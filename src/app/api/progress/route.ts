@@ -1,0 +1,71 @@
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { readJSON, writeJSON } from "@/lib/db";
+
+interface ProgressRecord {
+  studentId: string;
+  courseId: string;
+  completedLessons: string[];
+  quizScores: { lessonId: string; score: number; total: number; date: string }[];
+  lastAccessed: string;
+}
+
+export async function GET(request: Request) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const courseId = searchParams.get("courseId");
+
+  const progress = readJSON<ProgressRecord>("progress.json");
+  const userProgress = progress.filter((p) => p.studentId === session.user.id);
+
+  if (courseId) {
+    const courseRecord = userProgress.find((p) => p.courseId === courseId) || {
+      studentId: session.user.id,
+      courseId,
+      completedLessons: [],
+      quizScores: [],
+      lastAccessed: new Date().toISOString()
+    };
+    return NextResponse.json({ success: true, data: courseRecord });
+  }
+
+  return NextResponse.json({ success: true, data: userProgress });
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await getSession();
+    if (!session || !session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { courseId, lessonId } = await request.json();
+    if (!courseId || !lessonId) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+
+    const progress = readJSON<ProgressRecord>("progress.json");
+    const existingIndex = progress.findIndex(
+      (p) => p.studentId === session.user.id && p.courseId === courseId
+    );
+
+    if (existingIndex > -1) {
+      if (!progress[existingIndex].completedLessons.includes(lessonId)) {
+        progress[existingIndex].completedLessons.push(lessonId);
+        progress[existingIndex].lastAccessed = new Date().toISOString();
+      }
+    } else {
+      progress.push({
+        studentId: session.user.id as string,
+        courseId,
+        completedLessons: [lessonId],
+        quizScores: [],
+        lastAccessed: new Date().toISOString(),
+      });
+    }
+
+    writeJSON("progress.json", progress);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Progress POST Error:", err);
+    return NextResponse.json({ error: "Failed to update progress" }, { status: 500 });
+  }
+}

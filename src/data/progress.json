@@ -1,0 +1,72 @@
+[
+  {
+    "studentId": "xw5uerb",
+    "courseId": "capcut-masterclass",
+    "completedLessons": [
+      "cc-1"
+    ],
+    "quizScores": [],
+    "lastAccessed": "2026-05-01T00:09:04.026Z"
+  },
+  {
+    "studentId": "xw5uerb",
+    "lessonId": "cc-1",
+    "type": "quiz",
+    "score": 0,
+    "total": 2,
+    "percent": 0,
+    "date": "2026-05-01T00:09:26.556Z"
+  },
+  {
+    "studentId": "itskzk3",
+    "courseId": "photoshop-masterclass",
+    "completedLessons": [
+      "ps-2",
+      "ps-7",
+      "ps-6",
+      "ps-5",
+      "ps-4",
+      "ps-3",
+      "ps-1",
+      "ps-8"
+    ],
+    "quizScores": [],
+    "lastAccessed": "2026-05-01T00:55:36.260Z"
+  },
+  {
+    "studentId": "itskzk3",
+    "lessonId": "ps-2",
+    "type": "quiz",
+    "score": 0,
+    "total": 2,
+    "percent": 0,
+    "date": "2026-05-01T00:36:02.299Z"
+  },
+  {
+    "studentId": "itskzk3",
+    "lessonId": "ps-2",
+    "type": "quiz",
+    "score": 0,
+    "total": 2,
+    "percent": 0,
+    "date": "2026-05-01T00:36:12.454Z"
+  },
+  {
+    "studentId": "itskzk3",
+    "lessonId": "ps-8",
+    "type": "quiz",
+    "score": 0,
+    "total": 2,
+    "percent": 0,
+    "date": "2026-05-01T00:55:55.761Z"
+  },
+  {
+    "studentId": "itskzk3",
+    "lessonId": "ps-8",
+    "type": "quiz",
+    "score": 0,
+    "total": 2,
+    "percent": 0,
+    "date": "2026-05-01T00:56:10.425Z"
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "admin-1",
+    "name": "Samuel Kimiri",
+    "email": "samcreativegraphics7@gmail.com",
+    "phone": "0743475247",
+    "password": "$2a$10$fAxBhuOHwWD3AjY7U95HyuPZiPCLv0ND.fQdzkLtoKgVhE2Nyh7My",
+    "role": "admin",
+    "enrolledCourses": ["1", "2", "3", "4", "5"],
+    "createdAt": "2026-05-11T00:00:00.000Z"
+  }
+]
