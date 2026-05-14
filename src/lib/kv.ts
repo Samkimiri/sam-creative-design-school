@@ -13,14 +13,19 @@ export async function getData<T>(key: string, defaultValue: T[]): Promise<T[]> {
     // 1. Try Vercel KV first (if configured)
     if (process.env.KV_REST_API_URL) {
       const data = await kv.get<T[]>(key);
-      if (data) return data;
+      if (Array.isArray(data)) return data;
+      if (data && typeof data === 'object') return Object.values(data) as T[];
     }
   } catch (error) {
     console.error(`KV Read Error for ${key}:`, error);
   }
 
   // 2. Fallback to Memory Cache
-  if (memoryCache[key]) return memoryCache[key] as T[];
+  if (memoryCache[key]) {
+    const data = memoryCache[key];
+    if (Array.isArray(data)) return data as T[];
+    if (typeof data === 'object') return Object.values(data) as T[];
+  }
 
   // 3. Fallback to the default value (usually from JSON files)
   return defaultValue;
