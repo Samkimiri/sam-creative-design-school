@@ -1,75 +1,88 @@
 import fs from "fs";
 import path from "path";
-
-import { getData, setData } from "./kv";
+import getMongoClient from "./mongodb";
 
 const DATA_DIR = path.join(process.cwd(), "src", "data");
 
-// Use globalThis to persist the memory database across hot-reloads and API calls on Vercel
-const memoryDB = (globalThis as any).memoryDB || ((globalThis as any).memoryDB = {});
+function getCollectionName(filename: string): string {
+  return filename.replace(".json", "");
+}
+
+type MemoryDB = Record<string, unknown[]>;
+const globalDb = globalThis as typeof globalThis & { memoryDB?: MemoryDB };
+const memoryDB: MemoryDB = globalDb.memoryDB ?? (globalDb.memoryDB = {});
 
 export function readJSON<T>(filename: string): T[] {
-  // Return from memory if we've written to it in this process
   if (memoryDB[filename]) return memoryDB[filename] as T[];
 
   const filePath = path.join(DATA_DIR, filename);
-  const adminAccount = {
-    id: "admin-1",
-    name: "Samuel Kimiri",
-    email: "samcreativegraphics7@gmail.com",
-    phone: "0743475247",
-    password: "$2a$10$fAxBhuOHwWD3AjY7U95HyuPZiPCLv0ND.fQdzkLtoKgVhE2Nyh7My", // Password: SamCreative@2026
-    role: "admin",
-    enrolledCourses: ["photoshop-masterclass", "illustrator-training", "capcut-masterclass", "solidworks-engineers"],
-    createdAt: new Date().toISOString()
-  };
-
   try {
-    if (!fs.existsSync(filePath)) {
-      if (filename === "students.json") return [adminAccount] as unknown as T[];
-      return [];
-    }
+    if (!fs.existsSync(filePath)) return [];
     const raw = fs.readFileSync(filePath, "utf-8");
-    const data = JSON.parse(raw) as T[];
-    
-    // Ensure admin exists in student list
-    if (filename === "students.json") {
-      const hasAdmin = data.some((s: any) => s.email === adminAccount.email);
-      if (!hasAdmin) return [adminAccount, ...data] as unknown as T[];
-    }
-    
-    return data;
+    return JSON.parse(raw) as T[];
   } catch {
-    if (filename === "students.json") return [adminAccount] as unknown as T[];
     return [];
   }
 }
 
-/**
- * Async version for True Persistence (Vercel KV)
- */
 export async function getDB<T>(filename: string): Promise<T[]> {
-  const localData = readJSON<T>(filename);
-  return await getData<T>(filename, localData);
+  try {
+    const client = await getMongoClient();
+    const db = client.db("scds_db");
+    const collection = db.collection(getCollectionName(filename));
+
+    const documents = await collection.find({}).toArray();
+
+    if (documents.length === 0) {
+      const fallbackData = readJSON<T>(filename);
+      if (fallbackData.length > 0) {
+        await saveDB(filename, fallbackData);
+        return fallbackData;
+      }
+      return [];
+    }
+
+    return documents.map((doc) => {
+      const { _id: _unused, ...rest } = doc as Record<string, unknown> & { _id?: unknown };
+      void _unused;
+      return rest as T;
+    });
+  } catch (error) {
+    console.error("MongoDB getDB error:", error);
+    return readJSON<T>(filename);
+  }
 }
 
 export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
-  // 1. Update Memory Cache (Sync)
-  memoryDB[filename] = data;
-  
-  // 2. Try to update Vercel KV (Async)
-  await setData(filename, data);
+  memoryDB[filename] = data as unknown[];
 
-  // 3. Try to update Local File (Sync - fails on Vercel)
   const filePath = path.join(DATA_DIR, filename);
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
-  } catch (e) {
-    // Expected on Vercel
+  } catch {
+    // Local file write is optional when MongoDB is available
+  }
+
+  try {
+    const client = await getMongoClient();
+    const db = client.db("scds_db");
+    const collection = db.collection(getCollectionName(filename));
+
+    const cleanData = data.map((item) => {
+      const { _id: _unused, ...rest } = item as Record<string, unknown> & { _id?: unknown };
+      void _unused;
+      return rest;
+    });
+
+    await collection.deleteMany({});
+    if (cleanData.length > 0) {
+      await collection.insertMany(cleanData);
+    }
+  } catch (error) {
+    console.error("MongoDB saveDB error:", error);
   }
 }
 
 export function writeJSON<T>(filename: string, data: T[]): void {
-  // Fire and forget for sync compatibility, but background persistence happens
-  saveDB(filename, data); 
+  void saveDB(filename, data);
 }

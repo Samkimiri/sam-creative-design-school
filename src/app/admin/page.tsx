@@ -288,7 +288,7 @@ export default function AdminDashboard() {
                         <h4 className="font-bold text-dark mb-2 flex items-center gap-2">
                           <span className="text-primary">{lesson.order}.</span> {lesson.title}
                         </h4>
-                        <p className="text-gray-600 text-sm mb-4 leading-relaxed bg-gray-50 p-4 rounded-xl italic">"{lesson.content}"</p>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed bg-gray-50 p-4 rounded-xl italic">&quot;{lesson.content}&quot;</p>
                         {lesson.quiz && (
                           <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
                             <p className="text-xs font-bold text-primary uppercase mb-2">Quiz Preview ({lesson.quiz.questions.length} Qs)</p>

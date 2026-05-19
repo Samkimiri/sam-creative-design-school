@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   title: "Sam Creative Design School | Master Creative & Engineering Skills",
   description: "Learn Photoshop, Illustrator, CapCut, and SolidWorks with industry-level training in Kenya. Practical skills for young creatives and engineers.",
   keywords: ["Graphic design training Kenya", "Photoshop classes Kenya", "SolidWorks training", "Sam Creative Design School"],
+  icons: {
+    icon: "/file.svg",
+  },
 };
 
 export default function RootLayout({

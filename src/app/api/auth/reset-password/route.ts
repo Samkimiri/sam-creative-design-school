@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readJSON, writeJSON } from "@/lib/db";
+import type { Student } from "@/types";
 import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
@@ -7,8 +8,8 @@ export async function POST(request: Request) {
     const { email, newPassword } = await request.json();
     if (!email) return NextResponse.json({ success: false, message: "Email is required" }, { status: 400 });
 
-    const students = readJSON<any>("students.json");
-    const idx = students.findIndex((s: any) => s.email.toLowerCase() === email.toLowerCase());
+    const students = readJSON<Student>("students.json");
+    const idx = students.findIndex((s) => s.email.toLowerCase() === email.toLowerCase());
 
     if (idx > -1) {
       // In a real app, we'd send an email. For this mock, we update immediately if requested.

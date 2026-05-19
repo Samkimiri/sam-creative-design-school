@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
 import { getSession } from "@/lib/auth";
-import { readJSON, getDB } from "@/lib/db";
+import { getDB } from "@/lib/db";
 
 interface ProgressRecord {
   studentId: string;

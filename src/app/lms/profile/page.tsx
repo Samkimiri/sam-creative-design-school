@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
+import type { ProgressRecord } from "@/types";
 
 interface Student {
   id: string;
@@ -15,7 +16,7 @@ interface Student {
 
 export default function ProfilePage() {
   const [student, setStudent] = useState<Student | null>(null);
-  const [progress, setProgress] = useState<any[]>([]);
+  const [progress, setProgress] = useState<ProgressRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
@@ -235,7 +236,7 @@ export default function ProfilePage() {
                   );
                 }) : (
                   <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                    <p className="text-gray-500 text-sm mb-4">You haven't enrolled in any courses yet.</p>
+                    <p className="text-gray-500 text-sm mb-4">You haven&apos;t enrolled in any courses yet.</p>
                     <Link href="/courses" className="bg-dark text-white px-6 py-2 rounded-lg text-sm font-bold">
                       Browse Courses
                     </Link>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readJSON, writeJSON } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import type { MpesaStkResponse } from "@/types";
 
 interface Enrollment {
   id: string;
@@ -15,16 +16,6 @@ interface Enrollment {
   checkoutRequestId?: string;
   status: "pending" | "confirmed";
   whatsappConfirmed?: boolean;
-  createdAt: string;
-}
-
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  enrolledCourses: string[];
   createdAt: string;
 }
 
@@ -48,7 +39,7 @@ export async function POST(request: Request) {
     const session = await getSession();
 
     // --- REAL STK PUSH INTEGRATION ---
-    let mpesaResponse: any = null;
+    let mpesaResponse: MpesaStkResponse | null = null;
     let pushSuccess = false;
 
     try {

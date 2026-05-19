@@ -39,7 +39,7 @@ export default function ForgotPassword() {
             <div className="text-center py-6">
               <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-6">📧</div>
               <h3 className="text-xl font-bold text-white mb-2">Check Your Email</h3>
-              <p className="text-gray-400 mb-8">We've sent a password reset link to <span className="text-white font-bold">{email}</span>.</p>
+              <p className="text-gray-400 mb-8">We&apos;ve sent a password reset link to <span className="text-white font-bold">{email}</span>.</p>
               <Link href="/auth/login" className="block w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 transition-all">
                 Back to Login
               </Link>

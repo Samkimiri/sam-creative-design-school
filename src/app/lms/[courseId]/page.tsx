@@ -165,7 +165,7 @@ export default function CoursePlayer() {
                     <div className="bg-blue-50/30 border border-blue-100/50 rounded-2xl p-6 md:p-8">
                       <div className="prose prose-blue max-w-none">
                         <p className="text-gray-700 leading-relaxed text-lg italic font-medium mb-6">
-                          "{activeLesson.content}"
+                          &quot;{activeLesson.content}&quot;
                         </p>
                         <div className="space-y-4 text-gray-600">
                           <p>In this lesson, we cover the essential skills needed for {course.title}. Follow along with the video and use these notes as a quick reference guide.</p>

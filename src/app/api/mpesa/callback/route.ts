@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readJSON, writeJSON } from "@/lib/db";
+import type { Enrollment, Student } from "@/types";
 
 export async function POST(request: Request) {
   try {
@@ -11,30 +12,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Invalid callback payload" });
     }
 
-    const { ResultCode, ResultDesc, CallbackMetadata, MerchantRequestID, CheckoutRequestID } = Body.stkCallback;
+    const { ResultCode, ResultDesc, CheckoutRequestID } = Body.stkCallback;
 
     if (ResultCode === 0) {
       // Payment successful
-      const enrollments = readJSON<any>("enrollments.json");
-      const idx = enrollments.findIndex((e: any) => e.checkoutRequestId === CheckoutRequestID);
+      const enrollments = readJSON<Enrollment>("enrollments.json");
+      const idx = enrollments.findIndex((e) => e.checkoutRequestId === CheckoutRequestID);
 
       if (idx > -1) {
         enrollments[idx].status = "confirmed";
         writeJSON("enrollments.json", enrollments);
 
         // Also assign course to student profile
-        const students = readJSON<any>("students.json");
+        const students = readJSON<Student>("students.json");
         const enrollment = enrollments[idx];
-        const studentIdx = students.findIndex((s: any) => s.email === enrollment.studentEmail || s.phone === enrollment.phone);
+        const studentIdx = students.findIndex(
+          (s) => s.email === enrollment.studentEmail || s.phone === enrollment.phone
+        );
 
         if (studentIdx > -1) {
+          const enrolled = students[studentIdx].enrolledCourses ?? [];
           const courseIds = enrollment.courseId.split(",");
           courseIds.forEach((cid: string) => {
             const trimmed = cid.trim();
-            if (trimmed && !students[studentIdx].enrolledCourses.includes(trimmed)) {
-              students[studentIdx].enrolledCourses.push(trimmed);
+            if (trimmed && !enrolled.includes(trimmed)) {
+              enrolled.push(trimmed);
             }
           });
+          students[studentIdx].enrolledCourses = enrolled;
           writeJSON("students.json", students);
         }
       }
