@@ -40,3 +40,47 @@ export interface MpesaStkResponse {
   ResponseCode?: string;
   CheckoutRequestID?: string;
 }
+
+export type AnalyticsEventType =
+  | "page_view"
+  | "click"
+  | "form_submit"
+  | "scroll_depth"
+  | "session_start"
+  | "session_end";
+
+export interface AnalyticsEvent {
+  id: string;
+  visitorId: string;
+  sessionId: string;
+  type: AnalyticsEventType;
+  path: string;
+  label?: string;
+  metadata?: Record<string, string>;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
+  referrer?: string;
+  device?: string;
+  browser?: string;
+  createdAt: string;
+}
+
+export interface VisitorSession {
+  id: string;
+  visitorId: string;
+  sessionId: string;
+  firstSeen: string;
+  lastSeen: string;
+  pageViews: number;
+  engagements: number;
+  landingPage: string;
+  lastPage: string;
+  pages: string[];
+  referrer: string;
+  device: string;
+  browser: string;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
+}

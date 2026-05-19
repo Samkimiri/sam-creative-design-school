@@ -27,12 +27,57 @@ interface Enrollment {
   createdAt: string;
 }
 
+interface VisitorSession {
+  id: string;
+  visitorId: string;
+  sessionId: string;
+  firstSeen: string;
+  lastSeen: string;
+  pageViews: number;
+  engagements: number;
+  landingPage: string;
+  lastPage: string;
+  pages: string[];
+  referrer: string;
+  device: string;
+  browser: string;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
+}
+
+interface AnalyticsEvent {
+  id: string;
+  type: string;
+  path: string;
+  label?: string;
+  device?: string;
+  browser?: string;
+  userName?: string;
+  userEmail?: string;
+  createdAt: string;
+}
+
+interface AnalyticsSummary {
+  uniqueVisitors: number;
+  totalSessions: number;
+  todayVisitors: number;
+  todaySessions: number;
+  pageViews: number;
+  engagements: number;
+  topPages: { path: string; count: number }[];
+  topClicks: { label: string; count: number }[];
+}
+
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
-  const [tab, setTab] = useState<"students" | "enrollments" | "content">("enrollments");
+  const [tab, setTab] = useState<"analytics" | "enrollments" | "students" | "content">("analytics");
   const [students, setStudents] = useState<Student[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
+  const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
+  const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -43,16 +88,22 @@ export default function AdminDashboard() {
       const headers = { "Content-Type": "application/json" };
       const body = JSON.stringify({ password: pw });
       
-      const [sRes, eRes] = await Promise.all([
+      const [sRes, eRes, aRes] = await Promise.all([
         fetch("/api/admin/students", { method: "POST", headers, body }),
         fetch("/api/admin/enrollments", { method: "POST", headers, body }),
+        fetch("/api/admin/analytics", { method: "POST", headers, body }),
       ]);
       
-      const [sData, eData] = await Promise.all([sRes.json(), eRes.json()]);
+      const [sData, eData, aData] = await Promise.all([sRes.json(), eRes.json(), aRes.json()]);
       
       if (sData.success) {
         setStudents(sData.data);
         setEnrollments(eData.data);
+        if (aData.success) {
+          setVisitorSessions(aData.sessions);
+          setAnalyticsEvents(aData.events);
+          setAnalyticsSummary(aData.summary);
+        }
         setAuthed(true);
         if (pw) setPassword(pw);
       } else if (pw) {
@@ -124,10 +175,10 @@ export default function AdminDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           {[
-            { label: "Total Students", value: students.length, icon: "👥", color: "bg-blue-50 text-blue-600" },
-            { label: "Total Enrollments", value: enrollments.length, icon: "📋", color: "bg-primary/10 text-primary" },
-            { label: "Pending Payments", value: pendingCount, icon: "⏳", color: "bg-yellow-50 text-yellow-600" },
-            { label: "Confirmed Revenue", value: `Ksh ${revenue.toLocaleString()}`, icon: "💰", color: "bg-green-50 text-green-600" },
+            { label: "Unique Visitors", value: analyticsSummary?.uniqueVisitors ?? 0, icon: "👁️", color: "bg-purple-50 text-purple-600" },
+            { label: "Page Views", value: analyticsSummary?.pageViews ?? 0, icon: "📄", color: "bg-indigo-50 text-indigo-600" },
+            { label: "Today's Visitors", value: analyticsSummary?.todayVisitors ?? 0, icon: "📈", color: "bg-blue-50 text-blue-600" },
+            { label: "Engagements", value: analyticsSummary?.engagements ?? 0, icon: "🖱️", color: "bg-orange-50 text-orange-600" },
           ].map((stat, i) => (
             <div key={i} className={`rounded-2xl p-5 ${stat.color}`}>
               <div className="text-3xl mb-2">{stat.icon}</div>
@@ -139,16 +190,151 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
-          {(["enrollments", "students", "content"] as const).map((t) => (
+          {(["analytics", "enrollments", "students", "content"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${tab === t ? "bg-dark text-white" : "bg-white text-gray-500 hover:text-dark border border-gray-200"}`}
             >
-              {t.charAt(0).toUpperCase() + t.slice(1).replace("Content", " Content")}
+              {t === "analytics" ? "Visitors" : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
         </div>
+
+        {tab === "analytics" && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                <h3 className="font-bold text-dark mb-4">Top Pages</h3>
+                {analyticsSummary?.topPages.length ? (
+                  <ul className="space-y-3">
+                    {analyticsSummary.topPages.map((p) => (
+                      <li key={p.path} className="flex justify-between items-center text-sm">
+                        <span className="text-gray-700 truncate mr-4">{p.path}</span>
+                        <span className="font-bold text-primary shrink-0">{p.count} views</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-400 text-sm">No page views yet. Browse the site to collect data.</p>
+                )}
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                <h3 className="font-bold text-dark mb-4">Top Clicks &amp; Actions</h3>
+                {analyticsSummary?.topClicks.length ? (
+                  <ul className="space-y-3">
+                    {analyticsSummary.topClicks.map((c) => (
+                      <li key={c.label} className="flex justify-between items-center text-sm gap-4">
+                        <span className="text-gray-700 truncate">{c.label}</span>
+                        <span className="font-bold text-primary shrink-0">{c.count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-400 text-sm">No click events yet.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="font-bold text-dark">Visitor Sessions</h3>
+                <p className="text-xs text-gray-500 mt-1">Everyone who viewed or engaged with the website</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
+                    <tr>
+                      <th className="px-6 py-4 text-left">Visitor</th>
+                      <th className="px-6 py-4 text-left">Device</th>
+                      <th className="px-6 py-4 text-left">Pages</th>
+                      <th className="px-6 py-4 text-left">Views</th>
+                      <th className="px-6 py-4 text-left">Engagements</th>
+                      <th className="px-6 py-4 text-left">Referrer</th>
+                      <th className="px-6 py-4 text-left">Last Seen</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {visitorSessions.length === 0 ? (
+                      <tr><td colSpan={7} className="text-center py-12 text-gray-400">No visitors tracked yet</td></tr>
+                    ) : visitorSessions.map((s) => (
+                      <tr key={s.sessionId} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          {s.userName ? (
+                            <>
+                              <div className="font-bold text-dark">{s.userName}</div>
+                              <div className="text-xs text-gray-500">{s.userEmail}</div>
+                            </>
+                          ) : (
+                            <div className="font-mono text-xs text-gray-600">{s.visitorId.slice(0, 18)}…</div>
+                          )}
+                          <div className="text-xs text-gray-400 mt-1">Landing: {s.landingPage}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-medium">{s.device}</div>
+                          <div className="text-xs text-gray-500">{s.browser}</div>
+                        </td>
+                        <td className="px-6 py-4 text-xs text-gray-600 max-w-[180px]">
+                          {s.pages.slice(0, 3).join(", ")}
+                          {s.pages.length > 3 && ` +${s.pages.length - 3}`}
+                        </td>
+                        <td className="px-6 py-4 font-bold text-primary">{s.pageViews}</td>
+                        <td className="px-6 py-4 font-bold text-orange-600">{s.engagements}</td>
+                        <td className="px-6 py-4 text-xs text-gray-500 max-w-[120px] truncate">{s.referrer}</td>
+                        <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
+                          {new Date(s.lastSeen).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="font-bold text-dark">Live Activity Feed</h3>
+                <p className="text-xs text-gray-500 mt-1">Recent page views, clicks, and form submissions</p>
+              </div>
+              <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider sticky top-0">
+                    <tr>
+                      <th className="px-6 py-3 text-left">Time</th>
+                      <th className="px-6 py-3 text-left">Type</th>
+                      <th className="px-6 py-3 text-left">Page</th>
+                      <th className="px-6 py-3 text-left">Detail</th>
+                      <th className="px-6 py-3 text-left">User</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {analyticsEvents.length === 0 ? (
+                      <tr><td colSpan={5} className="text-center py-8 text-gray-400">No activity yet</td></tr>
+                    ) : analyticsEvents.map((ev) => (
+                      <tr key={ev.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-3 text-gray-500 whitespace-nowrap text-xs">
+                          {new Date(ev.createdAt).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-3">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
+                            {ev.type.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-gray-700">{ev.path}</td>
+                        <td className="px-6 py-3 text-xs text-gray-600 max-w-[200px] truncate">
+                          {ev.label || "—"}
+                        </td>
+                        <td className="px-6 py-3 text-xs">
+                          {ev.userName || <span className="text-gray-400">Anonymous</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Enrollments Table */}
         {tab === "enrollments" && (
