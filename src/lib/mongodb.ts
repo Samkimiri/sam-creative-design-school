@@ -1,6 +1,7 @@
 import { MongoClient } from "mongodb";
 
-const uri = process.env.MONGODB_URI;
+const uri =
+  process.env.MONGODB_URI || process.env.SCDS_DB_MONGODB_URI;
 
 type GlobalMongo = typeof globalThis & {
   _mongoClientPromise?: Promise<MongoClient>;
@@ -11,7 +12,9 @@ let productionPromise: Promise<MongoClient> | undefined;
 function createClientPromise(): Promise<MongoClient> {
   if (!uri) {
     return Promise.reject(
-      new Error('Invalid/Missing environment variable: "MONGODB_URI"')
+      new Error(
+        'Invalid/Missing environment variable: "MONGODB_URI" or "SCDS_DB_MONGODB_URI"'
+      )
     );
   }
 

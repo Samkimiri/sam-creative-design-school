@@ -1,8 +1,8 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
-type Step = "start" | "identity" | "contact" | "security" | "ambition" | "success";
+type Step = "start" | "login" | "identity" | "contact" | "security" | "ambition" | "success";
 
 export default function GamifiedRegistration() {
   const [step, setStep] = useState<Step>("start");
@@ -16,6 +16,39 @@ export default function GamifiedRegistration() {
   });
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Login and session states
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginStatus, setLoginStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [loginError, setLoginError] = useState("");
+
+  // Check if user is already logged in on mount
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.student) {
+            setIsLoggedIn(true);
+            setFormData({
+              name: data.student.name || "",
+              email: data.student.email || "",
+              phone: data.student.phone || "",
+              password: "••••••••",
+              interest: data.student.interest || "",
+              avatar: data.student.profileImage || data.student.avatar || null,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed checking auth status:", err);
+      }
+    }
+    checkSession();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -31,16 +64,38 @@ export default function GamifiedRegistration() {
   const register = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStep("success");
+      if (isLoggedIn) {
+        // Update existing member details
+        const res = await fetch("/api/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            phone: formData.phone,
+            profileImage: formData.avatar,
+            avatar: formData.avatar,
+            interest: formData.interest,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setStep("success");
+        } else {
+          alert(data.message || "Failed to update details");
+        }
       } else {
-        alert(data.message || "Registration failed");
+        // Register new member
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setStep("success");
+        } else {
+          alert(data.message || data.error || "Registration failed");
+        }
       }
     } catch (err) {
       alert("An error occurred. Please try again.");
@@ -60,7 +115,7 @@ export default function GamifiedRegistration() {
       setStep("security");
     }
     if (current === "security") {
-      if (!formData.password) return alert("Please set a password");
+      if (!isLoggedIn && !formData.password) return alert("Please set a password");
       setStep("ambition");
     }
     if (current === "ambition") {
@@ -87,6 +142,121 @@ export default function GamifiedRegistration() {
             <p className="mt-8 text-gray-400 font-bold uppercase tracking-[0.3em] text-sm">
               Press Start to Begin Your Quest
             </p>
+            <div className="mt-8 text-gray-400 font-bold">
+              {isLoggedIn ? (
+                <div className="flex flex-col items-center gap-2">
+                  <span>
+                    Welcome back, <span className="text-primary">{formData.name}</span>!
+                  </span>
+                  <button 
+                    onClick={() => setStep("identity")} 
+                    className="text-primary underline hover:text-primary/80 transition-all text-lg"
+                  >
+                    Resume Quest & Review Details →
+                  </button>
+                </div>
+              ) : (
+                <span>
+                  Already a member?{" "}
+                  <button 
+                    onClick={() => setStep("login")} 
+                    className="text-primary underline hover:text-primary/80 ml-1 transition-all"
+                  >
+                    Sign In
+                  </button>
+                </span>
+              )}
+            </div>
+          </div>
+        );
+
+      case "login":
+        return (
+          <div className="max-w-md mx-auto text-center animate-slide-up">
+            <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Welcome Back</h3>
+            <p className="text-gray-400 mb-8 font-medium">Sign in to resume your SCDS quest</p>
+            
+            {loginError && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm font-medium">
+                {loginError}
+              </div>
+            )}
+
+            <div className="space-y-4 mb-6">
+              <input 
+                required
+                type="email"
+                placeholder="Email Address"
+                className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg transition-all"
+                value={loginEmail}
+                onChange={e => setLoginEmail(e.target.value)}
+              />
+              <input 
+                required
+                type="password"
+                placeholder="Password"
+                className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg transition-all"
+                value={loginPassword}
+                onChange={e => setLoginPassword(e.target.value)}
+              />
+            </div>
+            
+            <button
+              disabled={loginStatus === "loading"}
+              onClick={async () => {
+                if (!loginEmail || !loginPassword) {
+                  setLoginError("Please enter your details");
+                  return;
+                }
+                setLoginStatus("loading");
+                setLoginError("");
+                try {
+                  const res = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    // Success login! Now fetch their details
+                    const meRes = await fetch("/api/auth/me");
+                    const meData = await meRes.json();
+                    if (meData.success && meData.student) {
+                      setIsLoggedIn(true);
+                      setFormData({
+                        name: meData.student.name || "",
+                        email: meData.student.email || "",
+                        phone: meData.student.phone || "",
+                        password: "••••••••",
+                        interest: meData.student.interest || "",
+                        avatar: meData.student.profileImage || meData.student.avatar || null,
+                      });
+                      setStep("identity"); // Go to step 1 with their pre-filled details!
+                    }
+                  } else {
+                    setLoginStatus("error");
+                    setLoginError(data.message || data.error || "Login failed");
+                  }
+                } catch {
+                  setLoginStatus("error");
+                  setLoginError("An error occurred during sign in");
+                } finally {
+                  setLoginStatus("idle");
+                }
+              }}
+              className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg hover:bg-primary/95 transition-all shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loginStatus === "loading" ? (
+                <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : "Sign In & Resume Quest →"}
+            </button>
+
+            <button 
+              onClick={() => setStep("start")}
+              className="mt-6 text-sm text-gray-500 hover:text-white font-bold transition-all"
+            >
+              ← Back to Start
+            </button>
           </div>
         );
 
@@ -165,20 +335,28 @@ export default function GamifiedRegistration() {
         return (
           <div className="max-w-md mx-auto text-center animate-slide-up">
             <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Secure the Vault</h3>
-            <p className="text-gray-400 mb-8 font-medium">Create a strong master key for your portal.</p>
-            <input 
-              required
-              type="password"
-              placeholder="Strong Password"
-              className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg mb-6 transition-all"
-              value={formData.password}
-              onChange={e => setFormData({...formData, password: e.target.value})}
-            />
+            <p className="text-gray-400 mb-8 font-medium">
+              {isLoggedIn ? "You are logged in. Your account is already secure." : "Create a strong master key for your portal."}
+            </p>
+            {!isLoggedIn ? (
+              <input 
+                required
+                type="password"
+                placeholder="Strong Password"
+                className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg mb-6 transition-all"
+                value={formData.password}
+                onChange={e => setFormData({...formData, password: e.target.value})}
+              />
+            ) : (
+              <div className="w-full bg-green-500/10 border border-green-500/20 text-green-400 rounded-2xl p-5 font-bold mb-6">
+                ✓ Account Authenticated
+              </div>
+            )}
             <button
               onClick={() => nextStep("security")}
               className="w-full bg-white text-dark py-5 rounded-2xl font-black text-lg hover:bg-primary hover:text-white transition-all shadow-xl"
             >
-              Lock It In →
+              {isLoggedIn ? "Continue Quest →" : "Lock It In →"}
             </button>
           </div>
         );
@@ -246,7 +424,7 @@ export default function GamifiedRegistration() {
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(26,143,227,0.1),transparent)] pointer-events-none" />
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-4xl mx-auto bg-white/5 backdrop-blur-3xl rounded-[3rem] p-10 md:p-16 border border-white/10 shadow-3xl">
-          {step !== "start" && step !== "success" && (
+          {step !== "start" && step !== "login" && step !== "success" && (
             <div className="mb-12">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xs font-black text-primary uppercase tracking-[0.3em]">Quest Progress</span>
