@@ -6,7 +6,7 @@
     "phone": "0743475247",
     "password": "$2a$10$fAxBhuOHwWD3AjY7U95HyuPZiPCLv0ND.fQdzkLtoKgVhE2Nyh7My",
     "role": "admin",
-    "enrolledCourses": ["1", "2", "3", "4", "5"],
+    "enrolledCourses": ["photoshop-masterclass", "illustrator-training", "capcut-masterclass", "solidworks-engineers"],
     "createdAt": "2026-05-11T00:00:00.000Z"
   }
 ]

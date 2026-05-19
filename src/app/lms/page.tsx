@@ -16,6 +16,7 @@ interface Student {
   name: string;
   email: string;
   enrolledCourses: string[];
+  profileImage?: string;
 }
 
 export default async function LMSDashboard() {
@@ -24,10 +25,11 @@ export default async function LMSDashboard() {
   let enrolledCourses = courses;
   let studentName = "Student";
   let allProgress: ProgressRecord[] = [];
+  let student: Student | undefined = undefined;
 
   if (session) {
     const allStudents = await getDB<Student>("students.json");
-    const student = allStudents.find((s) => s.id === session.user.id);
+    student = allStudents.find((s) => s.id === session.user.id);
     studentName = session.user.name;
     
     // Fallback: If student not found in JSON (Vercel ephemeral), 
