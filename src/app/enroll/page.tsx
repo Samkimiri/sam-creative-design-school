@@ -32,8 +32,11 @@ function EnrollForm() {
     fetchProfile();
   }, []);
   
-  const [status, setStatus] = useState<"idle" | "submitting" | "stk" | "success">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "stk" | "success" | "failed">("idle");
   const [ref, setRef] = useState("");
+  const [checkoutRequestId, setCheckoutRequestId] = useState("");
+  const [stkMessage, setStkMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,18 +64,46 @@ function EnrollForm() {
       });
       
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.pushSuccess) {
         setRef(data.reference);
+        setCheckoutRequestId(data.checkoutRequestId || "");
+        setStkMessage(data.message || "M-Pesa prompt sent to your phone.");
         setStatus("stk");
+      } else if (data.success && !data.pushSuccess) {
+        setRef(data.reference);
+        setErrorMessage(data.message || "Enrollment saved but M-Pesa prompt was not sent.");
+        setStatus("failed");
       } else {
-        alert(data.message || "Enrollment failed");
-        setStatus("idle");
+        setErrorMessage(data.message || "Enrollment failed");
+        setStatus("failed");
       }
-    } catch (err) {
-      alert("An error occurred. Please try again.");
-      setStatus("idle");
+    } catch {
+      setErrorMessage("An error occurred. Please try again.");
+      setStatus("failed");
     }
   };
+
+  useEffect(() => {
+    if (status !== "stk" || !checkoutRequestId) return;
+
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/mpesa/status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ checkoutRequestId, reference: ref }),
+        });
+        const data = await res.json();
+        if (data.paid) setStatus("success");
+      } catch {
+        // keep polling
+      }
+    };
+
+    const interval = setInterval(poll, 5000);
+    poll();
+    return () => clearInterval(interval);
+  }, [status, checkoutRequestId, ref]);
 
   const toggleCourse = (id: string) => {
     setFormData(prev => ({
@@ -83,26 +114,63 @@ function EnrollForm() {
     }));
   };
 
+  const totalAmount = courses
+    .filter((c) => formData.selectedCourses.includes(c.id))
+    .reduce((s, c) => s + c.price, 0);
+
+  if (status === "failed") {
+    return (
+      <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border-2 border-red-200 animate-fade-in">
+        <div className="text-center py-6">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-black text-dark mb-3">Payment Not Started</h2>
+          <p className="text-gray-600 mb-6">{errorMessage}</p>
+          {ref && (
+            <p className="text-sm text-gray-500 mb-6">
+              Reference: <span className="font-bold text-primary">{ref}</span>
+            </p>
+          )}
+          <button
+            onClick={() => { setStatus("idle"); setErrorMessage(""); }}
+            className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (status === "stk") {
     return (
       <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border-4 border-primary relative overflow-hidden animate-fade-in">
         <div className="text-center py-10">
           <div className="text-6xl mb-6 animate-bounce">📲</div>
-          <h2 className="text-3xl font-black text-dark mb-4">STK Push Sent!</h2>
+          <h2 className="text-3xl font-black text-dark mb-4">Check Your Phone</h2>
+          <p className="text-gray-600 mb-4 max-w-md mx-auto">
+            Safaricom sent an M-Pesa prompt to{" "}
+            <span className="font-bold text-primary">{formData.phone}</span>.
+          </p>
+          {stkMessage && (
+            <p className="text-sm text-green-700 bg-green-50 rounded-xl px-4 py-2 mb-6 inline-block font-medium">
+              {stkMessage}
+            </p>
+          )}
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            Please check your phone (<span className="font-bold text-primary">{formData.phone}</span>). 
-            Enter your <span className="font-bold text-dark">MPESA PIN</span> to authorize the payment of:
+            Enter your <span className="font-bold text-dark">M-Pesa PIN</span> to pay:
             <span className="font-bold text-primary block text-3xl mt-2 tracking-tighter">
-              Ksh {courses.filter(c => formData.selectedCourses.includes(c.id)).reduce((s, c) => s + c.price, 0).toLocaleString()}
+              Ksh {totalAmount.toLocaleString()}
             </span>
           </p>
           
           <div className="bg-primary/5 rounded-2xl p-6 mb-8 border border-primary/10">
             <div className="flex items-center justify-center gap-3 text-primary font-bold mb-2">
               <span className="w-2 h-2 bg-primary rounded-full animate-ping" />
-              Waiting for Safaricom Confirmation...
+              Waiting for Safaricom confirmation…
             </div>
-            <p className="text-xs text-gray-400">Do not close this page until the process is complete.</p>
+            <p className="text-xs text-gray-400">
+              This page updates automatically when payment is received. Ref: {ref}
+            </p>
           </div>
 
           <button 
@@ -271,7 +339,7 @@ export default function Enroll() {
               {[
                 { step: 1, title: "Choose Course", desc: "Select the training program that fits your goals." },
                 { step: 2, title: "Fill Details", desc: "Provide your name and phone number for enrollment." },
-                { step: 3, title: "Pay via MPESA", desc: "Use Send Money to 0743475247 (Samuel Kimiri)." },
+                { step: 3, title: "Pay via M-Pesa", desc: "Enter your PIN when the Safaricom prompt appears on your phone." },
                 { step: 4, title: "Get Access", desc: "Receive login details for the LMS and start learning." }
               ].map(item => (
                 <div key={item.step} className="flex gap-6">

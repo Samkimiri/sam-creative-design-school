@@ -31,14 +31,9 @@ export interface Enrollment {
   phone: string;
   reference: string;
   checkoutRequestId?: string;
-  status: string;
+  status: "pending" | "confirmed" | string;
   whatsappConfirmed?: boolean;
   createdAt: string;
-}
-
-export interface MpesaStkResponse {
-  ResponseCode?: string;
-  CheckoutRequestID?: string;
 }
 
 export type AnalyticsEventType =

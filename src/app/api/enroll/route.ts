@@ -1,23 +1,8 @@
 import { NextResponse } from "next/server";
-import { readJSON, writeJSON } from "@/lib/db";
+import { getDB, saveDB } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import type { MpesaStkResponse } from "@/types";
-
-interface Enrollment {
-  id: string;
-  studentId: string;
-  studentName: string;
-  studentEmail: string;
-  courseId: string;
-  courseName: string;
-  amount: number;
-  phone: string;
-  reference: string;
-  checkoutRequestId?: string;
-  status: "pending" | "confirmed";
-  whatsappConfirmed?: boolean;
-  createdAt: string;
-}
+import { initiateStkPush, isMpesaConfigured } from "@/lib/mpesa";
+import type { Enrollment } from "@/types";
 
 export async function POST(request: Request) {
   try {
@@ -25,33 +10,69 @@ export async function POST(request: Request) {
     const { name, phone, courseId, courseName, amount } = body;
 
     if (!name || !phone || !courseId) {
-      return NextResponse.json({ success: false, message: "All fields are required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "All fields are required" },
+        { status: 400 }
+      );
     }
 
-    const phoneRegex = /^0[7|1][0-9]{8}$/; // Added 01 to Kenyan phone regex
+    const phoneRegex = /^0[71]\d{8}$/;
     if (!phoneRegex.test(phone)) {
-      return NextResponse.json({ success: false, message: "Please enter a valid Kenyan phone number (07XXXXXXXX or 01XXXXXXXX)" }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Please enter a valid Kenyan phone number (07XXXXXXXX or 01XXXXXXXX)",
+        },
+        { status: 400 }
+      );
+    }
+
+    const parsedAmount = Number(amount);
+    if (!parsedAmount || parsedAmount < 1) {
+      return NextResponse.json(
+        { success: false, message: "Invalid payment amount" },
+        { status: 400 }
+      );
     }
 
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
-
-    const enrollments = readJSON<Enrollment>("enrollments.json");
+    const enrollments = await getDB<Enrollment>("enrollments.json");
     const session = await getSession();
 
-    // --- REAL STK PUSH INTEGRATION ---
-    let mpesaResponse: MpesaStkResponse | null = null;
     let pushSuccess = false;
+    let checkoutRequestId: string | undefined;
+    let merchantRequestId: string | undefined;
+    let mpesaMessage = "";
+    let mpesaConfigured = isMpesaConfigured();
 
-    try {
-      const { initiateStkPush } = await import("@/lib/mpesa");
-      mpesaResponse = await initiateStkPush(phone, amount, reference);
-      if (mpesaResponse?.ResponseCode === "0") {
-        pushSuccess = true;
+    if (mpesaConfigured) {
+      const stk = await initiateStkPush(phone, parsedAmount, reference);
+      pushSuccess = stk.success;
+      checkoutRequestId = stk.checkoutRequestId;
+      merchantRequestId = stk.merchantRequestId;
+      mpesaMessage =
+        stk.customerMessage ||
+        stk.responseDescription ||
+        stk.errorMessage ||
+        "";
+
+      if (!stk.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              stk.errorMessage ||
+              "Could not send M-Pesa prompt. Check your phone number and try again.",
+            mpesaConfigured: true,
+            mpesaError: stk.raw,
+          },
+          { status: 502 }
+        );
       }
-    } catch (error) {
-      console.error("M-Pesa STK Push Error:", error);
+    } else {
+      mpesaMessage =
+        "M-Pesa API credentials are not configured on the server. Contact support to complete payment.";
     }
-    // ---------------------------------
 
     const newEnrollment: Enrollment = {
       id: "ENR-" + Date.now(),
@@ -60,41 +81,47 @@ export async function POST(request: Request) {
       studentEmail: session?.user.email || "",
       courseId: String(courseId),
       courseName: courseName || "Course",
-      amount: amount || 0,
+      amount: parsedAmount,
       phone,
       reference,
-      checkoutRequestId: mpesaResponse?.CheckoutRequestID,
+      checkoutRequestId,
       status: "pending",
       createdAt: new Date().toISOString(),
     };
 
     enrollments.push(newEnrollment);
-    writeJSON("enrollments.json", enrollments);
+    await saveDB("enrollments.json", enrollments);
 
     return NextResponse.json({
       success: true,
-      message: pushSuccess ? "STK Push sent to your phone!" : "Enrollment saved. Please pay manually if you didn't receive a prompt.",
+      message: pushSuccess
+        ? mpesaMessage || "M-Pesa prompt sent! Check your phone and enter your PIN."
+        : mpesaMessage,
       reference,
       pushSuccess,
-      mpesaResponse,
-      mpesaNumber: process.env.MPESA_SHORTCODE || "0743475247",
-      recipientName: "Samuel Kimiri",
+      mpesaConfigured,
+      checkoutRequestId,
+      merchantRequestId,
+      paybillNumber: process.env.MPESA_SHORTCODE || "",
+      recipientName: process.env.MPESA_ACCOUNT_NAME || "Samuel Kimiri",
     });
   } catch (error) {
     console.error("Enrollment error:", error);
-    return NextResponse.json({ success: false, message: "Failed to process enrollment" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Failed to process enrollment";
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
     const { reference, whatsappConfirmed } = await request.json();
-    const enrollments = readJSON<Enrollment>("enrollments.json");
+    const enrollments = await getDB<Enrollment>("enrollments.json");
     const idx = enrollments.findIndex((e) => e.reference === reference);
-    
+
     if (idx > -1) {
       enrollments[idx].whatsappConfirmed = whatsappConfirmed;
-      writeJSON("enrollments.json", enrollments);
+      await saveDB("enrollments.json", enrollments);
       return NextResponse.json({ success: true });
     }
     return NextResponse.json({ success: false, message: "Enrollment not found" }, { status: 404 });
@@ -104,6 +131,6 @@ export async function PATCH(request: Request) {
 }
 
 export async function GET() {
-  const enrollments = readJSON<Enrollment>("enrollments.json");
+  const enrollments = await getDB<Enrollment>("enrollments.json");
   return NextResponse.json({ success: true, data: enrollments });
 }
