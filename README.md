@@ -29,8 +29,31 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## M-Pesa Sandbox / Production Setup
+
+This app uses the Daraja STK Push flow for M-Pesa payments. To run the integration, add a local environment file with the required M-Pesa credentials.
+
+Create a `.env.local` file at the project root with values like:
+
+```env
+MPESA_ENV=sandbox
+MPESA_CONSUMER_KEY=your_mpesa_consumer_key
+MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret
+MPESA_SHORTCODE=your_mpesa_shortcode
+MPESA_PASSKEY=your_mpesa_passkey
+MPESA_CALLBACK_URL=https://your-public-domain/api/mpesa/callback
+MPESA_TRANSACTION_TYPE=CustomerPayBillOnline
+```
+
+Important notes:
+
+- `MPESA_ENV` should be `sandbox` for testing, and `production` for live.
+- `MPESA_CALLBACK_URL` must be publicly accessible to receive Safaricom callback notifications.
+- If you are developing locally, use a tunneling service like `ngrok` or `localtunnel`.
+- `MPESA_TRANSACTION_TYPE` defaults to `CustomerPayBillOnline` in code.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/ deploying) for more details.

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { readJSON, writeJSON } from "@/lib/db";
+import { getDB, saveDB } from "@/lib/db";
+import { isMpesaConfigured, initiateStkPush } from "@/lib/mpesa";
+import type { Enrollment } from "@/types";
 
 export async function POST(request: Request) {
   try {
@@ -15,30 +17,47 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    // Simulate STK Push delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    if (!isMpesaConfigured()) {
+      return NextResponse.json({ error: "M-Pesa API is not configured on the server." }, { status: 500 });
+    }
 
-    // Simulate success
-    const enrollments = readJSON<Record<string, unknown>>("enrollments.json");
-    const newEnrollment = {
-      id: "MPESA_" + Math.random().toString(36).substring(2, 9),
+    const reference = `SCDS_${session.user.id.substring(0, 5)}`;
+    
+    // Initiate actual STK Push via Daraja API
+    const pushResult = await initiateStkPush(phone, amount, reference);
+
+    if (!pushResult.success) {
+      return NextResponse.json({ error: pushResult.errorMessage || "M-Pesa STK Push failed." }, { status: 400 });
+    }
+
+    // Save as "pending" enrollment, containing the checkoutRequestId
+    const enrollments = await getDB<Enrollment>("enrollments.json");
+    const newEnrollment: Enrollment = {
+      id: "ENR_" + Math.random().toString(36).substring(2, 9),
       studentId: session.user.id,
+      studentEmail: session.user.email,
       courseId,
       amount,
       phone,
-      status: "paid",
+      status: "pending",
       date: new Date().toISOString(),
+      checkoutRequestId: pushResult.checkoutRequestId,
+      merchantRequestId: pushResult.merchantRequestId,
+      reference,
     };
 
     enrollments.push(newEnrollment);
-    writeJSON("enrollments.json", enrollments);
+    await saveDB("enrollments.json", enrollments);
 
     return NextResponse.json({ 
       success: true, 
-      message: "Payment successful! You are now enrolled.",
+      message: "Please check your phone and enter your M-Pesa PIN to complete the payment.",
+      checkoutRequestId: pushResult.checkoutRequestId,
+      reference,
       enrollment: newEnrollment 
     });
-  } catch {
+  } catch (error) {
+    console.error("Payment API Error:", error);
     return NextResponse.json({ error: "Payment processing failed" }, { status: 500 });
   }
 }
