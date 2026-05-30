@@ -105,8 +105,13 @@ export default function ProfilePage() {
   const totalLessonsDone = progress.reduce((acc, p) => acc + (p.completedLessons?.length || 0), 0);
 
   return (
-    <div className="pt-28 pb-24 bg-[#F8F8F8] min-h-screen">
-      <div className="container mx-auto px-6 max-w-4xl">
+    <div className="relative isolate pt-28 pb-24 bg-[#F8F8F8] min-h-screen overflow-hidden">
+      <div
+        className="absolute inset-0 -z-10 bg-[url('/images/hero.png')] bg-cover bg-center opacity-10"
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 -z-10 bg-white/75" aria-hidden="true" />
+      <div className="container mx-auto px-6 max-w-4xl relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left Column: Avatar & Basic Info */}
@@ -222,9 +227,16 @@ export default function ProfilePage() {
                           <h4 className="font-bold text-dark group-hover:text-primary transition-colors">{course.title}</h4>
                           <p className="text-xs text-gray-500">{completed} of {courseLessons.length} lessons completed</p>
                         </div>
-                        <Link href={`/lms/${course.id}`} className="text-xs font-bold bg-dark text-white px-4 py-2 rounded-lg hover:bg-primary transition-all">
-                          {pct === 100 ? "Review" : pct > 0 ? "Continue" : "Start"}
-                        </Link>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {pct === 100 && (
+                            <a href={`/api/certificates/${course.id}`} className="text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-4 py-2 rounded-lg hover:bg-green-100 transition-all">
+                              Certificate
+                            </a>
+                          )}
+                          <Link href={`/lms/${course.id}`} className="text-xs font-bold bg-dark text-white px-4 py-2 rounded-lg hover:bg-primary transition-all">
+                            {pct === 100 ? "Review" : pct > 0 ? "Continue" : "Start"}
+                          </Link>
+                        </div>
                       </div>
                       <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                         <div 

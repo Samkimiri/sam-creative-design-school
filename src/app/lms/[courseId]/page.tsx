@@ -100,7 +100,12 @@ export default function CoursePlayer() {
   if (!course) return <div className="pt-32 text-center text-2xl font-bold">Course not found</div>;
 
   return (
-    <div className="pt-20 bg-[#F8F8F8] min-h-screen">
+    <div className="relative isolate pt-20 bg-[#F8F8F8] min-h-screen overflow-hidden">
+      <div
+        className="fixed inset-0 -z-10 bg-[url('/images/hero.png')] bg-cover bg-center opacity-10"
+        aria-hidden="true"
+      />
+      <div className="fixed inset-0 -z-10 bg-white/75" aria-hidden="true" />
       {/* Top Course Bar */}
       <div className="bg-dark text-white px-6 py-3 flex items-center justify-between sticky top-20 z-40 shadow-xl">
         <div className="flex items-center gap-4">
@@ -117,6 +122,14 @@ export default function CoursePlayer() {
             </div>
             <span className="text-sm text-primary font-bold">{progress}%</span>
           </div>
+          {progress === 100 && (
+            <a
+              href={`/api/certificates/${course.id}`}
+              className="hidden sm:inline-flex bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-600 transition-colors"
+            >
+              Certificate
+            </a>
+          )}
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-white transition-colors">
             {sidebarOpen ? "▶ Hide" : "◀ Show"} lessons
           </button>
@@ -174,6 +187,21 @@ export default function CoursePlayer() {
                       )}
                     </div>
                   </div>
+
+                  {progress === 100 && (
+                    <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-black uppercase tracking-widest text-green-700">Course Completed</p>
+                        <h3 className="text-xl font-extrabold text-green-950">Your certificate is ready.</h3>
+                      </div>
+                      <a
+                        href={`/api/certificates/${course.id}`}
+                        className="bg-green-600 text-white text-center font-bold px-5 py-3 rounded-xl hover:bg-green-700 transition-colors"
+                      >
+                        Download Certificate
+                      </a>
+                    </div>
+                  )}
 
                   <div className="mt-8">
                     <h3 className="text-lg font-bold text-dark mb-4 flex items-center gap-2">

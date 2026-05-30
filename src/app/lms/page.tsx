@@ -53,8 +53,13 @@ export default async function LMSDashboard() {
   const totalLessons = lessons.length;
 
   return (
-    <div className="pt-28 pb-24 bg-[#F8F8F8] min-h-screen">
-      <div className="container mx-auto px-6">
+    <div className="relative isolate pt-28 pb-24 bg-[#F8F8F8] min-h-screen overflow-hidden">
+      <div
+        className="absolute inset-0 -z-10 bg-[url('/images/hero.png')] bg-cover bg-center opacity-10"
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 -z-10 bg-white/75" aria-hidden="true" />
+      <div className="container mx-auto px-6 relative z-10">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
@@ -161,6 +166,15 @@ export default async function LMSDashboard() {
                       />
                     </div>
                   </div>
+
+                  {progress === 100 && (
+                    <a
+                      href={`/api/certificates/${course.id}`}
+                      className="mb-3 block w-full border border-green-500 bg-green-50 text-green-700 text-center font-bold py-3.5 rounded-xl hover:bg-green-100 transition-all"
+                    >
+                      Download Certificate
+                    </a>
+                  )}
 
                   <Link
                     href={`/lms/${course.id}`}
