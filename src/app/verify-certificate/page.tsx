@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 type VerificationResult = {
   valid: boolean;
@@ -12,7 +12,7 @@ type VerificationResult = {
   totalLessons: number;
 };
 
-export default function VerifyCertificatePage() {
+function VerifyCertificateForm() {
   const searchParams = useSearchParams();
   const [certificateId, setCertificateId] = useState(searchParams.get("id") || "");
   const [message, setMessage] = useState("");
@@ -79,5 +79,21 @@ export default function VerifyCertificatePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function VerifyCertificatePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="pt-32 pb-24">
+          <div className="container mx-auto max-w-3xl px-6">
+            <p className="font-medium text-gray-600">Loading certificate verifier...</p>
+          </div>
+        </div>
+      }
+    >
+      <VerifyCertificateForm />
+    </Suspense>
   );
 }
