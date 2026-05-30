@@ -11,24 +11,6 @@ export default function Home() {
     { value: "95%", label: "Completion Rate" },
   ];
 
-  const testimonials = [
-    {
-      name: "Grace Njeri", role: "Freelance Graphic Designer", stars: 5,
-      text: "The Photoshop masterclass completely changed my life. Within 3 weeks of finishing I had my first paid client — a local salon that paid me Ksh 8,000 for social media designs. Samuel's teaching style is unmatched.",
-      initials: "GN", color: "bg-blue-500"
-    },
-    {
-      name: "Kevin Omondi", role: "Content Creator & Influencer", stars: 5,
-      text: "CapCut training helped my Instagram grow from 800 to 12,000 followers in 2 months. I now earn from brand deals and Samuel showed me exactly how to edit videos that get views. 100% worth every shilling.",
-      initials: "KO", color: "bg-pink-500"
-    },
-    {
-      name: "Daniel Otieno", role: "Mechanical Engineer", stars: 5,
-      text: "I joined SolidWorks training as a fresh engineering graduate. Six weeks later I landed a job as a CAD designer at a Nairobi manufacturing company. The practical approach made all the difference.",
-      initials: "DO", color: "bg-gray-600"
-    },
-  ];
-
   return (
     <div>
       {/* ── Hero ────────────────────────────────────────── */}
@@ -209,40 +191,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Testimonials ─────────────────────────────────── */}
-      <section className="py-24 bg-light-gray">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Success Stories</span>
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-4">What Our Students Say</h2>
-            <div className="w-20 h-1.5 bg-primary mx-auto rounded-full" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((t, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl shadow-sm relative">
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.stars }).map((_, s) => (
-                    <span key={s} className="text-primary text-lg">★</span>
-                  ))}
-                </div>
-                <p className="text-gray-600 mb-6 italic leading-relaxed">&ldquo;{t.text}&rdquo;</p>
-                <div className="flex items-center gap-3">
-                  <div className={`w-11 h-11 ${t.color} rounded-full flex items-center justify-center text-white font-bold text-sm`}>
-                    {t.initials}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-dark text-sm">{t.name}</h4>
-                    <span className="text-xs text-gray-500">{t.role}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <ReviewsSection />
+      <ReviewsSection mode="preview" />
 
       {/* ── CTA ──────────────────────────────────────────── */}
       <section className="py-24 bg-white">

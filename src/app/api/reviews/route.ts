@@ -79,3 +79,56 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const { id, name, role, rating, text } = await request.json();
+    const cleanId = String(id || "").trim();
+    const cleanName = String(name || "").trim();
+    const cleanText = String(text || "").trim();
+    const cleanRole = String(role || "").trim();
+
+    if (!cleanId || cleanId.startsWith("seed-")) {
+      return NextResponse.json(
+        { success: false, message: "This review cannot be edited." },
+        { status: 403 }
+      );
+    }
+
+    if (!cleanName || !cleanText) {
+      return NextResponse.json(
+        { success: false, message: "Name and review are required." },
+        { status: 400 }
+      );
+    }
+
+    const reviews = await getDB<Review>("reviews.json");
+    const customReviews = reviews.filter((review) => !review.id.startsWith("seed-"));
+    const reviewIndex = customReviews.findIndex((review) => review.id === cleanId);
+
+    if (reviewIndex === -1) {
+      return NextResponse.json(
+        { success: false, message: "Review not found." },
+        { status: 404 }
+      );
+    }
+
+    const updatedReview: Review = {
+      ...customReviews[reviewIndex],
+      name: cleanName.slice(0, 80),
+      role: cleanRole.slice(0, 80),
+      rating: normalizeRating(rating),
+      text: cleanText.slice(0, 280),
+    };
+
+    customReviews[reviewIndex] = updatedReview;
+    await saveDB("reviews.json", customReviews.slice(0, 50));
+
+    return NextResponse.json({ success: true, data: updatedReview });
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Could not update review." },
+      { status: 500 }
+    );
+  }
+}
