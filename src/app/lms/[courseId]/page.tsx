@@ -189,6 +189,18 @@ export default function CoursePlayer() {
                           Download PDF
                         </a>
                       </div>
+                      {activeLesson.image && (
+                        <figure className="mb-6 overflow-hidden rounded-2xl border border-blue-100 bg-white">
+                          <img
+                            src={activeLesson.image}
+                            alt={activeLesson.imageAlt || activeLesson.title}
+                            className="h-56 w-full object-cover"
+                          />
+                          <figcaption className="px-4 py-3 text-xs font-bold uppercase tracking-widest text-gray-500">
+                            {activeLesson.title}
+                          </figcaption>
+                        </figure>
+                      )}
                       <div className="prose prose-blue max-w-none">
                         <div className="space-y-5 text-gray-700 leading-relaxed">
                           {activeLesson.content.split("\n\n").map((paragraph, index) => (
