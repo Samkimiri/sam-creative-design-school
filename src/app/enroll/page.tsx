@@ -213,14 +213,14 @@ function EnrollForm() {
           <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
             ✓
           </div>
-          <h2 className="text-3xl font-bold mb-4">Enrollment Initiated!</h2>
+          <h2 className="text-3xl font-bold mb-4">Payment Received for Review</h2>
           <p className="text-gray-600 mb-8 text-lg">
-            Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your enrollment for <span className="font-bold text-dark">{formData.selectedCourses.length} courses</span> is being processed.
+            Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your payment details are ready to send to WhatsApp so the school can activate your LMS access quickly.
           </p>
           
           <div className="bg-light-gray p-8 rounded-2xl mb-8 text-left border-l-4 border-primary">
-            <h3 className="font-bold text-lg mb-4">Payment Verification</h3>
-            <p className="text-gray-700 mb-4">For faster activation, please confirm via WhatsApp:</p>
+            <h3 className="font-bold text-lg mb-4">WhatsApp Activation Message</h3>
+            <p className="text-gray-700 mb-4">The button below opens a prepared message with your name, course, reference, amount, and next step.</p>
             <div className="space-y-2">
               <p className="flex justify-between"><span>Reference:</span> <span className="font-bold text-primary">{ref}</span></p>
               <p className="flex justify-between"><span>Total Amount:</span> <span className="font-bold">Ksh {courses.filter(c => formData.selectedCourses.includes(c.id)).reduce((s, c) => s + c.price, 0).toLocaleString()}</span></p>
@@ -237,11 +237,15 @@ function EnrollForm() {
                 });
               } catch (e) {}
               
-              window.open(`https://wa.me/254743475247?text=Hi, my name is ${formData.name}. I just authorized an STK payment of Ksh ${courses.filter(c => formData.selectedCourses.includes(c.id)).reduce((s, c) => s + c.price, 0)} with Reference ${ref}.`, '_blank');
+              const selected = courses.filter(c => formData.selectedCourses.includes(c.id));
+              const courseNames = selected.map((course) => course.title).join(", ");
+              const total = selected.reduce((s, c) => s + c.price, 0);
+              const message = `Hi, my name is ${formData.name}. I just authorized an STK payment of Ksh ${total} for ${courseNames}. Reference: ${ref}. Please activate my LMS access and send the next steps.`;
+              window.open(`https://wa.me/254743475247?text=${encodeURIComponent(message)}`, '_blank');
             }}
             className="inline-block w-full bg-[#25D366] text-white font-bold py-4 rounded-xl hover:opacity-90 transition-all text-center shadow-lg"
           >
-            Confirm via WhatsApp
+            Send WhatsApp Confirmation
           </button>
         </div>
       </div>

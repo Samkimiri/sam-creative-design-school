@@ -9,6 +9,7 @@ const seedReviews: Review[] = [
     role: "Freelance Graphic Designer",
     rating: 5,
     text: "The Photoshop masterclass completely changed my life. Within 3 weeks of finishing I had my first paid client.",
+    approved: true,
     createdAt: "2026-01-10T09:00:00.000Z",
   },
   {
@@ -17,6 +18,7 @@ const seedReviews: Review[] = [
     role: "Content Creator",
     rating: 5,
     text: "CapCut training helped me understand how to edit videos that keep people watching. The lessons are very practical.",
+    approved: true,
     createdAt: "2026-01-18T09:00:00.000Z",
   },
   {
@@ -25,6 +27,7 @@ const seedReviews: Review[] = [
     role: "Mechanical Engineer",
     rating: 5,
     text: "SolidWorks training gave me confidence to create proper CAD models and explain my design process professionally.",
+    approved: true,
     createdAt: "2026-02-02T09:00:00.000Z",
   },
 ];
@@ -37,7 +40,7 @@ function normalizeRating(value: unknown): number {
 
 export async function GET() {
   const reviews = await getDB<Review>("reviews.json");
-  const customReviews = reviews.filter((review) => !review.id.startsWith("seed-"));
+  const customReviews = reviews.filter((review) => !review.id.startsWith("seed-") && review.approved === true);
   return NextResponse.json({
     success: true,
     data: [...customReviews, ...seedReviews].slice(0, 12),
@@ -65,6 +68,7 @@ export async function POST(request: Request) {
       role: cleanRole.slice(0, 80),
       rating: normalizeRating(rating),
       text: cleanText.slice(0, 280),
+      approved: false,
       createdAt: new Date().toISOString(),
     };
 

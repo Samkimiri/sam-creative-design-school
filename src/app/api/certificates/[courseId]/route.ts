@@ -18,7 +18,7 @@ function escapePdfText(value: string): string {
   return cleanText(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
 
-function buildCertificatePdf(studentName: string, courseTitle: string): Buffer {
+function buildCertificatePdf(studentName: string, courseTitle: string, certificateId: string): Buffer {
   const issuedOn = new Intl.DateTimeFormat("en-KE", {
     dateStyle: "long",
     timeZone: "Africa/Nairobi",
@@ -47,6 +47,10 @@ function buildCertificatePdf(studentName: string, courseTitle: string): Buffer {
     "0 -58 Td",
     "/F1 11 Tf",
     `(${escapePdfText(`Issued on ${issuedOn}`)}) Tj`,
+    "0 -18 Td",
+    `(${escapePdfText(`Certificate ID: ${certificateId}`)}) Tj`,
+    "0 -18 Td",
+    `(${escapePdfText(`Verify at /verify-certificate?id=${certificateId}`)}) Tj`,
     "0 -54 Td",
     "(Samuel Ndungu Kimiri) Tj",
     "0 -16 Td",
@@ -112,7 +116,8 @@ export async function GET(
   const students = await getDB<Student>("students.json");
   const student = students.find((item) => item.id === session.user.id);
   const studentName = student?.name || session.user.name || "Student";
-  const pdf = buildCertificatePdf(studentName, course.title);
+  const certificateId = `SCDS-${session.user.id}-${course.id}`;
+  const pdf = buildCertificatePdf(studentName, course.title, certificateId);
   const body = new Uint8Array(pdf).buffer;
 
   return new NextResponse(body, {

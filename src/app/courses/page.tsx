@@ -1,5 +1,12 @@
 import { courses } from "@/data/courses";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Courses in Kenya | Photoshop, Illustrator, CapCut and SolidWorks",
+  description:
+    "Enroll in practical Photoshop, Illustrator, CapCut, and SolidWorks training at Sam Creative Design School in Kenya, with LMS access, notes, quizzes, and certificates.",
+};
 
 export default function Courses() {
   return (
@@ -44,17 +51,25 @@ export default function Courses() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-6 bg-light-gray rounded-2xl">
+                <div className="flex flex-col gap-5 p-6 bg-light-gray rounded-2xl sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <span className="text-sm text-gray-500 block">Course Fee</span>
                     <span className="text-2xl font-extrabold text-dark">Ksh {course.price}</span>
                   </div>
-                  <Link
-                    href={`/enroll?course=${course.id}`}
-                    className="bg-primary text-white px-10 py-4 rounded-xl font-bold hover:scale-105 transition-all shadow-lg"
-                  >
-                    Enroll Now
-                  </Link>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Link
+                      href={`/lms/${course.id}?preview=1`}
+                      className="border border-primary text-primary px-6 py-4 rounded-xl font-bold text-center hover:bg-primary hover:text-white transition-all"
+                    >
+                      Preview Lesson
+                    </Link>
+                    <Link
+                      href={`/enroll?course=${course.id}`}
+                      className="bg-primary text-white px-8 py-4 rounded-xl font-bold text-center hover:scale-105 transition-all shadow-lg"
+                    >
+                      Enroll Now
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

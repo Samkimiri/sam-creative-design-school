@@ -87,6 +87,10 @@ function ReviewCard({
     <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
       <div className="flex items-start justify-between gap-3 mb-4">
         <Stars rating={review.rating} />
+        <div className="flex items-center gap-2">
+        {review.approved === false && (
+          <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-800">Pending approval</span>
+        )}
         {editable && onEdit && (
           <button
             type="button"
@@ -96,6 +100,7 @@ function ReviewCard({
             Edit
           </button>
         )}
+        </div>
       </div>
       <p className="text-gray-600 mb-6 italic leading-relaxed">&ldquo;{review.text}&rdquo;</p>
       <div className="flex items-center gap-3">
@@ -184,7 +189,7 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
         const nextEditableIds = [data.data.id, ...editableIds];
         setEditableIds(nextEditableIds);
         writeEditableIds(nextEditableIds);
-        setMessage("Thank you. Your review has been added. You can edit it on this browser.");
+        setMessage("Thank you. Your review has been submitted for admin approval. You can still edit it on this browser.");
       }
 
       setForm(initialForm);

@@ -69,12 +69,48 @@ interface AnalyticsSummary {
   topClicks: { label: string; count: number }[];
 }
 
+interface AdminReview {
+  id: string;
+  name: string;
+  role?: string;
+  rating: number;
+  text: string;
+  approved?: boolean;
+  createdAt: string;
+}
+
+interface AdminProject {
+  id: string;
+  studentName: string;
+  courseName: string;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+}
+
+interface AdminAssignment {
+  id: string;
+  studentName: string;
+  courseName: string;
+  lessonTitle: string;
+  fileUrl?: string;
+  notes?: string;
+  status: "submitted" | "reviewed" | "revision";
+  feedback?: string;
+  createdAt: string;
+}
+
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
-  const [tab, setTab] = useState<"analytics" | "enrollments" | "students" | "content">("analytics");
+  const [tab, setTab] = useState<"analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "content">("analytics");
   const [students, setStudents] = useState<Student[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [reviews, setReviews] = useState<AdminReview[]>([]);
+  const [projects, setProjects] = useState<AdminProject[]>([]);
+  const [assignments, setAssignments] = useState<AdminAssignment[]>([]);
   const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
@@ -88,13 +124,16 @@ export default function AdminDashboard() {
       const headers = { "Content-Type": "application/json" };
       const body = JSON.stringify({ password: pw });
       
-      const [sRes, eRes, aRes] = await Promise.all([
+      const [sRes, eRes, aRes, rRes, pRes, asRes] = await Promise.all([
         fetch("/api/admin/students", { method: "POST", headers, body }),
         fetch("/api/admin/enrollments", { method: "POST", headers, body }),
         fetch("/api/admin/analytics", { method: "POST", headers, body }),
+        fetch("/api/admin/reviews", { method: "POST", headers, body }),
+        fetch("/api/admin/projects", { method: "POST", headers, body }),
+        fetch("/api/admin/assignments", { method: "POST", headers, body }),
       ]);
       
-      const [sData, eData, aData] = await Promise.all([sRes.json(), eRes.json(), aRes.json()]);
+      const [sData, eData, aData, rData, pData, asData] = await Promise.all([sRes.json(), eRes.json(), aRes.json(), rRes.json(), pRes.json(), asRes.json()]);
       
       if (sData.success) {
         setStudents(sData.data);
@@ -104,6 +143,9 @@ export default function AdminDashboard() {
           setAnalyticsEvents(aData.events);
           setAnalyticsSummary(aData.summary);
         }
+        if (rData.success) setReviews(rData.data);
+        if (pData.success) setProjects(pData.data);
+        if (asData.success) setAssignments(asData.data);
         setAuthed(true);
         if (pw) setPassword(pw);
       } else if (pw) {
@@ -128,6 +170,34 @@ export default function AdminDashboard() {
       body: JSON.stringify({ password, enrollmentId, status: "confirmed" }),
     });
     setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, status: "confirmed" } : e));
+  };
+
+  const setReviewApproval = async (id: string, approved: boolean) => {
+    await fetch("/api/admin/reviews", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password, id, approved }),
+    });
+    setReviews((prev) => prev.map((review) => review.id === id ? { ...review, approved } : review));
+  };
+
+  const setProjectStatus = async (id: string, status: AdminProject["status"]) => {
+    await fetch("/api/admin/projects", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password, id, status }),
+    });
+    setProjects((prev) => prev.map((project) => project.id === id ? { ...project, status } : project));
+  };
+
+  const markAssignment = async (id: string, status: "reviewed" | "revision") => {
+    const feedback = window.prompt("Feedback for the student?") || "";
+    await fetch("/api/admin/assignments", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password, id, status, feedback }),
+    });
+    setAssignments((prev) => prev.map((item) => item.id === id ? { ...item, status, feedback } : item));
   };
 
   if (!authed) {
@@ -190,7 +260,7 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
-          {(["analytics", "enrollments", "students", "content"] as const).map((t) => (
+          {(["analytics", "enrollments", "students", "reviews", "projects", "assignments", "content"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -436,6 +506,90 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {tab === "reviews" && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="font-bold text-dark">Review Moderation</h3>
+              <p className="text-xs text-gray-500 mt-1">Only approved reviews appear on the public website.</p>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {reviews.length === 0 ? (
+                <p className="p-6 text-sm text-gray-400">No student reviews submitted yet.</p>
+              ) : reviews.map((review) => (
+                <div key={review.id} className="p-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="font-bold text-dark">{review.name} · {review.rating}/5</p>
+                    <p className="text-xs text-gray-400">{review.role || "Student"} · {review.approved ? "Approved" : "Pending"}</p>
+                    <p className="mt-3 text-sm text-gray-600">{review.text}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setReviewApproval(review.id, true)} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white">Approve</button>
+                    <button onClick={() => setReviewApproval(review.id, false)} className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-dark">Hide</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === "projects" && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="font-bold text-dark">Student Project Gallery Moderation</h3>
+              <p className="text-xs text-gray-500 mt-1">Approve finished work before it appears publicly.</p>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {projects.length === 0 ? (
+                <p className="p-6 text-sm text-gray-400">No projects submitted yet.</p>
+              ) : projects.map((project) => (
+                <div key={project.id} className="p-6 grid gap-4 md:grid-cols-[120px_1fr_auto]">
+                  <div className="h-24 overflow-hidden rounded-xl bg-gray-100">
+                    {project.imageUrl && <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover" />}
+                  </div>
+                  <div>
+                    <p className="font-bold text-dark">{project.title}</p>
+                    <p className="text-xs text-primary font-bold">{project.courseName} · {project.studentName}</p>
+                    <p className="mt-2 text-sm text-gray-600">{project.description}</p>
+                    <p className="mt-2 text-xs text-gray-400">Status: {project.status}</p>
+                  </div>
+                  <div className="flex gap-2 md:flex-col">
+                    <button onClick={() => setProjectStatus(project.id, "approved")} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white">Approve</button>
+                    <button onClick={() => setProjectStatus(project.id, "rejected")} className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-dark">Reject</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === "assignments" && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="font-bold text-dark">Course Assignment Uploads</h3>
+              <p className="text-xs text-gray-500 mt-1">Mark submitted work and leave feedback.</p>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {assignments.length === 0 ? (
+                <p className="p-6 text-sm text-gray-400">No assignments submitted yet.</p>
+              ) : assignments.map((assignment) => (
+                <div key={assignment.id} className="p-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="font-bold text-dark">{assignment.studentName}</p>
+                    <p className="text-xs text-primary font-bold">{assignment.courseName} · {assignment.lessonTitle}</p>
+                    {assignment.fileUrl && <a href={assignment.fileUrl} className="mt-2 block text-sm font-bold text-primary" target="_blank">Open submitted file</a>}
+                    {assignment.notes && <p className="mt-2 text-sm text-gray-600">{assignment.notes}</p>}
+                    <p className="mt-2 text-xs text-gray-400">Status: {assignment.status}{assignment.feedback ? ` · Feedback: ${assignment.feedback}` : ""}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => markAssignment(assignment.id, "reviewed")} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white">Mark Reviewed</button>
+                    <button onClick={() => markAssignment(assignment.id, "revision")} className="rounded-xl bg-yellow-100 px-4 py-2 text-sm font-bold text-yellow-800">Needs Revision</button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

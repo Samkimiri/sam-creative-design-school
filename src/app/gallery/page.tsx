@@ -1,3 +1,5 @@
+import StudentProjects from "@/components/StudentProjects";
+
 export default function GalleryPage() {
   const categories = ["All", "Photoshop", "Illustrator", "CapCut", "SolidWorks"];
 
@@ -71,6 +73,8 @@ export default function GalleryPage() {
             </div>
           ))}
         </div>
+
+        <StudentProjects />
 
         {/* CTA */}
         <div className="text-center mt-16 bg-light-gray rounded-3xl p-12">

@@ -41,6 +41,7 @@ export default function Navbar() {
     { href: "/gallery", label: "Gallery" },
     { href: "/reviews", label: "Reviews" },
     { href: "/blog", label: "Blog" },
+    { href: "/resources", label: "Resources" },
     { href: "/faq", label: "FAQ" },
     { href: "/contact", label: "Contact" },
   ];

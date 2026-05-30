@@ -49,6 +49,15 @@ export default async function LMSDashboard() {
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
 
+  const getBadges = (progress: number) => {
+    const badges = ["Starter"];
+    if (progress >= 25) badges.push("Beginner");
+    if (progress >= 50) badges.push("Layer Master");
+    if (progress >= 75) badges.push("Quiz Champion");
+    if (progress === 100) badges.push("Course Completed");
+    return badges;
+  };
+
   const totalCompleted = allProgress.reduce((sum, p) => sum + (p.completedLessons?.length || 0), 0);
   const totalLessons = lessons.length;
 
@@ -165,6 +174,14 @@ export default async function LMSDashboard() {
                         style={{ width: `${progress}%` }}
                       />
                     </div>
+                  </div>
+
+                  <div className="mb-5 flex flex-wrap gap-2">
+                    {getBadges(progress).map((badge) => (
+                      <span key={badge} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-primary">
+                        {badge}
+                      </span>
+                    ))}
                   </div>
 
                   {progress === 100 && (

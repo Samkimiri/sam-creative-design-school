@@ -89,5 +89,34 @@ export interface Review {
   role?: string;
   rating: number;
   text: string;
+  approved?: boolean;
   createdAt: string;
+}
+
+export interface ProjectSubmission {
+  id: string;
+  studentName: string;
+  courseId?: string;
+  courseName: string;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  courseName: string;
+  lessonId: string;
+  lessonTitle: string;
+  fileUrl?: string;
+  notes?: string;
+  status: "submitted" | "reviewed" | "revision";
+  feedback?: string;
+  createdAt: string;
+  updatedAt?: string;
 }

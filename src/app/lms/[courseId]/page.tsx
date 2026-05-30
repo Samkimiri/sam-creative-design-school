@@ -21,6 +21,8 @@ type QuizResult = {
   }[];
 };
 
+type LessonTab = "video" | "notes" | "resources" | "assignment" | "quiz";
+
 export default function CoursePlayer() {
   const params = useParams();
   const courseId = params.courseId as string;
@@ -30,8 +32,11 @@ export default function CoursePlayer() {
   const [activeLesson, setActiveLesson] = useState<Lesson>(courseLessons[0]);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [activeTab, setActiveTab] = useState<LessonTab>("video");
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
+  const [assignmentForm, setAssignmentForm] = useState({ fileUrl: "", notes: "" });
+  const [assignmentStatus, setAssignmentStatus] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const loadProgress = useCallback(async () => {
@@ -86,8 +91,11 @@ export default function CoursePlayer() {
   const selectLesson = (lesson: Lesson) => {
     setActiveLesson(lesson);
     setShowQuiz(false);
+    setActiveTab("video");
     setQuizResult(null);
     setQuizAnswers([]);
+    setAssignmentForm({ fileUrl: "", notes: "" });
+    setAssignmentStatus("");
   };
 
   const nextLesson = () => {
@@ -96,6 +104,29 @@ export default function CoursePlayer() {
   };
 
   const progress = courseLessons.length > 0 ? Math.round((completedLessons.length / courseLessons.length) * 100) : 0;
+
+  const openTab = (tab: LessonTab) => {
+    setActiveTab(tab);
+    setShowQuiz(tab === "quiz");
+    if (tab !== "quiz") setQuizResult(null);
+  };
+
+  const submitAssignment = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAssignmentStatus("Submitting...");
+    try {
+      const res = await fetch("/api/assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId, lessonId: activeLesson.id, ...assignmentForm }),
+      });
+      const data = await res.json();
+      setAssignmentStatus(data.success ? "Assignment submitted for tutor feedback." : data.message || "Could not submit assignment.");
+      if (data.success) setAssignmentForm({ fileUrl: "", notes: "" });
+    } catch {
+      setAssignmentStatus("Could not submit assignment. Please login and try again.");
+    }
+  };
 
   if (!course) return <div className="pt-32 text-center text-2xl font-bold">Course not found</div>;
 
@@ -143,6 +174,22 @@ export default function CoursePlayer() {
             {/* Video Player */}
             {!showQuiz ? (
               <>
+                <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm sm:grid-cols-5">
+                  {(["video", "notes", "resources", "assignment", "quiz"] as LessonTab[]).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => openTab(tab)}
+                      disabled={tab === "quiz" && !activeLesson.quiz}
+                      className={`rounded-xl px-3 py-3 text-sm font-bold capitalize transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
+                        activeTab === tab ? "bg-primary text-white shadow-sm" : "text-gray-600 hover:bg-gray-50 hover:text-dark"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                {activeTab === "video" && (
                 <div className="bg-dark rounded-2xl overflow-hidden shadow-2xl aspect-video mb-6">
                   <iframe
                     key={activeLesson.id}
@@ -153,6 +200,7 @@ export default function CoursePlayer() {
                     allowFullScreen
                   />
                 </div>
+                )}
 
                 {/* Lesson Details */}
                 <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
@@ -179,7 +227,7 @@ export default function CoursePlayer() {
                       )}
                       {activeLesson.quiz && (
                         <button
-                          onClick={() => setShowQuiz(true)}
+                          onClick={() => openTab("quiz")}
                           className="bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-primary/90 transition-all"
                         >
                           📝 Take Quiz
@@ -257,6 +305,33 @@ export default function CoursePlayer() {
                       </div>
                     </div>
                   )}
+
+                  {activeTab === "assignment" && (
+                    <div className="mt-8 pt-8 border-t border-gray-100">
+                      <h4 className="font-bold text-dark mb-4 text-sm uppercase tracking-wider">Submit Assignment</h4>
+                      <form onSubmit={submitAssignment} className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                        <div className="grid grid-cols-1 gap-4">
+                          <input
+                            value={assignmentForm.fileUrl}
+                            onChange={(event) => setAssignmentForm({ ...assignmentForm, fileUrl: event.target.value })}
+                            placeholder="Project link, file URL, Google Drive link, or portfolio URL"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                          />
+                          <textarea
+                            value={assignmentForm.notes}
+                            onChange={(event) => setAssignmentForm({ ...assignmentForm, notes: event.target.value })}
+                            placeholder="Explain what you created or ask for feedback"
+                            rows={5}
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                          />
+                        </div>
+                        <button className="mt-4 rounded-xl bg-primary px-6 py-3 font-bold text-white hover:bg-primary/90">
+                          Submit for Marking
+                        </button>
+                        {assignmentStatus && <p className="mt-3 text-sm font-medium text-gray-600">{assignmentStatus}</p>}
+                      </form>
+                    </div>
+                  )}
                 </div>
 
                 {/* Navigation */}
@@ -286,7 +361,7 @@ export default function CoursePlayer() {
                 {!quizResult ? (
                   <>
                     <div className="mb-8">
-                      <button onClick={() => setShowQuiz(false)} className="text-sm text-gray-500 hover:text-dark mb-4 block">
+                      <button onClick={() => openTab("video")} className="text-sm text-gray-500 hover:text-dark mb-4 block">
                         ← Back to Lesson
                       </button>
                       <h2 className="text-2xl font-extrabold text-dark mb-1">Lesson Quiz</h2>
@@ -372,7 +447,7 @@ export default function CoursePlayer() {
                         Try Again
                       </button>
                       <button
-                        onClick={() => { setShowQuiz(false); setQuizResult(null); nextLesson(); }}
+                        onClick={() => { openTab("video"); setQuizResult(null); nextLesson(); }}
                         className="bg-dark text-white px-6 py-3 rounded-xl font-bold hover:bg-primary transition-all"
                       >
                         Next Lesson →
