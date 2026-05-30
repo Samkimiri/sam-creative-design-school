@@ -11,6 +11,7 @@ async function confirmEnrollment(checkoutRequestId: string): Promise<boolean> {
   if (enrollments[idx].status === "confirmed") return true;
 
   enrollments[idx].status = "confirmed";
+  enrollments[idx].mpesaResultCode = "0";
   await saveDB("enrollments.json", enrollments);
 
   const enrollment = enrollments[idx];
@@ -64,6 +65,17 @@ export async function POST(request: Request) {
       });
     }
 
+    if (enrollment.status === "failed") {
+      return NextResponse.json({
+        success: true,
+        paid: false,
+        status: "failed",
+        reference: enrollment.reference,
+        resultCode: enrollment.mpesaResultCode,
+        resultDesc: enrollment.mpesaResultDesc || "Payment failed",
+      });
+    }
+
     if (!enrollment.checkoutRequestId) {
       return NextResponse.json({
         success: true,
@@ -93,6 +105,18 @@ export async function POST(request: Request) {
         reference: enrollment.reference,
         resultDesc: query.resultDesc,
       });
+    }
+
+    if (query.resultCode && query.resultCode !== "0") {
+      const idx = enrollments.findIndex(
+        (e) => e.checkoutRequestId === enrollment.checkoutRequestId
+      );
+      if (idx > -1) {
+        enrollments[idx].status = "failed";
+        enrollments[idx].mpesaResultCode = query.resultCode;
+        enrollments[idx].mpesaResultDesc = query.resultDesc || "Payment failed";
+        await saveDB("enrollments.json", enrollments);
+      }
     }
 
     return NextResponse.json({

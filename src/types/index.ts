@@ -31,6 +31,9 @@ export interface Enrollment {
   phone: string;
   reference: string;
   checkoutRequestId?: string;
+  merchantRequestId?: string;
+  mpesaResultCode?: string;
+  mpesaResultDesc?: string;
   status: "pending" | "confirmed" | string;
   whatsappConfirmed?: boolean;
   createdAt: string;

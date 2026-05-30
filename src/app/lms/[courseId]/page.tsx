@@ -4,6 +4,23 @@ import Link from "next/link";
 import { courses, lessons, Lesson } from "@/data/courses";
 import { useParams } from "next/navigation";
 
+type QuizResult = {
+  score: number;
+  total: number;
+  passed: boolean;
+  percentage: number;
+  results: {
+    questionId: string;
+    question: string;
+    selectedAnswer: number;
+    selectedOption: string;
+    correctAnswer: number;
+    correctOption: string;
+    correct: boolean;
+    explanation: string;
+  }[];
+};
+
 export default function CoursePlayer() {
   const params = useParams();
   const courseId = params.courseId as string;
@@ -14,7 +31,7 @@ export default function CoursePlayer() {
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
-  const [quizResult, setQuizResult] = useState<{ score: number; total: number; passed: boolean; percentage: number } | null>(null);
+  const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const loadProgress = useCallback(async () => {
@@ -50,7 +67,7 @@ export default function CoursePlayer() {
       const res = await fetch("/api/quiz/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lessonId: activeLesson.id, answers: quizAnswers }),
+        body: JSON.stringify({ courseId, lessonId: activeLesson.id, answers: quizAnswers }),
       });
       const data = await res.json();
       setQuizResult(data);
@@ -163,17 +180,20 @@ export default function CoursePlayer() {
                       <span className="text-primary">📝</span> Lesson Notes
                     </h3>
                     <div className="bg-blue-50/30 border border-blue-100/50 rounded-2xl p-6 md:p-8">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                        <p className="text-sm font-bold text-primary uppercase tracking-widest">Student Notes</p>
+                        <a
+                          href={`/api/notes/${activeLesson.id}`}
+                          className="inline-flex items-center justify-center bg-white border border-blue-200 text-primary px-4 py-2 rounded-xl text-sm font-bold hover:border-primary hover:shadow-sm transition-all"
+                        >
+                          Download PDF
+                        </a>
+                      </div>
                       <div className="prose prose-blue max-w-none">
-                        <p className="text-gray-700 leading-relaxed text-lg italic font-medium mb-6">
-                          &quot;{activeLesson.content}&quot;
-                        </p>
-                        <div className="space-y-4 text-gray-600">
-                          <p>In this lesson, we cover the essential skills needed for {course.title}. Follow along with the video and use these notes as a quick reference guide.</p>
-                          <ul className="list-disc pl-5 space-y-2">
-                            <li>Apply the techniques demonstrated in the video</li>
-                            <li>Download the exercise materials provided</li>
-                            <li>Take the quiz to test your understanding</li>
-                          </ul>
+                        <div className="space-y-5 text-gray-700 leading-relaxed">
+                          {activeLesson.content.split("\n\n").map((paragraph, index) => (
+                            <p key={index}>{paragraph}</p>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -262,7 +282,7 @@ export default function CoursePlayer() {
 
                     <button
                       onClick={handleQuizSubmit}
-                      disabled={quizAnswers.length < (activeLesson.quiz?.questions.length || 0)}
+                      disabled={(activeLesson.quiz?.questions ?? []).some((_, index) => quizAnswers[index] === undefined)}
                       className="mt-10 w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 transition-all shadow-lg disabled:opacity-40"
                     >
                       Submit Answers
@@ -278,6 +298,32 @@ export default function CoursePlayer() {
                       You scored <span className="font-bold text-dark">{quizResult.score}/{quizResult.total}</span> ({quizResult.percentage}%)
                       {quizResult.passed ? " — Lesson marked complete! 🏆" : " — You need 70% to pass. Try again!"}
                     </p>
+                    <div className="text-left max-w-3xl mx-auto mb-8 space-y-4">
+                      {quizResult.results.map((result, index) => (
+                        <div
+                          key={result.questionId}
+                          className={`border rounded-2xl p-5 ${
+                            result.correct ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-4 mb-3">
+                            <p className="font-bold text-dark">Q{index + 1}. {result.question}</p>
+                            <span className={`text-xs font-black px-3 py-1 rounded-full ${
+                              result.correct ? "bg-green-600 text-white" : "bg-red-600 text-white"
+                            }`}>
+                              {result.correct ? "Correct" : "Review"}
+                            </span>
+                          </div>
+                          <div className="space-y-2 text-sm text-gray-700">
+                            <p>Your answer: <span className="font-bold">{result.selectedOption}</span></p>
+                            {!result.correct && (
+                              <p>Correct answer: <span className="font-bold">{result.correctOption}</span></p>
+                            )}
+                            <p className="bg-white/70 border border-white rounded-xl p-3">{result.explanation}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                     <div className="flex gap-4 justify-center">
                       <button
                         onClick={() => { setQuizResult(null); setQuizAnswers([]); }}

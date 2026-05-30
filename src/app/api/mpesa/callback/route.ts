@@ -14,18 +14,26 @@ export async function POST(request: Request) {
 
     const { ResultCode, ResultDesc, CheckoutRequestID } = Body.stkCallback;
 
-    if (ResultCode !== 0) {
-      console.log(`M-Pesa payment failed: ${ResultDesc}`);
-      return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
-    }
-
     const enrollments = await getDB<Enrollment>("enrollments.json");
     const idx = enrollments.findIndex(
       (e) => e.checkoutRequestId === CheckoutRequestID
     );
 
+    if (String(ResultCode) !== "0") {
+      console.log(`M-Pesa payment failed: ${ResultDesc}`);
+      if (idx > -1) {
+        enrollments[idx].status = "failed";
+        enrollments[idx].mpesaResultCode = String(ResultCode);
+        enrollments[idx].mpesaResultDesc = String(ResultDesc || "Payment failed");
+        await saveDB("enrollments.json", enrollments);
+      }
+      return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
+    }
+
     if (idx > -1) {
       enrollments[idx].status = "confirmed";
+      enrollments[idx].mpesaResultCode = String(ResultCode);
+      enrollments[idx].mpesaResultDesc = String(ResultDesc || "Success");
       await saveDB("enrollments.json", enrollments);
 
       const enrollment = enrollments[idx];

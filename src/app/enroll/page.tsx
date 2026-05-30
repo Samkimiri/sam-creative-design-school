@@ -38,6 +38,25 @@ function EnrollForm() {
   const [stkMessage, setStkMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  const checkPaymentStatus = async () => {
+    if (!checkoutRequestId) return;
+
+    const res = await fetch("/api/mpesa/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ checkoutRequestId, reference: ref }),
+    });
+    const data = await res.json();
+    if (data.paid) {
+      setStatus("success");
+    } else if (data.status === "failed") {
+      setErrorMessage(data.resultDesc || "M-Pesa payment was not completed.");
+      setStatus("failed");
+    } else if (data.resultDesc) {
+      setStkMessage(data.resultDesc);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.selectedCourses.length === 0) {
@@ -88,13 +107,7 @@ function EnrollForm() {
 
     const poll = async () => {
       try {
-        const res = await fetch("/api/mpesa/status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ checkoutRequestId, reference: ref }),
-        });
-        const data = await res.json();
-        if (data.paid) setStatus("success");
+        await checkPaymentStatus();
       } catch {
         // keep polling
       }
@@ -174,10 +187,12 @@ function EnrollForm() {
           </div>
 
           <button 
-            onClick={() => setStatus("success")}
+            onClick={() => {
+              void checkPaymentStatus();
+            }}
             className="w-full bg-dark text-white font-bold py-4 rounded-xl hover:bg-primary transition-all shadow-lg mb-4"
           >
-            I have entered my PIN
+            I have entered my PIN - check status
           </button>
           
           <button 

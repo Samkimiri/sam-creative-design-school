@@ -85,6 +85,7 @@ export async function POST(request: Request) {
       phone,
       reference,
       checkoutRequestId,
+      merchantRequestId,
       status: "pending",
       createdAt: new Date().toISOString(),
     };

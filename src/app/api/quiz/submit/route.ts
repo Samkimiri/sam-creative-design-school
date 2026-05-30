@@ -15,15 +15,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
+    const submittedAnswers = Array.isArray(answers)
+      ? answers
+      : lesson.quiz.questions.map((q) => answers?.[q.id]);
+
     let score = 0;
-    const results = lesson.quiz.questions.map((q) => {
-      const isCorrect = answers[q.id] === q.answer;
+    const results = lesson.quiz.questions.map((q, index) => {
+      const selectedAnswer = Number(submittedAnswers[index]);
+      const isCorrect = selectedAnswer === q.answer;
       if (isCorrect) score++;
-      return { questionId: q.id, correct: isCorrect };
+      return {
+        questionId: q.id,
+        question: q.question,
+        selectedAnswer,
+        selectedOption: q.options[selectedAnswer] ?? "No answer selected",
+        correctAnswer: q.answer,
+        correctOption: q.options[q.answer],
+        correct: isCorrect,
+        explanation: q.explanation ?? "Review the lesson notes for this concept.",
+      };
     });
 
     const total = lesson.quiz.questions.length;
-    const percent = (score / total) * 100;
+    const percentage = Math.round((score / total) * 100);
+    const passed = percentage >= 70;
 
     // Save quiz attempt
     const progress = readJSON<Record<string, unknown>>("progress.json");
@@ -34,12 +49,13 @@ export async function POST(request: Request) {
       type: "quiz",
       score,
       total,
-      percent,
+      percentage,
+      passed,
       date: new Date().toISOString(),
     });
     writeJSON("progress.json", progress);
 
-    return NextResponse.json({ success: true, score, total, percent, results });
+    return NextResponse.json({ success: true, score, total, percentage, passed, results });
   } catch {
     return NextResponse.json({ error: "Quiz submission failed" }, { status: 500 });
   }

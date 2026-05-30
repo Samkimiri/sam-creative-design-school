@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getDB, saveDB } from "@/lib/db";
 import { isMpesaConfigured, initiateStkPush } from "@/lib/mpesa";
+import { courses } from "@/data/courses";
 import type { Enrollment } from "@/types";
 
 export async function POST(request: Request) {
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
     }
 
     const reference = `SCDS_${session.user.id.substring(0, 5)}`;
+    const course = courses.find((item) => item.id === courseId);
     
     // Initiate actual STK Push via Daraja API
     const pushResult = await initiateStkPush(phone, amount, reference);
@@ -35,12 +37,14 @@ export async function POST(request: Request) {
     const newEnrollment: Enrollment = {
       id: "ENR_" + Math.random().toString(36).substring(2, 9),
       studentId: session.user.id,
+      studentName: session.user.name || session.user.email || "Student",
       studentEmail: session.user.email,
       courseId,
+      courseName: course?.title || String(courseId),
       amount,
       phone,
       status: "pending",
-      date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       checkoutRequestId: pushResult.checkoutRequestId,
       merchantRequestId: pushResult.merchantRequestId,
       reference,

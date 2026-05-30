@@ -29,6 +29,37 @@ export interface StkQueryResult {
   raw?: Record<string, unknown>;
 }
 
+async function readMpesaResponse(response: Response): Promise<Record<string, unknown>> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as Record<string, unknown>;
+  }
+
+  const text = await response.text();
+  return {
+    errorMessage:
+      text ||
+      `M-Pesa API returned HTTP ${response.status} ${response.statusText}`,
+    httpStatus: response.status,
+    httpStatusText: response.statusText,
+  };
+}
+
+function mpesaErrorMessage(
+  data: Record<string, unknown>,
+  fallback: string
+): string {
+  return String(
+    data.errorMessage ||
+      data.errorMessageEnglish ||
+      data.ResponseDescription ||
+      data.ResultDesc ||
+      data.httpStatusText ||
+      fallback
+  );
+}
+
 export function getMpesaBaseUrl(): string {
   if (process.env.MPESA_BASE_URL) return process.env.MPESA_BASE_URL;
   return process.env.MPESA_ENV === "production" ? PRODUCTION_BASE : SANDBOX_BASE;
@@ -113,13 +144,15 @@ export async function getMpesaToken(): Promise<string> {
     }
   );
 
-  const data = (await response.json()) as {
+  const data = (await readMpesaResponse(response)) as {
     access_token?: string;
     errorMessage?: string;
   };
 
   if (!response.ok || !data.access_token) {
-    throw new Error(data.errorMessage || "Failed to obtain M-Pesa access token");
+    throw new Error(
+      mpesaErrorMessage(data, "Failed to obtain M-Pesa access token")
+    );
   }
 
   return data.access_token;
@@ -160,12 +193,12 @@ export async function initiateStkPush(
     body: JSON.stringify(body),
   });
 
-  const data = (await response.json()) as Record<string, unknown>;
+  const data = await readMpesaResponse(response);
 
-  if (data.errorMessage) {
+  if (!response.ok || data.errorMessage) {
     return {
       success: false,
-      errorMessage: String(data.errorMessage),
+      errorMessage: mpesaErrorMessage(data, "M-Pesa STK Push failed"),
       raw: data,
     };
   }
@@ -180,7 +213,9 @@ export async function initiateStkPush(
     customerMessage: String(data.CustomerMessage ?? ""),
     merchantRequestId: String(data.MerchantRequestID ?? ""),
     checkoutRequestId: String(data.CheckoutRequestID ?? ""),
-    errorMessage: success ? undefined : String(data.ResponseDescription ?? "STK Push failed"),
+    errorMessage: success
+      ? undefined
+      : mpesaErrorMessage(data, "STK Push failed"),
     raw: data,
   };
 }
@@ -208,12 +243,12 @@ export async function queryStkPushStatus(
     }),
   });
 
-  const data = (await response.json()) as Record<string, unknown>;
+  const data = await readMpesaResponse(response);
 
-  if (data.errorMessage) {
+  if (!response.ok || data.errorMessage) {
     return {
       success: false,
-      resultDesc: String(data.errorMessage),
+      resultDesc: mpesaErrorMessage(data, "Failed to query M-Pesa payment status"),
       raw: data,
     };
   }
