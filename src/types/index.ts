@@ -82,3 +82,12 @@ export interface VisitorSession {
   userName?: string;
   userEmail?: string;
 }
+
+export interface Review {
+  id: string;
+  name: string;
+  role?: string;
+  rating: number;
+  text: string;
+  createdAt: string;
+}

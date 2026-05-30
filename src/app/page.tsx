@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { courses } from "@/data/courses";
 import GamifiedRegistration from "@/components/GamifiedRegistration";
+import ReviewsSection from "@/components/ReviewsSection";
 
 export default function Home() {
   const stats = [
@@ -240,6 +241,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <ReviewsSection />
 
       {/* ── CTA ──────────────────────────────────────────── */}
       <section className="py-24 bg-white">
