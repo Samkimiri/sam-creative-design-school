@@ -64,9 +64,9 @@ export default function ResourcesPage() {
           <h2 className="mb-6 text-2xl font-extrabold text-dark">Blog resources</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {blogPosts.slice(0, 4).map((post) => (
-              <Link key={post.id} href={`/blog/${post.id}`} className="grid overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-xl sm:grid-cols-[160px_1fr]">
+              <Link key={post.id} href={`/blog/${post.id}`} className="grid overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-xl sm:grid-cols-3">
                 <img src={post.image} alt={post.title} className="h-44 w-full object-cover sm:h-full" />
-                <div className="p-5">
+                <div className="p-5 sm:col-span-2">
                   <p className="mb-2 text-xs font-black uppercase tracking-widest text-primary">{post.category}</p>
                   <h3 className="font-extrabold leading-snug text-dark">{post.title}</h3>
                   <p className="mt-3 text-sm text-gray-500">{post.date}</p>

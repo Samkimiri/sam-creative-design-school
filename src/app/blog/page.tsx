@@ -9,8 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default function BlogPage() {
-  const [featured, ...morePosts] = blogPosts;
-
   return (
     <div className="pt-32 pb-24">
       <div className="bg-dark py-16 mb-16">
@@ -20,32 +18,12 @@ export default function BlogPage() {
             Practical <span className="text-primary">Learning Guides</span>
           </h1>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Responsive, current articles for students building creative and engineering skills in Kenya.
+            Current articles and resources for students building creative and engineering skills in Kenya.
           </p>
         </div>
       </div>
 
       <main className="container mx-auto px-6 max-w-6xl">
-        <Link
-          href={`/blog/${featured.id}`}
-          className={`mb-12 grid overflow-hidden rounded-3xl bg-gradient-to-br ${featured.gradient} text-white shadow-xl md:grid-cols-[1.05fr_0.95fr]`}
-        >
-          <div className="p-8 md:p-12">
-            <span className="mb-4 inline-flex rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-widest">
-              Featured · {featured.readTime}
-            </span>
-            <h2 className="mb-4 text-3xl font-extrabold leading-tight md:text-5xl">{featured.title}</h2>
-            <p className="mb-6 max-w-2xl text-white/85">{featured.excerpt}</p>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-white/75">
-              <span>{featured.date}</span>
-              <span>Read full article</span>
-            </div>
-          </div>
-          <div className="min-h-64 bg-black/10 md:min-h-full">
-            <img src={featured.image} alt={featured.title} className="h-full w-full object-cover mix-blend-screen opacity-90" />
-          </div>
-        </Link>
-
         <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-primary">Latest Articles</p>
@@ -57,11 +35,11 @@ export default function BlogPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {morePosts.map((post) => (
+          {blogPosts.map((post) => (
             <article key={post.id} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
               <Link href={`/blog/${post.id}`} className="block">
-                <div className={`h-44 bg-gradient-to-br ${post.gradient}`}>
-                  <img src={post.image} alt={post.title} className="h-full w-full object-cover mix-blend-screen opacity-90" />
+                <div className="h-48 bg-light-gray">
+                  <img src={post.image} alt={post.title} className="h-full w-full object-cover" />
                 </div>
                 <div className="p-6">
                   <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wider">

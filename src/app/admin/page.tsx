@@ -546,11 +546,11 @@ export default function AdminDashboard() {
               {projects.length === 0 ? (
                 <p className="p-6 text-sm text-gray-400">No projects submitted yet.</p>
               ) : projects.map((project) => (
-                <div key={project.id} className="p-6 grid gap-4 md:grid-cols-[120px_1fr_auto]">
+                <div key={project.id} className="p-6 grid gap-4 md:grid-cols-4">
                   <div className="h-24 overflow-hidden rounded-xl bg-gray-100">
                     {project.imageUrl && <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover" />}
                   </div>
-                  <div>
+                  <div className="md:col-span-2">
                     <p className="font-bold text-dark">{project.title}</p>
                     <p className="text-xs text-primary font-bold">{project.courseName} · {project.studentName}</p>
                     <p className="mt-2 text-sm text-gray-600">{project.description}</p>
