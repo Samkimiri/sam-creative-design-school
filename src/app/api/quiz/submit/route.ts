@@ -65,7 +65,8 @@ export async function POST(request: Request) {
     await saveDB("quiz-attempts.json", quizAttempts);
 
     return NextResponse.json({ success: true, score, total, percentage, passed, results });
-  } catch {
+  } catch (error) {
+    console.error("Quiz submission failed:", error);
     return NextResponse.json({ error: "Quiz submission failed" }, { status: 500 });
   }
 }
