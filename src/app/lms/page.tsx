@@ -160,7 +160,7 @@ export default async function LMSDashboard() {
 
         {continueCourse && (
           <section className="mb-10 rounded-3xl border border-primary/15 bg-white p-6 shadow-sm">
-            <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-center">
+            <div className="grid gap-6 lg:grid-cols-[1fr_220px_320px] lg:items-center">
               <div>
                 <p className="text-sm font-black uppercase tracking-widest text-primary">Continue Where You Left Off</p>
                 <h2 className="mt-2 text-2xl font-extrabold text-dark">{continueCourse.nextLesson?.title || continueCourse.course.title}</h2>
@@ -176,6 +176,28 @@ export default async function LMSDashboard() {
                   </a>
                 </div>
               </div>
+
+              <div className="hidden justify-center lg:flex" aria-hidden="true">
+                <div className="study-buddy">
+                  <div className="study-buddy-shadow" />
+                  <div className="study-buddy-spark study-buddy-spark-one" />
+                  <div className="study-buddy-spark study-buddy-spark-two" />
+                  <div className="study-buddy-head">
+                    <span className="study-buddy-eye study-buddy-eye-left" />
+                    <span className="study-buddy-eye study-buddy-eye-right" />
+                    <span className="study-buddy-smile" />
+                  </div>
+                  <div className="study-buddy-body">
+                    <span className="study-buddy-book" />
+                    <span className="study-buddy-arm study-buddy-arm-left" />
+                    <span className="study-buddy-arm study-buddy-arm-right" />
+                  </div>
+                  <span className="study-buddy-leg study-buddy-leg-left" />
+                  <span className="study-buddy-leg study-buddy-leg-right" />
+                  <div className="study-buddy-bubble">Keep going!</div>
+                </div>
+              </div>
+
               <div className="rounded-2xl bg-light-gray p-5">
                 <div className="mb-3 flex items-center justify-between text-sm">
                   <span className="font-bold text-gray-600">Course progress</span>

@@ -139,3 +139,214 @@ h1, h2, h3, h4, h5, h6 {
 .animate-lms-badge {
   animation: lms-badge 2.4s ease-in-out infinite;
 }
+
+.study-buddy {
+  position: relative;
+  width: 170px;
+  height: 210px;
+  animation: study-buddy-dance 1.9s ease-in-out infinite;
+  transform-origin: 50% 88%;
+}
+
+.study-buddy-shadow {
+  position: absolute;
+  left: 35px;
+  bottom: 10px;
+  width: 102px;
+  height: 18px;
+  border-radius: 9999px;
+  background: rgba(10, 15, 30, 0.12);
+  animation: study-buddy-shadow 1.9s ease-in-out infinite;
+}
+
+.study-buddy-head {
+  position: absolute;
+  left: 43px;
+  top: 18px;
+  width: 84px;
+  height: 78px;
+  border: 4px solid #0a0f1e;
+  border-radius: 28px 28px 32px 32px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(26, 143, 227, 0.16);
+  animation: study-buddy-head 1.9s ease-in-out infinite;
+}
+
+.study-buddy-eye {
+  position: absolute;
+  top: 28px;
+  width: 9px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #0a0f1e;
+}
+
+.study-buddy-eye-left { left: 23px; }
+.study-buddy-eye-right { right: 23px; }
+
+.study-buddy-smile {
+  position: absolute;
+  left: 31px;
+  top: 48px;
+  width: 23px;
+  height: 10px;
+  border-bottom: 4px solid #1A8FE3;
+  border-radius: 0 0 9999px 9999px;
+}
+
+.study-buddy-body {
+  position: absolute;
+  left: 49px;
+  top: 92px;
+  width: 72px;
+  height: 72px;
+  border: 4px solid #0a0f1e;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #1A8FE3, #5AB4F0);
+  box-shadow: 0 16px 26px rgba(26, 143, 227, 0.22);
+}
+
+.study-buddy-book {
+  position: absolute;
+  left: 18px;
+  top: 22px;
+  width: 38px;
+  height: 28px;
+  border: 3px solid #0a0f1e;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.study-buddy-book::after {
+  content: "";
+  position: absolute;
+  left: 17px;
+  top: -3px;
+  width: 3px;
+  height: 28px;
+  background: #0a0f1e;
+}
+
+.study-buddy-arm {
+  position: absolute;
+  top: 13px;
+  width: 43px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #0a0f1e;
+  transform-origin: 6px 6px;
+}
+
+.study-buddy-arm-left {
+  left: -35px;
+  animation: study-buddy-arm-left 1.9s ease-in-out infinite;
+}
+
+.study-buddy-arm-right {
+  right: -35px;
+  transform-origin: 37px 6px;
+  animation: study-buddy-arm-right 1.9s ease-in-out infinite;
+}
+
+.study-buddy-leg {
+  position: absolute;
+  top: 157px;
+  width: 14px;
+  height: 42px;
+  border-radius: 9999px;
+  background: #0a0f1e;
+  transform-origin: 7px 4px;
+}
+
+.study-buddy-leg-left {
+  left: 62px;
+  animation: study-buddy-leg-left 1.9s ease-in-out infinite;
+}
+
+.study-buddy-leg-right {
+  right: 62px;
+  animation: study-buddy-leg-right 1.9s ease-in-out infinite;
+}
+
+.study-buddy-bubble {
+  position: absolute;
+  right: -10px;
+  top: 0;
+  border: 1px solid rgba(26, 143, 227, 0.18);
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #1A8FE3;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 8px 12px;
+  box-shadow: 0 10px 24px rgba(26, 143, 227, 0.12);
+  animation: study-buddy-bubble 1.9s ease-in-out infinite;
+}
+
+.study-buddy-spark {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 9999px;
+  background: #5AB4F0;
+  opacity: 0.75;
+}
+
+.study-buddy-spark-one {
+  left: 18px;
+  top: 42px;
+  animation: study-buddy-spark 1.9s ease-in-out infinite;
+}
+
+.study-buddy-spark-two {
+  right: 18px;
+  top: 116px;
+  animation: study-buddy-spark 1.9s ease-in-out infinite 0.35s;
+}
+
+@keyframes study-buddy-dance {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  25% { transform: translateY(-8px) rotate(3deg); }
+  50% { transform: translateY(0) rotate(2deg); }
+  75% { transform: translateY(-6px) rotate(-3deg); }
+}
+
+@keyframes study-buddy-head {
+  0%, 100% { transform: rotate(2deg); }
+  50% { transform: rotate(-3deg); }
+}
+
+@keyframes study-buddy-shadow {
+  0%, 100% { transform: scaleX(1); opacity: 0.12; }
+  50% { transform: scaleX(0.78); opacity: 0.08; }
+}
+
+@keyframes study-buddy-arm-left {
+  0%, 100% { transform: rotate(34deg); }
+  50% { transform: rotate(-22deg); }
+}
+
+@keyframes study-buddy-arm-right {
+  0%, 100% { transform: rotate(-34deg); }
+  50% { transform: rotate(22deg); }
+}
+
+@keyframes study-buddy-leg-left {
+  0%, 100% { transform: rotate(10deg); }
+  50% { transform: rotate(-18deg); }
+}
+
+@keyframes study-buddy-leg-right {
+  0%, 100% { transform: rotate(-10deg); }
+  50% { transform: rotate(18deg); }
+}
+
+@keyframes study-buddy-bubble {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.04); }
+}
+
+@keyframes study-buddy-spark {
+  0%, 100% { transform: scale(0.75); opacity: 0.35; }
+  50% { transform: scale(1.25); opacity: 0.85; }
+}
