@@ -184,18 +184,23 @@ export default async function LMSDashboard() {
                     <div className="study-buddy-spark study-buddy-spark-one" />
                     <div className="study-buddy-spark study-buddy-spark-two" />
                     <div className="study-buddy-head">
+                      <span className="study-buddy-hair study-buddy-hair-left" />
+                      <span className="study-buddy-hair study-buddy-hair-top" />
+                      <span className="study-buddy-cheek study-buddy-cheek-left" />
+                      <span className="study-buddy-cheek study-buddy-cheek-right" />
                       <span className="study-buddy-eye study-buddy-eye-left" />
                       <span className="study-buddy-eye study-buddy-eye-right" />
                       <span className="study-buddy-smile" />
                     </div>
                     <div className="study-buddy-body">
+                      <span className="study-buddy-collar" />
                       <span className="study-buddy-book" />
                       <span className="study-buddy-arm study-buddy-arm-left" />
                       <span className="study-buddy-arm study-buddy-arm-right" />
                     </div>
                     <span className="study-buddy-leg study-buddy-leg-left" />
                     <span className="study-buddy-leg study-buddy-leg-right" />
-                    <div className="study-buddy-bubble">Keep going!</div>
+                    <div className="study-buddy-bubble">{studentName.split(" ")[0]}, keep going!</div>
                   </div>
                 </div>
               </div>

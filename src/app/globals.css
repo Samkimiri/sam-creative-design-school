@@ -152,7 +152,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 4px auto 0;
   transform: scale(0.78);
   transform-origin: center;
-  width: 170px;
+  width: 220px;
   height: 164px;
 }
 
@@ -173,20 +173,55 @@ h1, h2, h3, h4, h5, h6 {
   top: 18px;
   width: 84px;
   height: 78px;
-  border: 4px solid #0a0f1e;
-  border-radius: 28px 28px 32px 32px;
-  background: #ffffff;
-  box-shadow: 0 12px 24px rgba(26, 143, 227, 0.16);
+  border: 4px solid #211713;
+  border-radius: 40px 40px 36px 36px;
+  background: #f0b98f;
+  box-shadow: 0 12px 24px rgba(26, 143, 227, 0.14);
   animation: study-buddy-head 1.9s ease-in-out infinite;
 }
+
+.study-buddy-hair {
+  position: absolute;
+  background: #211713;
+}
+
+.study-buddy-hair-left {
+  left: -2px;
+  top: -2px;
+  width: 38px;
+  height: 32px;
+  border-radius: 28px 12px 24px 8px;
+  transform: rotate(-10deg);
+}
+
+.study-buddy-hair-top {
+  left: 20px;
+  top: -12px;
+  width: 50px;
+  height: 30px;
+  border-radius: 9999px 9999px 18px 18px;
+  transform: rotate(8deg);
+}
+
+.study-buddy-cheek {
+  position: absolute;
+  top: 42px;
+  width: 10px;
+  height: 7px;
+  border-radius: 9999px;
+  background: rgba(224, 91, 91, 0.28);
+}
+
+.study-buddy-cheek-left { left: 14px; }
+.study-buddy-cheek-right { right: 14px; }
 
 .study-buddy-eye {
   position: absolute;
   top: 28px;
-  width: 9px;
-  height: 12px;
+  width: 8px;
+  height: 11px;
   border-radius: 9999px;
-  background: #0a0f1e;
+  background: #211713;
 }
 
 .study-buddy-eye-left { left: 23px; }
@@ -198,7 +233,7 @@ h1, h2, h3, h4, h5, h6 {
   top: 48px;
   width: 23px;
   height: 10px;
-  border-bottom: 4px solid #1A8FE3;
+  border-bottom: 4px solid #8a3f2c;
   border-radius: 0 0 9999px 9999px;
 }
 
@@ -208,10 +243,22 @@ h1, h2, h3, h4, h5, h6 {
   top: 92px;
   width: 72px;
   height: 72px;
-  border: 4px solid #0a0f1e;
-  border-radius: 24px;
-  background: linear-gradient(135deg, #1A8FE3, #5AB4F0);
+  border: 4px solid #211713;
+  border-radius: 26px 26px 22px 22px;
+  background: linear-gradient(135deg, #1A8FE3 0%, #3FA86A 100%);
   box-shadow: 0 16px 26px rgba(26, 143, 227, 0.22);
+}
+
+.study-buddy-collar {
+  position: absolute;
+  left: 23px;
+  top: -1px;
+  width: 26px;
+  height: 14px;
+  border-radius: 0 0 9999px 9999px;
+  background: #ffffff;
+  border: 3px solid #211713;
+  border-top: 0;
 }
 
 .study-buddy-book {
@@ -220,9 +267,9 @@ h1, h2, h3, h4, h5, h6 {
   top: 22px;
   width: 38px;
   height: 28px;
-  border: 3px solid #0a0f1e;
+  border: 3px solid #211713;
   border-radius: 8px;
-  background: #ffffff;
+  background: #fff8e7;
 }
 
 .study-buddy-book::after {
@@ -232,7 +279,7 @@ h1, h2, h3, h4, h5, h6 {
   top: -3px;
   width: 3px;
   height: 28px;
-  background: #0a0f1e;
+  background: #211713;
 }
 
 .study-buddy-arm {
@@ -241,8 +288,19 @@ h1, h2, h3, h4, h5, h6 {
   width: 43px;
   height: 12px;
   border-radius: 9999px;
-  background: #0a0f1e;
+  background: #211713;
   transform-origin: 6px 6px;
+}
+
+.study-buddy-arm::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 9999px;
+  background: #f0b98f;
+  border: 3px solid #211713;
 }
 
 .study-buddy-arm-left {
@@ -250,20 +308,35 @@ h1, h2, h3, h4, h5, h6 {
   animation: study-buddy-arm-left 1.9s ease-in-out infinite;
 }
 
+.study-buddy-arm-left::after { left: -9px; }
+
 .study-buddy-arm-right {
   right: -35px;
   transform-origin: 37px 6px;
   animation: study-buddy-arm-right 1.9s ease-in-out infinite;
 }
 
+.study-buddy-arm-right::after { right: -9px; }
+
 .study-buddy-leg {
   position: absolute;
   top: 157px;
   width: 14px;
   height: 42px;
-  border-radius: 9999px;
-  background: #0a0f1e;
+  border-radius: 9999px 9999px 6px 6px;
+  background: #1f3b73;
   transform-origin: 7px 4px;
+}
+
+.study-buddy-leg::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  bottom: -2px;
+  width: 24px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #211713;
 }
 
 .study-buddy-leg-left {
@@ -278,15 +351,18 @@ h1, h2, h3, h4, h5, h6 {
 
 .study-buddy-bubble {
   position: absolute;
-  right: -10px;
+  right: -36px;
   top: 0;
+  max-width: 132px;
   border: 1px solid rgba(26, 143, 227, 0.18);
-  border-radius: 9999px;
+  border-radius: 18px;
   background: #ffffff;
   color: #1A8FE3;
   font-size: 12px;
   font-weight: 900;
+  line-height: 1.15;
   padding: 8px 12px;
+  text-align: center;
   box-shadow: 0 10px 24px rgba(26, 143, 227, 0.12);
   animation: study-buddy-bubble 1.9s ease-in-out infinite;
 }
@@ -363,6 +439,7 @@ h1, h2, h3, h4, h5, h6 {
   .study-buddy-mobile {
     margin: 0;
     transform: scale(1);
+    width: 220px;
     height: 210px;
   }
 }

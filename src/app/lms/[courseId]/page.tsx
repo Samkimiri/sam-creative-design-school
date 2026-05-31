@@ -23,6 +23,8 @@ type QuizResult = {
 
 type LessonTab = "video" | "notes" | "resources" | "assignment" | "quiz";
 
+const mergeLessonIds = (...lessonGroups: string[][]) => Array.from(new Set(lessonGroups.flat()));
+
 export default function CoursePlayer() {
   const params = useParams();
   const courseId = params.courseId as string;
@@ -39,31 +41,86 @@ export default function CoursePlayer() {
   const [assignmentStatus, setAssignmentStatus] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  const progressStorageKey = `scds-progress-${courseId}`;
+
+  const readLocalProgress = useCallback(() => {
+    if (typeof window === "undefined") return [];
+
+    try {
+      const savedProgress = window.localStorage.getItem(progressStorageKey);
+      const parsedProgress = savedProgress ? JSON.parse(savedProgress) : [];
+      return Array.isArray(parsedProgress) ? parsedProgress.filter((id) => typeof id === "string") : [];
+    } catch {
+      return [];
+    }
+  }, [progressStorageKey]);
+
+  const writeLocalProgress = useCallback((lessonIds: string[]) => {
+    if (typeof window === "undefined") return;
+
+    try {
+      window.localStorage.setItem(progressStorageKey, JSON.stringify(mergeLessonIds(lessonIds)));
+    } catch {
+      // Browser storage can be unavailable in private mode; backend progress still handles signed-in users.
+    }
+  }, [progressStorageKey]);
+
+  const syncLessonProgress = useCallback(async (lessonId: string) => {
+    try {
+      const res = await fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId, lessonId }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.data?.completedLessons) {
+        setCompletedLessons((currentLessons) => {
+          const mergedLessons = mergeLessonIds(currentLessons, data.data.completedLessons);
+          writeLocalProgress(mergedLessons);
+          return mergedLessons;
+        });
+      }
+    } catch {
+      // Keep the local progress backup when the student is offline or the session needs refreshing.
+    }
+  }, [courseId, writeLocalProgress]);
+
   const loadProgress = useCallback(async () => {
+    const localLessons = readLocalProgress();
+    if (localLessons.length > 0) {
+      setCompletedLessons(localLessons);
+    }
+
     try {
       const res = await fetch(`/api/progress?courseId=${courseId}`);
       const data = await res.json();
-      // Safety check for Grouped structure
+
       if (data.success && data.data?.completedLessons) {
-        setCompletedLessons(data.data.completedLessons);
+        const serverLessons = Array.isArray(data.data.completedLessons) ? data.data.completedLessons : [];
+        const mergedLessons = mergeLessonIds(localLessons, serverLessons);
+        setCompletedLessons(mergedLessons);
+        writeLocalProgress(mergedLessons);
+
+        localLessons
+          .filter((lessonId) => !serverLessons.includes(lessonId))
+          .forEach((lessonId) => {
+            void syncLessonProgress(lessonId);
+          });
       }
     } catch {
-      // Not logged in, use local state
+      // Leave any local progress visible if the backend cannot be reached.
     }
-  }, [courseId]);
+  }, [courseId, readLocalProgress, syncLessonProgress, writeLocalProgress]);
 
   useEffect(() => { loadProgress(); }, [loadProgress]);
 
   const markComplete = async (lessonId: string) => {
     if (completedLessons.includes(lessonId)) return;
-    setCompletedLessons((prev) => [...prev, lessonId]);
-    try {
-      await fetch("/api/progress", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseId, lessonId }),
-      });
-    } catch { /* offline mode */ }
+    const nextLessons = mergeLessonIds(completedLessons, [lessonId]);
+    setCompletedLessons(nextLessons);
+    writeLocalProgress(nextLessons);
+    await syncLessonProgress(lessonId);
   };
 
   const handleQuizSubmit = async () => {
@@ -77,13 +134,10 @@ export default function CoursePlayer() {
       const data = await res.json();
       setQuizResult(data);
       if (data.passed) {
-        setCompletedLessons((prev) => prev.includes(activeLesson.id) ? prev : [...prev, activeLesson.id]);
-        // Also save to backend
-        await fetch("/api/progress", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ courseId, lessonId: activeLesson.id }),
-        });
+        const nextLessons = mergeLessonIds(completedLessons, [activeLesson.id]);
+        setCompletedLessons(nextLessons);
+        writeLocalProgress(nextLessons);
+        await syncLessonProgress(activeLesson.id);
       }
     } catch { /* handle offline */ }
   };

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { readJSON, writeJSON } from "@/lib/db";
+import { getDB, saveDB } from "@/lib/db";
 
 interface ProgressRecord {
   studentId: string;
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const courseId = searchParams.get("courseId");
 
-  const progress = readJSON<ProgressRecord>("progress.json");
+  const progress = await getDB<ProgressRecord>("progress.json");
   const userProgress = progress.filter((p) => p.studentId === session.user.id);
 
   if (courseId) {
@@ -42,28 +42,31 @@ export async function POST(request: Request) {
     const { courseId, lessonId } = await request.json();
     if (!courseId || !lessonId) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-    const progress = readJSON<ProgressRecord>("progress.json");
+    const progress = await getDB<ProgressRecord>("progress.json");
     const existingIndex = progress.findIndex(
       (p) => p.studentId === session.user.id && p.courseId === courseId
     );
+    let savedRecord: ProgressRecord;
 
     if (existingIndex > -1) {
       if (!progress[existingIndex].completedLessons.includes(lessonId)) {
         progress[existingIndex].completedLessons.push(lessonId);
-        progress[existingIndex].lastAccessed = new Date().toISOString();
       }
+      progress[existingIndex].lastAccessed = new Date().toISOString();
+      savedRecord = progress[existingIndex];
     } else {
-      progress.push({
+      savedRecord = {
         studentId: session.user.id as string,
         courseId,
         completedLessons: [lessonId],
         quizScores: [],
         lastAccessed: new Date().toISOString(),
-      });
+      };
+      progress.push(savedRecord);
     }
 
-    writeJSON("progress.json", progress);
-    return NextResponse.json({ success: true });
+    await saveDB("progress.json", progress);
+    return NextResponse.json({ success: true, data: savedRecord });
   } catch (err) {
     console.error("Progress POST Error:", err);
     return NextResponse.json({ error: "Failed to update progress" }, { status: 500 });
