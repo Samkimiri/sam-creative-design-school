@@ -143,6 +143,10 @@ export default function CoursePlayer() {
   };
 
   const selectLesson = (lesson: Lesson) => {
+    const lessonIndex = courseLessons.findIndex((item) => item.id === lesson.id);
+    const isUnlocked = lessonIndex === 0 || courseLessons.slice(0, lessonIndex).every((item) => completedLessons.includes(item.id));
+    if (!isUnlocked) return;
+
     setActiveLesson(lesson);
     setShowQuiz(false);
     setActiveTab("video");
@@ -154,10 +158,16 @@ export default function CoursePlayer() {
 
   const nextLesson = () => {
     const idx = courseLessons.findIndex((l) => l.id === activeLesson.id);
-    if (idx < courseLessons.length - 1) selectLesson(courseLessons[idx + 1]);
+    if (completedLessons.includes(activeLesson.id) && idx < courseLessons.length - 1) {
+      selectLesson(courseLessons[idx + 1]);
+    }
   };
 
-  const progress = courseLessons.length > 0 ? Math.round((completedLessons.length / courseLessons.length) * 100) : 0;
+  const completedCourseLessons = courseLessons.filter((lesson) => completedLessons.includes(lesson.id));
+  const progress = courseLessons.length > 0 ? Math.round((completedCourseLessons.length / courseLessons.length) * 100) : 0;
+  const activeLessonIndex = courseLessons.findIndex((lesson) => lesson.id === activeLesson.id);
+  const isActiveLessonComplete = completedLessons.includes(activeLesson.id);
+  const isLastLesson = activeLessonIndex === courseLessons.length - 1;
 
   const openTab = (tab: LessonTab) => {
     setActiveTab(tab);
@@ -271,7 +281,7 @@ export default function CoursePlayer() {
                       <h1 className="text-2xl font-extrabold text-dark">{activeLesson.title}</h1>
                     </div>
                     <div className="flex gap-3 shrink-0">
-                      {!completedLessons.includes(activeLesson.id) && (
+                      {!activeLesson.quiz && !completedLessons.includes(activeLesson.id) && (
                         <button
                           onClick={() => markComplete(activeLesson.id)}
                           className="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-green-600 transition-all"
@@ -289,6 +299,12 @@ export default function CoursePlayer() {
                       )}
                     </div>
                   </div>
+
+                  {activeLesson.quiz && !isActiveLessonComplete && (
+                    <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
+                      Pass this 5-question quiz with 70% or above to unlock the next lesson.
+                    </div>
+                  )}
 
                   {progress === 100 && (
                     <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -402,10 +418,10 @@ export default function CoursePlayer() {
                   </button>
                   <button
                     onClick={nextLesson}
-                    disabled={courseLessons.findIndex((l) => l.id === activeLesson.id) === courseLessons.length - 1}
+                    disabled={isLastLesson || !isActiveLessonComplete}
                     className="bg-dark text-white px-6 py-3 rounded-xl font-bold hover:bg-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    Next →
+                    {isActiveLessonComplete ? "Next →" : "Pass Quiz to Continue"}
                   </button>
                 </div>
               </>
@@ -525,7 +541,7 @@ export default function CoursePlayer() {
                 </div>
                 <span className="text-primary text-sm font-bold">{progress}%</span>
               </div>
-              <p className="text-gray-400 text-xs mt-1">{completedLessons.length}/{courseLessons.length} lessons done</p>
+              <p className="text-gray-400 text-xs mt-1">{completedCourseLessons.length}/{courseLessons.length} lessons done</p>
             </div>
 
             <div className="flex-1 overflow-y-auto p-3">
@@ -533,18 +549,20 @@ export default function CoursePlayer() {
                 {courseLessons.map((lesson, index) => {
                   const isActive = lesson.id === activeLesson.id;
                   const isDone = completedLessons.includes(lesson.id);
+                  const isLocked = index > 0 && !courseLessons.slice(0, index).every((item) => completedLessons.includes(item.id));
                   return (
                     <button
                       key={lesson.id}
                       onClick={() => selectLesson(lesson)}
+                      disabled={isLocked}
                       className={`w-full text-left p-3.5 rounded-xl flex items-center gap-3 transition-all ${
-                        isActive ? "bg-primary/10 border border-primary/20" : "hover:bg-gray-50"
+                        isLocked ? "cursor-not-allowed opacity-50" : isActive ? "bg-primary/10 border border-primary/20" : "hover:bg-gray-50"
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-xs ${
-                        isDone ? "bg-green-500 text-white" : isActive ? "bg-primary text-white" : "bg-gray-100 text-gray-400"
+                        isDone ? "bg-green-500 text-white" : isLocked ? "bg-gray-100 text-gray-400" : isActive ? "bg-primary text-white" : "bg-gray-100 text-gray-400"
                       }`}>
-                        {isDone ? "✓" : index + 1}
+                        {isDone ? "✓" : isLocked ? "🔒" : index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`font-bold text-sm truncate ${isActive ? "text-primary" : isDone ? "text-gray-400" : "text-dark"}`}>
@@ -553,6 +571,7 @@ export default function CoursePlayer() {
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-xs text-gray-400">⏱ {lesson.duration}</span>
                           {lesson.quiz && <span className="text-xs text-primary font-bold">📝 Quiz</span>}
+                          {isLocked && <span className="text-xs font-bold text-gray-400">Locked</span>}
                         </div>
                       </div>
                     </button>

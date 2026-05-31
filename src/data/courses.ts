@@ -386,14 +386,17 @@ const quizEnhancements: Record<string, NonNullable<Lesson["quiz"]>> = {
       { id: "ps-3-q1", question: "In a Layer Mask, what color is used to hide parts of the layer?", options: ["White", "Black", "Grey", "Red"], answer: 1, explanation: "Black hides pixels on a mask, white reveals them, and gray partially hides them." },
       { id: "ps-3-q2", question: "Why are masks preferred over the Eraser Tool?", options: ["They permanently delete pixels", "They make edits reversible", "They lower resolution", "They only work with text"], answer: 1, explanation: "Masks are non-destructive, so hidden areas can be restored later." },
       { id: "ps-3-q3", question: "Which command selects the opposite area of an active selection?", options: ["Feather", "Invert", "Rasterize", "Merge"], answer: 1, explanation: "Invert changes the active selection to the opposite area, which is useful when isolating backgrounds or subjects." },
-      { id: "ps-3-q4", question: "Why convert a layer to a Smart Object before applying filters?", options: ["So filters remain editable", "So the image becomes smaller only", "So layers disappear", "So text cannot be changed"], answer: 0, explanation: "Smart Objects allow filters to behave like Smart Filters, meaning they can be adjusted or removed later." }
+      { id: "ps-3-q4", question: "Why convert a layer to a Smart Object before applying filters?", options: ["So filters remain editable", "So the image becomes smaller only", "So layers disappear", "So text cannot be changed"], answer: 0, explanation: "Smart Objects allow filters to behave like Smart Filters, meaning they can be adjusted or removed later." },
+      { id: "ps-3-q5", question: "Which workspace helps refine complex edges such as hair?", options: ["Select and Mask", "Save for Web", "Paragraph Panel", "Timeline"], answer: 0, explanation: "Select and Mask includes edge refinement tools for soft or complex cutouts like hair, fabric, and fur." }
     ]
   },
   "ps-4": {
     questions: [
       { id: "ps-4-q1", question: "What should professional skin retouching preserve?", options: ["Natural skin texture", "Only shadows", "All blemishes", "Plastic smoothness"], answer: 0, explanation: "Good retouching improves the portrait while keeping natural pores and texture." },
       { id: "ps-4-q2", question: "What does frequency separation help separate?", options: ["Text and shapes", "Texture and color/tone", "RGB and CMYK", "Video and audio"], answer: 1, explanation: "Frequency separation lets you work on texture separately from skin color and tone." },
-      { id: "ps-4-q3", question: "Which blending modes are commonly useful for subtle retouching and light shaping?", options: ["Overlay and Soft Light", "Difference and Exclusion", "Dissolve and Hard Mix", "Bitmap and Indexed"], answer: 0, explanation: "Overlay and Soft Light are often used at low opacity for controlled highlights, shadows, and subtle tone work." }
+      { id: "ps-4-q3", question: "Which blending modes are commonly useful for subtle retouching and light shaping?", options: ["Overlay and Soft Light", "Difference and Exclusion", "Dissolve and Hard Mix", "Bitmap and Indexed"], answer: 0, explanation: "Overlay and Soft Light are often used at low opacity for controlled highlights, shadows, and subtle tone work." },
+      { id: "ps-4-q4", question: "Which tool is best for quickly removing small temporary blemishes?", options: ["Spot Healing Brush", "Type Tool", "Crop Tool", "Gradient Tool"], answer: 0, explanation: "Spot Healing Brush quickly blends small marks with the surrounding skin or texture." },
+      { id: "ps-4-q5", question: "What is Dodge and Burn mainly used for in portraits?", options: ["Shaping highlights and shadows", "Deleting layers", "Changing canvas size", "Exporting files"], answer: 0, explanation: "Dodge and Burn controls light and shadow to add depth while keeping the portrait natural." }
     ]
   },
   "ps-5": {
@@ -401,50 +404,71 @@ const quizEnhancements: Record<string, NonNullable<Lesson["quiz"]>> = {
       { id: "ps-5-q1", question: "What is visual hierarchy in poster design?", options: ["Making all text the same size", "Guiding what the viewer sees first", "Using only one font", "Removing spacing"], answer: 1, explanation: "Hierarchy controls importance so the main message is noticed before supporting details." },
       { id: "ps-5-q2", question: "What does kerning adjust?", options: ["Space between individual letter pairs", "Canvas resolution", "Layer opacity", "Image sharpness"], answer: 0, explanation: "Kerning fine-tunes spacing between specific letters to make type look polished." },
       { id: "ps-5-q3", question: "Which Photoshop feature is best for inserting artwork into a reusable mockup?", options: ["Smart Object", "Eraser Tool", "History Panel", "Bitmap Mode"], answer: 0, explanation: "Mockups usually use Smart Objects so you can replace the design while keeping perspective, shadows, and effects." },
-      { id: "ps-5-q4", question: "Which export choice is best for a print-ready document?", options: ["Low-quality JPEG only", "PDF or TIFF", "GIF only", "A screenshot"], answer: 1, explanation: "PDF and TIFF are common high-quality print delivery formats, while PSD should be kept as the editable working file." }
+      { id: "ps-5-q4", question: "Which export choice is best for a print-ready document?", options: ["Low-quality JPEG only", "PDF or TIFF", "GIF only", "A screenshot"], answer: 1, explanation: "PDF and TIFF are common high-quality print delivery formats, while PSD should be kept as the editable working file." },
+      { id: "ps-5-q5", question: "What does leading control in typography?", options: ["Space between lines", "Image brightness", "Canvas rotation", "Layer opacity"], answer: 0, explanation: "Leading controls the vertical space between lines of text, which affects readability." }
     ]
   },
   "ai-1": {
     questions: [
       { id: "ai-1-q1", question: "What happens to a vector image when you scale it up 1000%?", options: ["It becomes blurry", "It remains perfectly sharp", "It changes color", "It disappears"], answer: 1, explanation: "Vector artwork is calculated from paths and points, so it can scale without pixelation." },
-      { id: "ai-1-q2", question: "Which color mode is usually safer for print work?", options: ["RGB", "CMYK", "HSL", "Indexed Color"], answer: 1, explanation: "CMYK is designed for ink-based printing, while RGB is designed for screens." }
+      { id: "ai-1-q2", question: "Which color mode is usually safer for print work?", options: ["RGB", "CMYK", "HSL", "Indexed Color"], answer: 1, explanation: "CMYK is designed for ink-based printing, while RGB is designed for screens." },
+      { id: "ai-1-q3", question: "What is an Illustrator artboard most similar to?", options: ["A separate page or canvas", "A brush preset", "A password field", "A video timeline"], answer: 0, explanation: "Artboards let designers organize multiple layouts or brand items in one Illustrator document." },
+      { id: "ai-1-q4", question: "Which tool selects individual anchor points?", options: ["Direct Selection Tool", "Eyedropper Tool", "Rectangle Tool", "Zoom Tool"], answer: 0, explanation: "Direct Selection, shortcut A, edits individual points and handles on a vector path." },
+      { id: "ai-1-q5", question: "Why are logos commonly created as vectors?", options: ["They scale cleanly at any size", "They can only be used online", "They cannot be printed", "They remove all colors"], answer: 0, explanation: "Vector logos remain sharp from small icons to large banners because they are path-based." }
     ]
   },
   "ai-2": {
     questions: [
       { id: "ai-2-q1", question: "What action creates a curved point with the Pen Tool?", options: ["Single click", "Click and drag", "Press Delete", "Double-click the artboard"], answer: 1, explanation: "Clicking and dragging creates handles that control the curve." },
-      { id: "ai-2-q2", question: "Why should paths avoid too many anchor points?", options: ["They become harder to edit smoothly", "They cannot be colored", "They stop being vectors", "They export only as video"], answer: 0, explanation: "Fewer well-placed points create cleaner curves and easier editing." }
+      { id: "ai-2-q2", question: "Why should paths avoid too many anchor points?", options: ["They become harder to edit smoothly", "They cannot be colored", "They stop being vectors", "They export only as video"], answer: 0, explanation: "Fewer well-placed points create cleaner curves and easier editing." },
+      { id: "ai-2-q3", question: "What do Pen Tool handles control?", options: ["Curve direction and smoothness", "Video speed", "Font installation", "File passwords"], answer: 0, explanation: "Handles control how curves enter and leave anchor points." },
+      { id: "ai-2-q4", question: "Which key is used to break or adjust Pen Tool handles in many workflows?", options: ["Alt", "Caps Lock", "Tab", "F12"], answer: 0, explanation: "Alt is commonly used to adjust or break handles for sharper direction changes." },
+      { id: "ai-2-q5", question: "What is the best reason to trace logos for practice?", options: ["It trains precision with curves and spacing", "It deletes anchor points automatically", "It replaces learning color", "It only exports images"], answer: 0, explanation: "Tracing helps build control over curves, corners, spacing, and symmetry." }
     ]
   },
   "ai-3": {
     questions: [
       { id: "ai-3-q1", question: "What does Shape Builder help you do?", options: ["Edit video speed", "Merge or remove overlapping shapes", "Change DPI", "Export audio"], answer: 1, explanation: "Shape Builder combines or removes parts of overlapping vector shapes." },
-      { id: "ai-3-q2", question: "Why test a logo in black and white?", options: ["To check if it works without color effects", "To reduce file size only", "To remove paths", "To convert it to raster"], answer: 0, explanation: "A strong logo should remain clear and recognizable without relying on color." }
+      { id: "ai-3-q2", question: "Why test a logo in black and white?", options: ["To check if it works without color effects", "To reduce file size only", "To remove paths", "To convert it to raster"], answer: 0, explanation: "A strong logo should remain clear and recognizable without relying on color." },
+      { id: "ai-3-q3", question: "Which Pathfinder command combines selected shapes into one?", options: ["Unite", "Divide", "Crop Image", "Gaussian Blur"], answer: 0, explanation: "Unite merges selected vector shapes into one combined shape." },
+      { id: "ai-3-q4", question: "Why should a logo work at small sizes?", options: ["It may appear on icons, labels, and profiles", "It should only be used on billboards", "It removes the need for typography", "It changes the brand name"], answer: 0, explanation: "A practical logo must stay recognizable on small digital and printed applications." },
+      { id: "ai-3-q5", question: "What does holding Alt with Shape Builder usually do?", options: ["Remove selected regions", "Add video audio", "Lock the computer", "Change CMYK to RGB"], answer: 0, explanation: "Alt lets you subtract or delete unwanted shape regions while using Shape Builder." }
     ]
   },
   "cc-1": {
     questions: [
       { id: "cc-1-q1", question: "Which aspect ratio is best for Instagram Reels?", options: ["16:9", "4:3", "9:16", "2:1"], answer: 2, explanation: "9:16 is the vertical format used by Reels, TikTok, Shorts, and mobile-first video." },
-      { id: "cc-1-q2", question: "Why are captions useful in short-form video?", options: ["They help viewers understand with sound off", "They replace all editing", "They lower video quality", "They only work in landscape"], answer: 0, explanation: "Many viewers watch without sound, so readable captions keep the message clear." }
+      { id: "cc-1-q2", question: "Why are captions useful in short-form video?", options: ["They help viewers understand with sound off", "They replace all editing", "They lower video quality", "They only work in landscape"], answer: 0, explanation: "Many viewers watch without sound, so readable captions keep the message clear." },
+      { id: "cc-1-q3", question: "What should the first seconds of a short video do?", options: ["Hook attention quickly", "Show only the ending", "Stay silent and blank", "Hide the subject"], answer: 0, explanation: "A strong hook gives viewers a reason to keep watching immediately." },
+      { id: "cc-1-q4", question: "What does timeline trimming help remove?", options: ["Dead space and weak moments", "All captions", "The final export button", "Every transition"], answer: 0, explanation: "Trimming keeps the pace tight by removing pauses, mistakes, and low-energy sections." },
+      { id: "cc-1-q5", question: "Which format is best for YouTube Shorts and TikTok?", options: ["Vertical 9:16", "Square only", "Landscape 21:9 only", "A printed PDF"], answer: 0, explanation: "Vertical 9:16 fills mobile screens on TikTok, Reels, Shorts, and status platforms." }
     ]
   },
   "cc-2": {
     questions: [
       { id: "cc-2-q1", question: "What do keyframes create?", options: ["Motion or change over time", "A fixed screenshot", "Only audio noise", "A deleted clip"], answer: 0, explanation: "Keyframes set start and end values so CapCut can animate between them." },
-      { id: "cc-2-q2", question: "What is an overlay?", options: ["A layer placed above another clip", "A type of bank payment", "A deleted transition", "A video aspect ratio"], answer: 0, explanation: "Overlays place video, images, text, or graphics above the main clip." }
+      { id: "cc-2-q2", question: "What is an overlay?", options: ["A layer placed above another clip", "A type of bank payment", "A deleted transition", "A video aspect ratio"], answer: 0, explanation: "Overlays place video, images, text, or graphics above the main clip." },
+      { id: "cc-2-q3", question: "What can keyframes control in CapCut?", options: ["Scale, position, rotation, and opacity", "Only file names", "Only comments", "Bank account numbers"], answer: 0, explanation: "Keyframes can animate many properties including position, scale, rotation, opacity, and effects." },
+      { id: "cc-2-q4", question: "What does velocity editing change?", options: ["Clip speed over time", "The phone battery", "Canvas DPI", "The font license"], answer: 0, explanation: "Velocity editing speeds up or slows down parts of a clip for rhythm and impact." },
+      { id: "cc-2-q5", question: "Why should transitions be controlled?", options: ["They should support the story, not distract", "They must hide all captions", "They replace all editing skill", "They only work in photos"], answer: 0, explanation: "Professional transitions guide the viewer smoothly without overpowering the message." }
     ]
   },
   "sw-1": {
     questions: [
       { id: "sw-1-q1", question: "What color does a sketch turn when it is fully defined?", options: ["Blue", "Red", "Black", "Green"], answer: 2, explanation: "Black sketch geometry means size and position are fully controlled by dimensions and relations." },
       { id: "sw-1-q2", question: "Which relation makes two circles share the same center point?", options: ["Tangent", "Concentric", "Coincident", "Parallel"], answer: 1, explanation: "A concentric relation aligns circular entities around the same center." },
-      { id: "sw-1-q3", question: "Why is under-defined blue geometry risky?", options: ["It may move unexpectedly", "It cannot be extruded at all", "It is always hidden", "It means the part is finished"], answer: 0, explanation: "Under-defined geometry can shift when the model updates, causing inaccurate parts." }
+      { id: "sw-1-q3", question: "Why is under-defined blue geometry risky?", options: ["It may move unexpectedly", "It cannot be extruded at all", "It is always hidden", "It means the part is finished"], answer: 0, explanation: "Under-defined geometry can shift when the model updates, causing inaccurate parts." },
+      { id: "sw-1-q4", question: "What do Smart Dimensions control?", options: ["Exact sketch size", "Video captions", "Website reviews", "Layer opacity"], answer: 0, explanation: "Smart Dimensions define exact lengths, angles, diameters, and distances in a sketch." },
+      { id: "sw-1-q5", question: "Which relation makes a line lie flat from left to right?", options: ["Horizontal", "Concentric", "Tangent", "Pierce"], answer: 0, explanation: "A horizontal relation controls a line so it remains level from left to right." }
     ]
   },
   "sw-2": {
     questions: [
       { id: "sw-2-q1", question: "What does Extrude Boss/Base do?", options: ["Adds depth to a sketch", "Deletes all material", "Changes the file name", "Only adds color"], answer: 0, explanation: "Extrude Boss/Base turns a closed 2D sketch into a 3D solid by adding thickness." },
-      { id: "sw-2-q2", question: "Which feature is best for bottle-like circular forms?", options: ["Revolve", "Mirror only", "Text Tool", "Crop"], answer: 0, explanation: "Revolve rotates a profile around an axis, making it ideal for round objects." }
+      { id: "sw-2-q2", question: "Which feature is best for bottle-like circular forms?", options: ["Revolve", "Mirror only", "Text Tool", "Crop"], answer: 0, explanation: "Revolve rotates a profile around an axis, making it ideal for round objects." },
+      { id: "sw-2-q3", question: "What does Extrude Cut do?", options: ["Removes material", "Creates captions", "Changes the course price", "Deletes all sketches"], answer: 0, explanation: "Extrude Cut removes material to create holes, slots, pockets, and clearances." },
+      { id: "sw-2-q4", question: "What is a fillet used for?", options: ["Rounding edges", "Making passwords", "Cropping videos", "Changing color mode"], answer: 0, explanation: "Fillets round sharp edges to improve appearance, safety, and manufacturability." },
+      { id: "sw-2-q5", question: "What is a chamfer?", options: ["An angled edge", "A video transition", "A raster image", "A quiz score"], answer: 0, explanation: "A chamfer creates a flat angled edge instead of a rounded edge." }
     ]
   }
 };

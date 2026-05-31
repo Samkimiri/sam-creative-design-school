@@ -10,6 +10,10 @@ interface ProgressRecord {
   lastAccessed: string;
 }
 
+function isProgressRecord(record: Partial<ProgressRecord>): record is ProgressRecord {
+  return Boolean(record.studentId && record.courseId && Array.isArray(record.completedLessons));
+}
+
 export async function GET(request: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -18,7 +22,7 @@ export async function GET(request: Request) {
   const courseId = searchParams.get("courseId");
 
   const progress = await getDB<ProgressRecord>("progress.json");
-  const userProgress = progress.filter((p) => p.studentId === session.user.id);
+  const userProgress = progress.filter((p) => isProgressRecord(p) && p.studentId === session.user.id);
 
   if (courseId) {
     const courseRecord = userProgress.find((p) => p.courseId === courseId) || {
@@ -42,7 +46,7 @@ export async function POST(request: Request) {
     const { courseId, lessonId } = await request.json();
     if (!courseId || !lessonId) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
 
-    const progress = await getDB<ProgressRecord>("progress.json");
+    const progress = (await getDB<ProgressRecord>("progress.json")).filter(isProgressRecord);
     const existingIndex = progress.findIndex(
       (p) => p.studentId === session.user.id && p.courseId === courseId
     );

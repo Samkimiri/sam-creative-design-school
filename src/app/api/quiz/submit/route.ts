@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { readJSON, writeJSON } from "@/lib/db";
+import { getDB, saveDB } from "@/lib/db";
 import { lessons } from "@/data/courses";
+
+interface QuizAttempt {
+  studentId: string;
+  courseId: string;
+  lessonId: string;
+  score: number;
+  total: number;
+  percentage: number;
+  passed: boolean;
+  date: string;
+}
 
 export async function POST(request: Request) {
   try {
@@ -40,20 +51,18 @@ export async function POST(request: Request) {
     const percentage = Math.round((score / total) * 100);
     const passed = percentage >= 70;
 
-    // Save quiz attempt
-    const progress = readJSON<Record<string, unknown>>("progress.json");
-    progress.push({
+    const quizAttempts = await getDB<QuizAttempt>("quiz-attempts.json");
+    quizAttempts.push({
       studentId: session.user.id as string,
       courseId,
       lessonId,
-      type: "quiz",
       score,
       total,
       percentage,
       passed,
       date: new Date().toISOString(),
     });
-    writeJSON("progress.json", progress);
+    await saveDB("quiz-attempts.json", quizAttempts);
 
     return NextResponse.json({ success: true, score, total, percentage, passed, results });
   } catch {

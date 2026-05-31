@@ -20,6 +20,10 @@ interface Student {
   profileImage?: string;
 }
 
+function isProgressRecord(record: Partial<ProgressRecord>): record is ProgressRecord {
+  return Boolean(record.studentId && record.courseId && Array.isArray(record.completedLessons));
+}
+
 function getProgressMeta(progress: number) {
   if (progress === 100) return { label: "Completed", tone: "bg-green-50 text-green-700 border-green-200", action: "Review Course" };
   if (progress > 0) return { label: "In Progress", tone: "bg-blue-50 text-blue-700 border-blue-200", action: "Continue Learning" };
@@ -50,7 +54,9 @@ export default async function LMSDashboard() {
 
     const studentEnrolledIds = student?.enrolledCourses || ["photoshop-masterclass"];
     enrolledCourses = courses.filter((course) => studentEnrolledIds.includes(course.id));
-    allProgress = (await getDB<ProgressRecord>("progress.json")).filter((record) => record.studentId === session.user.id);
+    allProgress = (await getDB<ProgressRecord>("progress.json")).filter(
+      (record) => isProgressRecord(record) && record.studentId === session.user.id
+    );
   } else {
     enrolledCourses = [courses[0]];
   }
@@ -58,7 +64,9 @@ export default async function LMSDashboard() {
   const courseStats = enrolledCourses.map((course) => {
     const courseLessons = lessons.filter((lesson) => lesson.courseId === course.id).sort((a, b) => a.order - b.order);
     const record = allProgress.find((progress) => progress.courseId === course.id);
-    const completedLessons = record?.completedLessons || [];
+    const completedLessons = courseLessons
+      .filter((lesson) => record?.completedLessons.includes(lesson.id))
+      .map((lesson) => lesson.id);
     const progress = courseLessons.length > 0 ? Math.round((completedLessons.length / courseLessons.length) * 100) : 0;
     const nextLesson = courseLessons.find((lesson) => !completedLessons.includes(lesson.id)) || courseLessons[0];
     return { course, courseLessons, completedLessons, progress, nextLesson, record };
