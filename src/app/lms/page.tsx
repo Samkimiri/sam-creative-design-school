@@ -177,24 +177,26 @@ export default async function LMSDashboard() {
                 </div>
               </div>
 
-              <div className="hidden justify-center lg:flex" aria-hidden="true">
-                <div className="study-buddy">
-                  <div className="study-buddy-shadow" />
-                  <div className="study-buddy-spark study-buddy-spark-one" />
-                  <div className="study-buddy-spark study-buddy-spark-two" />
-                  <div className="study-buddy-head">
-                    <span className="study-buddy-eye study-buddy-eye-left" />
-                    <span className="study-buddy-eye study-buddy-eye-right" />
-                    <span className="study-buddy-smile" />
+              <div className="flex justify-center lg:flex" aria-hidden="true">
+                <div className="study-buddy-mobile">
+                  <div className="study-buddy">
+                    <div className="study-buddy-shadow" />
+                    <div className="study-buddy-spark study-buddy-spark-one" />
+                    <div className="study-buddy-spark study-buddy-spark-two" />
+                    <div className="study-buddy-head">
+                      <span className="study-buddy-eye study-buddy-eye-left" />
+                      <span className="study-buddy-eye study-buddy-eye-right" />
+                      <span className="study-buddy-smile" />
+                    </div>
+                    <div className="study-buddy-body">
+                      <span className="study-buddy-book" />
+                      <span className="study-buddy-arm study-buddy-arm-left" />
+                      <span className="study-buddy-arm study-buddy-arm-right" />
+                    </div>
+                    <span className="study-buddy-leg study-buddy-leg-left" />
+                    <span className="study-buddy-leg study-buddy-leg-right" />
+                    <div className="study-buddy-bubble">Keep going!</div>
                   </div>
-                  <div className="study-buddy-body">
-                    <span className="study-buddy-book" />
-                    <span className="study-buddy-arm study-buddy-arm-left" />
-                    <span className="study-buddy-arm study-buddy-arm-right" />
-                  </div>
-                  <span className="study-buddy-leg study-buddy-leg-left" />
-                  <span className="study-buddy-leg study-buddy-leg-right" />
-                  <div className="study-buddy-bubble">Keep going!</div>
                 </div>
               </div>
 
