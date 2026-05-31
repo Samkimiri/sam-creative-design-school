@@ -35,7 +35,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-dark text-white pt-16 pb-8">
+    <footer className="relative z-20 border-t border-primary/25 bg-[#050914] text-white shadow-[0_-18px_60px_rgba(5,9,20,0.35)] pt-16 pb-8">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
@@ -51,7 +51,7 @@ export default function Footer() {
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mt-1">Design School</span>
               </div>
             </Link>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+            <p className="text-white/85 text-sm leading-relaxed mb-6">
               Empowering Kenyan creatives and engineers with practical, income-generating digital skills.
             </p>
             {/* Social Icons */}
@@ -63,7 +63,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={s.name}
-                  className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition-all"
+                  className="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center text-white hover:bg-primary hover:text-white transition-all"
                 >
                   {s.icon}
                 </a>
@@ -77,7 +77,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {quickLinks.map((l) => (
                 <li key={l.href}>
-                  <Link href={l.href} className="text-gray-400 text-sm hover:text-primary transition-colors font-medium">
+                  <Link href={l.href} className="text-white/80 text-sm hover:text-primary-light transition-colors font-semibold">
                     {l.label}
                   </Link>
                 </li>
@@ -91,7 +91,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {lmsLinks.map((l) => (
                 <li key={l.href}>
-                  <Link href={l.href} className="text-gray-400 text-sm hover:text-primary transition-colors font-medium">
+                  <Link href={l.href} className="text-white/80 text-sm hover:text-primary-light transition-colors font-semibold">
                     {l.label}
                   </Link>
                 </li>
@@ -103,32 +103,32 @@ export default function Footer() {
           <div>
             <h4 className="font-extrabold text-white mb-5 text-sm uppercase tracking-wider">Contact Us</h4>
             <div className="space-y-4">
-              <a href="tel:0748201131" className="flex items-center gap-3 text-gray-400 hover:text-primary transition-colors text-sm group">
+              <a href="tel:0748201131" className="flex items-center gap-3 text-white/80 hover:text-primary-light transition-colors text-sm font-semibold group">
                 <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-primary shrink-0">📞</span>
                 0748201131
               </a>
-              <a href="mailto:samcreativegraphics7@gmail.com" className="flex items-center gap-3 text-gray-400 hover:text-primary transition-colors text-sm group">
+              <a href="mailto:samcreativegraphics7@gmail.com" className="flex items-center gap-3 text-white/80 hover:text-primary-light transition-colors text-sm font-semibold group">
                 <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-primary shrink-0">✉️</span>
                 <span className="truncate">samcreativegraphics7@gmail.com</span>
               </a>
-              <a href="https://wa.me/254748201131" target="_blank" rel="noreferrer" className="flex items-center gap-3 text-gray-400 hover:text-[#25D366] transition-colors text-sm group">
+              <a href="https://wa.me/254748201131" target="_blank" rel="noreferrer" className="flex items-center gap-3 text-white/80 hover:text-[#25D366] transition-colors text-sm font-semibold group">
                 <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-[#25D366] shrink-0">💬</span>
                 WhatsApp Support
               </a>
               <div className="pt-2">
-                <p className="text-xs text-gray-500 font-medium">MPESA Payments:</p>
-                <p className="text-gray-400 text-sm font-bold">0743475247 (Samuel Kimiri)</p>
+                <p className="text-xs text-white/60 font-semibold">MPESA Payments:</p>
+                <p className="text-white/85 text-sm font-bold">0743475247 (Samuel Kimiri)</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-500 text-sm">
+        <div className="border-t border-white/15 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-white/65 text-sm">
             © {year} Sam Creative Design School. All rights reserved.
           </p>
-          <p className="text-gray-600 text-sm font-medium italic">
+          <p className="text-white/55 text-sm font-medium italic">
             Empowering Creatives. Building Professionals.
           </p>
         </div>
