@@ -218,18 +218,16 @@ export default function GamifiedRegistration() {
                   });
                   const data = await res.json();
                   if (data.success) {
-                    // Success login! Now fetch their details
-                    const meRes = await fetch("/api/auth/me");
-                    const meData = await meRes.json();
-                    if (meData.success && meData.student) {
+                    const student = data.student || data.user;
+                    if (student) {
                       setIsLoggedIn(true);
                       setFormData({
-                        name: meData.student.name || "",
-                        email: meData.student.email || "",
-                        phone: meData.student.phone || "",
+                        name: student.name || "",
+                        email: student.email || "",
+                        phone: student.phone || "",
                         password: "••••••••",
-                        interest: meData.student.interest || "",
-                        avatar: meData.student.profileImage || meData.student.avatar || null,
+                        interest: student.interest || "",
+                        avatar: student.profileImage || student.avatar || null,
                       });
                       setStep("identity"); // Go to step 1 with their pre-filled details!
                     }

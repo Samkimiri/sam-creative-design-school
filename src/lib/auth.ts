@@ -52,7 +52,13 @@ export async function getSession() {
 export async function setSession(user: UserSession) {
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const session = await encrypt({ user, expires: expires.toISOString() });
-  (await cookies()).set("session", session, { expires, httpOnly: true, secure: process.env.NODE_ENV === "production" });
+  (await cookies()).set("session", session, {
+    expires,
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+  });
 }
 
 export async function logout() {

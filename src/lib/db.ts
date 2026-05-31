@@ -19,13 +19,17 @@ export function readJSON<T>(filename: string): T[] {
   try {
     if (!fs.existsSync(filePath)) return [];
     const raw = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(raw) as T[];
+    const data = JSON.parse(raw) as T[];
+    memoryDB[filename] = data as unknown[];
+    return data;
   } catch {
     return [];
   }
 }
 
 export async function getDB<T>(filename: string): Promise<T[]> {
+  if (memoryDB[filename]) return memoryDB[filename] as T[];
+
   try {
     const client = await getMongoClient();
     const db = client.db("scds_db");
@@ -37,16 +41,19 @@ export async function getDB<T>(filename: string): Promise<T[]> {
       const fallbackData = readJSON<T>(filename);
       if (fallbackData.length > 0) {
         await saveDB(filename, fallbackData);
+        memoryDB[filename] = fallbackData as unknown[];
         return fallbackData;
       }
       return [];
     }
 
-    return documents.map((doc) => {
+    const data = documents.map((doc) => {
       const { _id: _unused, ...rest } = doc as Record<string, unknown> & { _id?: unknown };
       void _unused;
       return rest as T;
     });
+    memoryDB[filename] = data as unknown[];
+    return data;
   } catch (error) {
     console.error("MongoDB getDB error:", error);
     return readJSON<T>(filename);
