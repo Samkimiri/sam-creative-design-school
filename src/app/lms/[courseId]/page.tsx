@@ -5,6 +5,7 @@ import { courses, lessons, Lesson } from "@/data/courses";
 import { useParams } from "next/navigation";
 
 type QuizResult = {
+  error?: string;
   score: number;
   total: number;
   passed: boolean;
@@ -132,6 +133,17 @@ export default function CoursePlayer() {
         body: JSON.stringify({ courseId, lessonId: activeLesson.id, answers: quizAnswers }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setQuizResult({
+          error: data.error || "Could not submit quiz. Please try again.",
+          score: 0,
+          total: activeLesson.quiz.questions.length,
+          passed: false,
+          percentage: 0,
+          results: [],
+        });
+        return;
+      }
       setQuizResult(data);
       if (data.passed) {
         const nextLessons = mergeLessonIds(completedLessons, [activeLesson.id]);
@@ -475,6 +487,12 @@ export default function CoursePlayer() {
                   </>
                 ) : (
                   <div className="text-center py-8">
+                    {quizResult.error ? (
+                      <div className="mx-auto mb-6 max-w-xl rounded-2xl border border-red-200 bg-red-50 p-5 text-left">
+                        <p className="font-bold text-red-800">Quiz could not be submitted</p>
+                        <p className="mt-1 text-sm text-red-700">{quizResult.error}</p>
+                      </div>
+                    ) : null}
                     <div className={`w-28 h-28 rounded-full mx-auto mb-6 flex items-center justify-center text-5xl ${quizResult.passed ? "bg-green-100" : "bg-red-100"}`}>
                       {quizResult.passed ? "🎉" : "😅"}
                     </div>

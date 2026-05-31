@@ -349,42 +349,15 @@ function EnrollForm() {
 export default function Enroll() {
   return (
     <div className="pt-32 pb-24 min-h-screen bg-light-gray">
-      <div className="container mx-auto px-6 max-w-5xl">
-        <div className="flex flex-col lg:flex-row gap-16">
-          <div className="lg:w-1/2">
-            <h1 className="text-4xl font-extrabold mb-6">Simple 4-Step <span className="text-primary">Enrollment</span></h1>
-            
-            <div className="space-y-12 mt-12">
-              {[
-                { step: 1, title: "Choose Course", desc: "Select the training program that fits your goals." },
-                { step: 2, title: "Fill Details", desc: "Provide your name and phone number for enrollment." },
-                { step: 3, title: "Pay via M-Pesa", desc: "Enter your PIN when the Safaricom prompt appears on your phone." },
-                { step: 4, title: "Get Access", desc: "Receive login details for the LMS and start learning." }
-              ].map(item => (
-                <div key={item.step} className="flex gap-6">
-                  <div className="w-12 h-12 bg-dark text-white rounded-full flex items-center justify-center font-bold shrink-0">
-                    {item.step}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-xl mb-1">{item.title}</h4>
-                    <p className="text-gray-600">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-16 p-8 bg-white/50 rounded-2xl border border-dashed border-gray-300">
-              <h5 className="font-bold mb-4">Need Help?</h5>
-              <p className="text-gray-600 mb-4">If you encounter any issues during enrollment, contact our support team immediately.</p>
-              <span className="font-bold text-primary">WhatsApp: 0748201131</span>
-            </div>
-          </div>
-          
-          <div className="lg:w-1/2">
-            <Suspense fallback={<div>Loading...</div>}>
-              <EnrollForm />
-            </Suspense>
-          </div>
+      <div className="container mx-auto px-6 max-w-2xl">
+        <Suspense fallback={<div>Loading...</div>}>
+          <EnrollForm />
+        </Suspense>
+
+        <div className="mt-8 p-6 bg-white/70 rounded-2xl border border-dashed border-gray-300 text-center">
+          <h5 className="font-bold mb-2">Need Help?</h5>
+          <p className="text-gray-600 mb-3">If you encounter any issues during enrollment, contact our support team immediately.</p>
+          <span className="font-bold text-primary">WhatsApp: 0748201131</span>
         </div>
       </div>
     </div>

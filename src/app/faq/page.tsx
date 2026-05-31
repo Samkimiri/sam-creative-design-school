@@ -1,4 +1,11 @@
 export default function FAQPage() {
+  const enrollmentSteps = [
+    { step: 1, title: "Choose Course", desc: "Select the training program that fits your goals." },
+    { step: 2, title: "Fill Details", desc: "Provide your name and phone number for enrollment." },
+    { step: 3, title: "Pay via M-Pesa", desc: "Enter your PIN when the Safaricom prompt appears on your phone." },
+    { step: 4, title: "Get Access", desc: "Receive login details for the LMS and start learning." }
+  ];
+
   const faqs = [
     {
       category: "Courses & Enrollment",
@@ -91,6 +98,23 @@ export default function FAQPage() {
             Everything you need to know before joining Sam Creative Design School. Can&apos;t find your answer? WhatsApp us at 0748201131.
           </p>
         </div>
+
+        <section className="mb-16 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+          <h2 className="text-2xl font-extrabold mb-8">Simple 4-Step <span className="text-primary">Enrollment</span></h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            {enrollmentSteps.map((item) => (
+              <div key={item.step} className="flex gap-4">
+                <div className="w-11 h-11 bg-dark text-white rounded-full flex items-center justify-center font-bold shrink-0">
+                  {item.step}
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-1">{item.title}</h3>
+                  <p className="text-gray-600">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* FAQ Sections */}
         <div className="space-y-12">
