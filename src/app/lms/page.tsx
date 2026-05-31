@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { courses, lessons } from "@/data/courses";
 import { getSession } from "@/lib/auth";
 import { getDB } from "@/lib/db";
@@ -19,6 +20,21 @@ interface Student {
   profileImage?: string;
 }
 
+function getProgressMeta(progress: number) {
+  if (progress === 100) return { label: "Completed", tone: "bg-green-50 text-green-700 border-green-200", action: "Review Course" };
+  if (progress > 0) return { label: "In Progress", tone: "bg-blue-50 text-blue-700 border-blue-200", action: "Continue Learning" };
+  return { label: "Unlocked", tone: "bg-primary/10 text-primary border-primary/20", action: "Start Course" };
+}
+
+function getBadges(progress: number) {
+  const badges = [{ label: "Starter", detail: "Portal opened" }];
+  if (progress >= 25) badges.push({ label: "Beginner", detail: "25% complete" });
+  if (progress >= 50) badges.push({ label: "Layer Master", detail: "Halfway there" });
+  if (progress >= 75) badges.push({ label: "Quiz Champion", detail: "Strong progress" });
+  if (progress === 100) badges.push({ label: "Course Completed", detail: "Certificate ready" });
+  return badges;
+}
+
 export default async function LMSDashboard() {
   const session = await getSession();
 
@@ -31,220 +47,286 @@ export default async function LMSDashboard() {
     const allStudents = await getDB<Student>("students.json");
     student = allStudents.find((s) => s.id === session.user.id);
     studentName = session.user.name;
-    
-    // Fallback: If student not found in JSON (Vercel ephemeral), 
-    // we still give them Photoshop access if they are logged in
-    const studentEnrolledIds = student?.enrolledCourses || ["photoshop-masterclass"]; 
-    enrolledCourses = courses.filter((c) => studentEnrolledIds.includes(c.id));
-    
-    allProgress = (await getDB<ProgressRecord>("progress.json")).filter((p) => p.studentId === session.user.id);
+
+    const studentEnrolledIds = student?.enrolledCourses || ["photoshop-masterclass"];
+    enrolledCourses = courses.filter((course) => studentEnrolledIds.includes(course.id));
+    allProgress = (await getDB<ProgressRecord>("progress.json")).filter((record) => record.studentId === session.user.id);
   } else {
-    enrolledCourses = [courses[0]]; // Preview first course
+    enrolledCourses = [courses[0]];
   }
 
-  const getProgress = (courseId: string) => {
-    const record = allProgress.find((p) => p.courseId === courseId);
-    const total = lessons.filter((l) => l.courseId === courseId).length;
-    const completed = record?.completedLessons?.length || 0;
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-  };
+  const courseStats = enrolledCourses.map((course) => {
+    const courseLessons = lessons.filter((lesson) => lesson.courseId === course.id).sort((a, b) => a.order - b.order);
+    const record = allProgress.find((progress) => progress.courseId === course.id);
+    const completedLessons = record?.completedLessons || [];
+    const progress = courseLessons.length > 0 ? Math.round((completedLessons.length / courseLessons.length) * 100) : 0;
+    const nextLesson = courseLessons.find((lesson) => !completedLessons.includes(lesson.id)) || courseLessons[0];
+    return { course, courseLessons, completedLessons, progress, nextLesson, record };
+  });
 
-  const getBadges = (progress: number) => {
-    const badges = ["Starter"];
-    if (progress >= 25) badges.push("Beginner");
-    if (progress >= 50) badges.push("Layer Master");
-    if (progress >= 75) badges.push("Quiz Champion");
-    if (progress === 100) badges.push("Course Completed");
-    return badges;
-  };
-
-  const totalCompleted = allProgress.reduce((sum, p) => sum + (p.completedLessons?.length || 0), 0);
-  const totalLessons = lessons.length;
+  const continueCourse =
+    courseStats.find((item) => item.progress > 0 && item.progress < 100) ||
+    courseStats.find((item) => item.progress === 0) ||
+    courseStats[0];
+  const totalCompleted = courseStats.reduce((sum, item) => sum + item.completedLessons.length, 0);
+  const totalAssignedLessons = courseStats.reduce((sum, item) => sum + item.courseLessons.length, 0);
+  const averageProgress = courseStats.length
+    ? Math.round(courseStats.reduce((sum, item) => sum + item.progress, 0) / courseStats.length)
+    : 0;
+  const certificatesEarned = courseStats.filter((item) => item.progress === 100).length;
+  const lockedCourses = session
+    ? courses.filter((course) => !enrolledCourses.some((enrolled) => enrolled.id === course.id))
+    : courses.slice(1);
 
   return (
-    <div className="relative isolate pt-28 pb-24 bg-[#F8F8F8] min-h-screen overflow-hidden">
-      <div
-        className="absolute inset-0 -z-10 bg-[url('/images/hero.png')] bg-cover bg-center opacity-10"
-        aria-hidden="true"
-      />
-      <div className="absolute inset-0 -z-10 bg-white/75" aria-hidden="true" />
-      <div className="container mx-auto px-6 relative z-10">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
-          <div>
-            <p className="text-primary font-bold uppercase tracking-widest text-sm mb-1">Learning Portal</p>
-            <h1 className="text-4xl font-extrabold text-dark">
-              Welcome back, <span className="text-primary">{studentName.split(" ")[0]}</span> 👋
-            </h1>
-            <p className="text-gray-500 mt-2">Continue your learning journey below.</p>
-          </div>
-          <div className="flex items-center gap-4">
-            {!session && (
-              <Link
-                href="/auth/login"
-                className="bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
-              >
-                Sign In to Save Progress
-              </Link>
-            )}
-            {session && (
-              <Link
-                href="/lms/profile"
-                className="flex items-center gap-3 bg-white px-5 py-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all"
-              >
-                <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold text-sm overflow-hidden border border-primary/20">
-                  {student?.profileImage ? (
-                    <img src={student.profileImage} alt={studentName} className="w-full h-full object-cover" />
-                  ) : (
-                    studentName.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <span className="font-bold text-dark">{studentName}</span>
-              </Link>
-            )}
-          </div>
-        </div>
+    <div className="relative isolate min-h-screen overflow-hidden bg-[#F6FAFF] pb-24 pt-28">
+      <div className="absolute inset-0 -z-10 bg-[url('/images/hero.png')] bg-cover bg-center opacity-10" aria-hidden="true" />
+      <div className="absolute inset-0 -z-10 bg-white/80" aria-hidden="true" />
 
-        {session && enrolledCourses.length > 0 && (
-          <div className="mb-10 bg-blue-50 border border-blue-100 rounded-3xl p-6 flex items-center gap-6 animate-pulse-slow">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm border border-blue-100">✅</div>
-            <div>
-              <h2 className="text-xl font-bold text-blue-900">Your Course is Now Active!</h2>
-              <p className="text-blue-700 opacity-80 font-medium">Your payment has been verified. You can now start learning below.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Stats Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          {[
-            { label: "Courses Enrolled", value: enrolledCourses.length.toString(), icon: "📚" },
-            { label: "Lessons Completed", value: totalCompleted.toString(), icon: "✅" },
-            { label: "Total Lessons", value: totalLessons.toString(), icon: "🎯" },
-            { label: "Certificates Earned", value: enrolledCourses.filter((_, i) => getProgress(enrolledCourses[i]?.id) === 100).length.toString(), icon: "🏆" },
-          ].map((stat, i) => (
-            <div key={i} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-              <div className="text-3xl mb-2">{stat.icon}</div>
-              <div className="text-3xl font-extrabold text-dark">{stat.value}</div>
-              <div className="text-sm text-gray-500 font-medium">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Course Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-12">
-          {enrolledCourses.map((course) => {
-            const progress = getProgress(course.id);
-            const courseLessons = lessons.filter((l) => l.courseId === course.id);
-            return (
-              <div key={course.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
-                <div className={`h-36 bg-gradient-to-br ${course.color} relative flex items-center justify-center`}>
-                  <span className="text-6xl">{course.icon}</span>
-                  <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full">
-                    {course.level}
-                  </div>
-                  {progress === 100 && (
-                    <div className="absolute top-4 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      ✓ Completed
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-xl font-bold text-dark group-hover:text-primary transition-colors leading-tight">
-                      {course.title}
-                    </h3>
-                    <span className="text-primary font-bold text-sm shrink-0 ml-2">{course.duration}</span>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-5">
-                    <span>📖 {courseLessons.length} lessons</span>
-                    <span>🏅 Certificate</span>
-                  </div>
-
-                  <div className="mb-5">
-                    <div className="flex justify-between text-sm mb-1.5">
-                      <span className="text-gray-500 font-medium">Progress</span>
-                      <span className="text-primary font-bold">{progress}%</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-primary to-primary-light rounded-full transition-all duration-500"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-5 flex flex-wrap gap-2">
-                    {getBadges(progress).map((badge) => (
-                      <span key={badge} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-primary">
-                        {badge}
-                      </span>
-                    ))}
-                  </div>
-
-                  {progress === 100 && (
-                    <a
-                      href={`/api/certificates/${course.id}`}
-                      className="mb-3 block w-full border border-green-500 bg-green-50 text-green-700 text-center font-bold py-3.5 rounded-xl hover:bg-green-100 transition-all"
-                    >
-                      Download Certificate
-                    </a>
-                  )}
-
+      <main className="container mx-auto px-6">
+        <section className="lms-hero mb-10 overflow-hidden rounded-[28px] border border-white/70 bg-dark p-6 text-white shadow-2xl md:p-8">
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+            <div className="animate-lms-rise">
+              <p className="mb-3 text-sm font-black uppercase tracking-widest text-primary-light">Learning Portal</p>
+              <h1 className="max-w-3xl text-4xl font-extrabold leading-tight md:text-6xl">
+                Welcome back, <span className="text-primary-light">{studentName.split(" ")[0]}</span>
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-white/75">
+                Your classes, progress, badges, assignments, and certificates are organized here so you can keep moving.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                {continueCourse && (
                   <Link
-                    href={`/lms/${course.id}`}
-                    className="block w-full bg-dark text-white text-center font-bold py-3.5 rounded-xl hover:bg-primary transition-all shadow-sm"
+                    href={`/lms/${continueCourse.course.id}`}
+                    className="rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary-light"
                   >
-                    {progress > 0 ? "Continue Learning →" : "Start Course →"}
+                    Continue Learning
                   </Link>
+                )}
+                {!session && (
+                  <Link
+                    href="/auth/login"
+                    className="rounded-xl border border-white/20 px-6 py-3 font-bold text-white transition hover:border-primary-light hover:text-primary-light"
+                  >
+                    Sign In to Save Progress
+                  </Link>
+                )}
+                {session && (
+                  <Link
+                    href="/lms/profile"
+                    className="rounded-xl border border-white/20 px-6 py-3 font-bold text-white transition hover:border-primary-light hover:text-primary-light"
+                  >
+                    View Profile
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            <div className="animate-lms-float rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur">
+              <div className="flex items-center gap-4">
+                <div className="relative grid h-28 w-28 shrink-0 place-items-center rounded-full bg-white/10">
+                  <div
+                    className="lms-progress-ring h-24 w-24"
+                    style={{ "--progress": `${averageProgress}%` } as CSSProperties}
+                  />
+                  <div className="absolute text-center">
+                    <div className="text-2xl font-extrabold">{averageProgress}%</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-white/60">Overall</div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-primary-light">Portal progress</p>
+                  <h2 className="text-2xl font-extrabold">{totalCompleted}/{totalAssignedLessons} lessons</h2>
+                  <p className="mt-1 text-sm text-white/65">{certificatesEarned} certificate{certificatesEarned === 1 ? "" : "s"} earned</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Other Available Courses */}
-        {session && courses.filter(c => !enrolledCourses.find(ec => ec.id === c.id)).length > 0 && (
-          <>
-            <h2 className="text-2xl font-bold text-dark mb-6">Available to Enroll</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {courses.filter(c => !enrolledCourses.find(ec => ec.id === ec.id && ec.id === c.id)).map((course) => (
-                <div key={course.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${course.color} flex items-center justify-center text-2xl`}>
-                      {course.icon}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-dark leading-tight">{course.title}</h4>
-                      <p className="text-xs text-gray-500">{course.level}</p>
-                    </div>
-                  </div>
-                  <Link
-                    href={`/enroll?course=${course.id}`}
-                    className="block w-full border border-primary text-primary text-center font-bold py-2 rounded-lg text-sm hover:bg-primary hover:text-white transition-all"
-                  >
-                    Enroll Now
-                  </Link>
-                </div>
-              ))}
             </div>
-          </>
+          </div>
+        </section>
+
+        <section className="mb-10 grid grid-cols-1 gap-5 md:grid-cols-4">
+          {[
+            { label: "Courses Active", value: enrolledCourses.length },
+            { label: "Lessons Done", value: totalCompleted },
+            { label: "Total Lessons", value: totalAssignedLessons },
+            { label: "Certificates", value: certificatesEarned },
+          ].map((stat, index) => (
+            <div key={stat.label} className="animate-lms-rise rounded-2xl border border-white bg-white p-5 shadow-sm" style={{ animationDelay: `${index * 80}ms` }}>
+              <p className="text-sm font-bold text-gray-500">{stat.label}</p>
+              <p className="mt-2 text-3xl font-extrabold text-dark">{stat.value}</p>
+            </div>
+          ))}
+        </section>
+
+        {continueCourse && (
+          <section className="mb-10 rounded-3xl border border-primary/15 bg-white p-6 shadow-sm">
+            <div className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-center">
+              <div>
+                <p className="text-sm font-black uppercase tracking-widest text-primary">Continue Where You Left Off</p>
+                <h2 className="mt-2 text-2xl font-extrabold text-dark">{continueCourse.nextLesson?.title || continueCourse.course.title}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
+                  {continueCourse.course.title} · {continueCourse.progress}% complete · next lesson ready.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link href={`/lms/${continueCourse.course.id}`} className="rounded-xl bg-dark px-6 py-3 font-bold text-white transition hover:-translate-y-0.5 hover:bg-primary">
+                    Open Lesson
+                  </Link>
+                  <a href={`/api/notes/${continueCourse.nextLesson?.id}`} className="rounded-xl border border-gray-200 px-6 py-3 font-bold text-dark transition hover:border-primary hover:text-primary">
+                    Download Notes
+                  </a>
+                </div>
+              </div>
+              <div className="rounded-2xl bg-light-gray p-5">
+                <div className="mb-3 flex items-center justify-between text-sm">
+                  <span className="font-bold text-gray-600">Course progress</span>
+                  <span className="font-black text-primary">{continueCourse.progress}%</span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-white">
+                  <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${continueCourse.progress}%` }} />
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {continueCourse.courseLessons.slice(0, 6).map((lesson) => (
+                    <span
+                      key={lesson.id}
+                      className={`h-2 rounded-full ${continueCourse.completedLessons.includes(lesson.id) ? "bg-primary" : "bg-white"}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
         )}
 
-        {/* Browse More */}
-        {session && enrolledCourses.length < courses.length && (
-          <div className="mt-12 bg-white rounded-3xl border border-dashed border-gray-200 p-10 text-center">
-            <div className="text-5xl mb-4">🚀</div>
-            <h3 className="text-2xl font-bold mb-2">Expand Your Skills</h3>
-            <p className="text-gray-500 mb-6">Enroll in more courses to unlock your full creative potential.</p>
-            <Link href="/courses" className="inline-block bg-primary text-white px-8 py-3.5 rounded-xl font-bold hover:bg-primary/90 transition-all">
-              Browse All Courses
+        <section className="mb-10">
+          <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-black uppercase tracking-widest text-primary">My Courses</p>
+              <h2 className="text-3xl font-extrabold text-dark">Unlocked learning paths</h2>
+            </div>
+            <Link href="/resources" className="font-bold text-primary hover:text-dark">
+              Open Resources
             </Link>
           </div>
+
+          <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
+            {courseStats.map(({ course, courseLessons, progress, completedLessons, nextLesson }, index) => {
+              const meta = getProgressMeta(progress);
+              const previewLessons = courseLessons.slice(0, 3);
+              return (
+                <article
+                  key={course.id}
+                  className="group animate-lms-rise overflow-hidden rounded-3xl border border-white bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className={`relative min-h-44 bg-gradient-to-br ${course.color} p-6 text-white`}>
+                    <div className="absolute inset-0 bg-black/10 opacity-0 transition group-hover:opacity-100" />
+                    <div className="relative flex items-start justify-between gap-4">
+                      <div>
+                        <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest ${meta.tone}`}>
+                          {meta.label}
+                        </span>
+                        <h3 className="mt-4 max-w-sm text-2xl font-extrabold leading-tight">{course.title}</h3>
+                        <p className="mt-2 text-sm text-white/80">{course.level}</p>
+                      </div>
+                      <div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-full bg-white/15">
+                        <div
+                          className="lms-progress-ring h-20 w-20"
+                          style={{ "--progress": `${progress}%` } as CSSProperties}
+                        />
+                        <span className="absolute text-sm font-black">{progress}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <div className="mb-5 grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-2xl bg-light-gray p-4">
+                        <p className="font-black text-dark">{completedLessons.length}/{courseLessons.length}</p>
+                        <p className="text-gray-500">Lessons complete</p>
+                      </div>
+                      <div className="rounded-2xl bg-light-gray p-4">
+                        <p className="font-black text-dark">{course.duration}</p>
+                        <p className="text-gray-500">Course duration</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-5">
+                      <p className="mb-3 text-xs font-black uppercase tracking-widest text-gray-400">Lesson Preview</p>
+                      <div className="space-y-2">
+                        {previewLessons.map((lesson) => {
+                          const isDone = completedLessons.includes(lesson.id);
+                          return (
+                            <div key={lesson.id} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2">
+                              <span className={`h-3 w-3 rounded-full ${isDone ? "bg-green-500" : "bg-primary/25"}`} />
+                              <span className="min-w-0 flex-1 truncate text-sm font-bold text-dark">{lesson.title}</span>
+                              <span className="text-xs text-gray-400">{lesson.duration}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="mb-5 flex flex-wrap gap-2">
+                      {getBadges(progress).map((badge, badgeIndex) => (
+                        <span
+                          key={badge.label}
+                          title={badge.detail}
+                          className="animate-lms-badge rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-primary"
+                          style={{ animationDelay: `${badgeIndex * 120}ms` }}
+                        >
+                          {badge.label}
+                        </span>
+                      ))}
+                    </div>
+
+                    {nextLesson && (
+                      <p className="mb-5 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+                        Next: <span className="font-black">{nextLesson.title}</span>
+                      </p>
+                    )}
+
+                    {progress === 100 && (
+                      <a href={`/api/certificates/${course.id}`} className="mb-3 block rounded-xl border border-green-500 bg-green-50 py-3 text-center font-bold text-green-700 transition hover:bg-green-100">
+                        Download Certificate
+                      </a>
+                    )}
+
+                    <Link href={`/lms/${course.id}`} className="block rounded-xl bg-dark py-3.5 text-center font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-primary">
+                      {meta.action}
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        {lockedCourses.length > 0 && (
+          <section>
+            <div className="mb-6">
+              <p className="text-sm font-black uppercase tracking-widest text-primary">Locked Courses</p>
+              <h2 className="text-2xl font-extrabold text-dark">Available when you enroll</h2>
+            </div>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              {lockedCourses.map((course) => (
+                <article key={course.id} className="rounded-2xl border border-gray-100 bg-white p-5 opacity-85 shadow-sm transition hover:opacity-100 hover:shadow-md">
+                  <div className={`mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br ${course.color} text-2xl grayscale`}>
+                    {course.shortTitle.slice(0, 1)}
+                  </div>
+                  <div className="mb-3 inline-flex rounded-full border border-gray-200 px-3 py-1 text-xs font-black uppercase tracking-widest text-gray-500">
+                    Locked
+                  </div>
+                  <h3 className="font-extrabold text-dark">{course.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-gray-500">{course.description}</p>
+                  <Link href={`/enroll?course=${course.id}`} className="mt-5 block rounded-xl border border-primary py-2.5 text-center text-sm font-bold text-primary transition hover:bg-primary hover:text-white">
+                    Enroll to Unlock
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </section>
         )}
-      </div>
+      </main>
     </div>
   );
 }
