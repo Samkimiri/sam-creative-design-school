@@ -84,7 +84,7 @@ function ReviewCard({
   onEdit?: (review: Review) => void;
 }) {
   return (
-    <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+    <article className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg motion-safe:hover:-translate-y-1">
       <div className="flex items-start justify-between gap-3 mb-4">
         <Stars rating={review.rating} />
         <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ function ReviewCard({
           <button
             type="button"
             onClick={() => onEdit(review)}
-            className="text-xs font-bold text-primary border border-primary/30 px-3 py-1.5 rounded-lg hover:bg-primary hover:text-white transition-all"
+            className="text-xs font-bold text-primary border border-primary/30 px-3 py-1.5 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5"
           >
             Edit
           </button>
@@ -104,7 +104,7 @@ function ReviewCard({
       </div>
       <p className="text-gray-600 mb-6 italic leading-relaxed">&ldquo;{review.text}&rdquo;</p>
       <div className="flex items-center gap-3">
-        <div className={`w-11 h-11 ${index % 2 === 0 ? "bg-blue-500" : "bg-pink-500"} rounded-full flex items-center justify-center text-white font-bold text-sm`}>
+        <div className={`w-11 h-11 ${index % 2 === 0 ? "bg-blue-500" : "bg-pink-500"} rounded-full flex items-center justify-center text-white font-bold text-sm transition-transform duration-300 motion-safe:hover:scale-105`}>
           {initials(review.name)}
         </div>
         <div>
@@ -207,13 +207,13 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
       <section className="py-20 bg-light-gray">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-8 items-center">
-            <div>
+            <div className="animate-fade-in">
               <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Top Review</span>
               <h2 className="text-3xl md:text-4xl font-extrabold mb-4">What Students Are Saying</h2>
               <p className="text-gray-600 mb-6 max-w-xl">
                 See how students rate their learning experience, then add your own review on the reviews page.
               </p>
-              <Link href="/reviews" className="inline-flex bg-primary text-white px-7 py-3 rounded-xl font-bold hover:bg-primary/90 transition-all">
+              <Link href="/reviews" className="inline-flex bg-primary text-white px-7 py-3 rounded-xl font-bold hover:bg-primary/90 transition-all duration-300 motion-safe:hover:-translate-y-0.5">
                 View and Add Reviews
               </Link>
             </div>
@@ -227,7 +227,7 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
   return (
     <section className="py-24 bg-light-gray">
       <div className="container mx-auto px-6">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-12 animate-fade-in">
           <div>
             <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Student Reviews</span>
             <h1 className="text-3xl md:text-5xl font-extrabold mb-3">Reviews & Ratings</h1>
@@ -235,7 +235,7 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
               Share your learning experience and help future students choose the right course.
             </p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 px-6 py-4 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 px-6 py-4 shadow-sm transition-all duration-300 hover:shadow-lg motion-safe:hover:-translate-y-1">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Average Rating</p>
             <div className="flex items-center gap-3">
               <span className="text-3xl font-extrabold text-dark">{averageRating}</span>
@@ -245,7 +245,7 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8">
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm">
+          <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 p-6 md:p-8 shadow-sm transition-all duration-300 hover:shadow-lg">
             <div className="flex items-start justify-between gap-4 mb-5">
               <h2 className="text-xl font-bold text-dark">{form.id ? "Edit Your Review" : "Leave a Review"}</h2>
               {form.id && (
@@ -289,7 +289,7 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(0)}
                       onClick={() => setForm((current) => ({ ...current, rating: star }))}
-                      className={`text-3xl transition-transform hover:scale-110 ${active ? "text-primary" : "text-gray-300"}`}
+                      className={`text-3xl transition-transform duration-200 hover:scale-110 ${active ? "text-primary" : "text-gray-300"}`}
                       aria-label={`Rate ${star} stars`}
                     >
                       ★
@@ -310,7 +310,7 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
 
             <button
               disabled={submitting}
-              className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50"
+              className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 motion-safe:hover:-translate-y-0.5"
             >
               {submitting ? "Saving..." : form.id ? "Save Changes" : "Submit Review"}
             </button>

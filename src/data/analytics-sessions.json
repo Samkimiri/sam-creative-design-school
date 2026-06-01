@@ -1,1 +1,193 @@
-[]
+[
+  {
+    "id": "s-1780235616413-avce8cm",
+    "visitorId": "v-1780235616412-8mmjj08",
+    "sessionId": "s-1780235616413-avce8cm",
+    "firstSeen": "2026-05-31T13:53:50.586Z",
+    "lastSeen": "2026-05-31T18:06:20.837Z",
+    "pageViews": 1,
+    "engagements": 3,
+    "landingPage": "/",
+    "lastPage": "/auth/login",
+    "pages": [
+      "/",
+      "/auth/login"
+    ],
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "userId": null,
+    "userName": null,
+    "userEmail": null
+  },
+  {
+    "id": "s-1780249330827-arqkopg",
+    "visitorId": "v-1779222972039-qpauk8q",
+    "sessionId": "s-1780249330827-arqkopg",
+    "firstSeen": "2026-05-31T17:42:16.057Z",
+    "lastSeen": "2026-05-31T17:53:39.138Z",
+    "pageViews": 6,
+    "engagements": 24,
+    "landingPage": "/",
+    "lastPage": "/lms",
+    "pages": [
+      "/",
+      "/auth/login",
+      "/lms",
+      "/lms/profile"
+    ],
+    "referrer": "Direct",
+    "device": "Mobile",
+    "browser": "Chrome",
+    "userId": "cecyp72",
+    "userName": "Samuel Ndung'u Kimiri ",
+    "userEmail": "samkimiri550307@gmail.com"
+  },
+  {
+    "id": "s-1780235616413-avce8cm",
+    "visitorId": "v-1780235616412-8mmjj08",
+    "sessionId": "s-1780235616413-avce8cm",
+    "firstSeen": "2026-05-31T13:53:50.586Z",
+    "lastSeen": "2026-05-31T17:41:43.285Z",
+    "pageViews": 0,
+    "engagements": 3,
+    "landingPage": "/",
+    "lastPage": "/auth/login",
+    "pages": [
+      "/",
+      "/auth/login"
+    ],
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "userId": null,
+    "userName": null,
+    "userEmail": null
+  },
+  {
+    "id": "s-1780235677872-88j05o5",
+    "visitorId": "v-1780233251667-zybw5xd",
+    "sessionId": "s-1780235677872-88j05o5",
+    "firstSeen": "2026-05-31T13:54:38.804Z",
+    "lastSeen": "2026-05-31T17:36:31.050Z",
+    "pageViews": 3,
+    "engagements": 30,
+    "landingPage": "/",
+    "lastPage": "/lms",
+    "pages": [
+      "/",
+      "/enroll",
+      "/lms"
+    ],
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "userId": "0rr4bll",
+    "userName": "MARTIN KINYUA",
+    "userEmail": "Kinyuam047@gmail.com"
+  },
+  {
+    "id": "s-1780235677872-88j05o5",
+    "visitorId": "v-1780233251667-zybw5xd",
+    "sessionId": "s-1780235677872-88j05o5",
+    "firstSeen": "2026-05-31T13:54:38.804Z",
+    "lastSeen": "2026-05-31T17:36:31.050Z",
+    "pageViews": 3,
+    "engagements": 30,
+    "landingPage": "/",
+    "lastPage": "/lms",
+    "pages": [
+      "/",
+      "/enroll",
+      "/lms"
+    ],
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "userId": "0rr4bll",
+    "userName": "MARTIN KINYUA",
+    "userEmail": "Kinyuam047@gmail.com"
+  },
+  {
+    "id": "s-1780233535081-04kboly",
+    "visitorId": "v-1779222972039-qpauk8q",
+    "sessionId": "s-1780233535081-04kboly",
+    "firstSeen": "2026-05-31T13:42:05.502Z",
+    "lastSeen": "2026-05-31T13:51:42.933Z",
+    "pageViews": 0,
+    "engagements": 25,
+    "landingPage": "/lms",
+    "lastPage": "/lms/illustrator-training",
+    "pages": [
+      "/lms",
+      "/lms/illustrator-training"
+    ],
+    "referrer": "Direct",
+    "device": "Mobile",
+    "browser": "Chrome",
+    "userId": "cecyp72",
+    "userName": "Samuel Ndung'u Kimiri ",
+    "userEmail": "samkimiri550307@gmail.com"
+  },
+  {
+    "id": "s-1780233535081-04kboly",
+    "visitorId": "v-1779222972039-qpauk8q",
+    "sessionId": "s-1780233535081-04kboly",
+    "firstSeen": "2026-05-31T13:42:05.502Z",
+    "lastSeen": "2026-05-31T13:51:42.933Z",
+    "pageViews": 0,
+    "engagements": 25,
+    "landingPage": "/lms",
+    "lastPage": "/lms/illustrator-training",
+    "pages": [
+      "/lms",
+      "/lms/illustrator-training"
+    ],
+    "referrer": "Direct",
+    "device": "Mobile",
+    "browser": "Chrome",
+    "userId": "cecyp72",
+    "userName": "Samuel Ndung'u Kimiri ",
+    "userEmail": "samkimiri550307@gmail.com"
+  },
+  {
+    "id": "s-1780229148838-2kgpkzp",
+    "visitorId": "v-1779814766380-5nfn8o9",
+    "sessionId": "s-1780229148838-2kgpkzp",
+    "firstSeen": "2026-05-31T13:48:06.494Z",
+    "lastSeen": "2026-05-31T13:48:06.564Z",
+    "pageViews": 0,
+    "engagements": 2,
+    "landingPage": "/lms/photoshop-masterclass",
+    "lastPage": "/lms/photoshop-masterclass",
+    "pages": [
+      "/lms/photoshop-masterclass"
+    ],
+    "referrer": "https://sam-creative-design-school.vercel.app/admin",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "userId": "admin-1",
+    "userName": "Samuel Kimiri",
+    "userEmail": "samcreativegraphics7@gmail.com"
+  },
+  {
+    "id": "s-1780229148838-2kgpkzp",
+    "visitorId": "v-1779814766380-5nfn8o9",
+    "sessionId": "s-1780229148838-2kgpkzp",
+    "firstSeen": "2026-05-31T13:48:06.494Z",
+    "lastSeen": "2026-05-31T13:48:06.564Z",
+    "pageViews": 0,
+    "engagements": 2,
+    "landingPage": "/lms/photoshop-masterclass",
+    "lastPage": "/lms/photoshop-masterclass",
+    "pages": [
+      "/lms/photoshop-masterclass"
+    ],
+    "referrer": "https://sam-creative-design-school.vercel.app/admin",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "userId": "admin-1",
+    "userName": "Samuel Kimiri",
+    "userEmail": "samcreativegraphics7@gmail.com"
+  }
+]

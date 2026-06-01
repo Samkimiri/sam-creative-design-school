@@ -9,7 +9,8 @@ const SECRET = new TextEncoder().encode(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect LMS and Admin routes
+  // Protect LMS routes. The admin page can render its password prompt for everyone;
+  // admin API routes perform the real authorization checks.
   if (pathname.startsWith("/lms") || pathname.startsWith("/admin")) {
     const token = request.cookies.get("session")?.value;
 
@@ -17,22 +18,11 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith("/lms")) {
         return NextResponse.redirect(new URL("/auth/login", request.url));
       }
-      // For /admin, we allow it to load the password prompt if not logged in
-      // but ideally we'd want admin to login via /auth/login too
     }
 
     try {
       if (token) {
-        const { payload } = await jwtVerify(token, SECRET);
-        
-        // If it's an admin route, check role
-        if (pathname.startsWith("/admin")) {
-          const user = payload.user as { role?: string };
-          if (user.role !== "admin") {
-             // If not admin, redirect to dashboard
-             return NextResponse.redirect(new URL("/lms", request.url));
-          }
-        }
+        await jwtVerify(token, SECRET);
       }
     } catch {
       if (pathname.startsWith("/lms")) {

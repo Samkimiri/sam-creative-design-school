@@ -70,12 +70,12 @@ export default function Home() {
       </section>
 
       {/* ── Stats ────────────────────────────────────────── */}
-      <section className="py-12 bg-white border-b border-gray-100">
+      <section className="py-12 bg-white border-b border-gray-100 animate-fade-in">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-4xl md:text-5xl font-extrabold text-primary mb-1">{stat.value}</div>
+              <div key={i} className="text-center transition-transform duration-300 motion-safe:hover:-translate-y-1">
+                <div className="text-4xl md:text-5xl font-extrabold text-primary mb-1 transition-colors duration-300">{stat.value}</div>
                 <div className="text-sm text-gray-500 font-medium">{stat.label}</div>
               </div>
             ))}
@@ -88,7 +88,7 @@ export default function Home() {
       {/* ── Why Choose Us ────────────────────────────────── */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 animate-fade-in">
             <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Why Us</span>
             <h2 className="text-3xl md:text-4xl font-extrabold mb-4">Why Choose Sam Creative Design School?</h2>
             <div className="w-20 h-1.5 bg-primary mx-auto rounded-full" />
@@ -105,8 +105,8 @@ export default function Home() {
               { title: "Small Batches", desc: "We keep classes small to ensure every student gets individual attention.", icon: "👥" },
               { title: "Career Support", desc: "Tips on freelancing, job applications, and building your client base after graduation.", icon: "🚀" },
             ].map((item, i) => (
-              <div key={i} className="p-7 rounded-2xl bg-light-gray card-hover group">
-                <div className="text-4xl mb-4">{item.icon}</div>
+              <div key={i} className="p-7 rounded-2xl bg-light-gray card-hover group transition-all duration-300">
+                <div className="text-4xl mb-4 transition-transform duration-300 motion-safe:group-hover:scale-110">{item.icon}</div>
                 <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{item.desc}</p>
               </div>
@@ -118,7 +118,7 @@ export default function Home() {
       {/* ── Courses Preview ───────────────────────────────── */}
       <section className="py-24 bg-dark text-white">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 animate-fade-in">
             <div>
               <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Our Programs</span>
               <h2 className="text-3xl md:text-4xl font-extrabold">Popular Courses</h2>
@@ -131,7 +131,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {courses.map((course) => (
-              <div key={course.id} className="group bg-gray-900 rounded-2xl overflow-hidden border border-gray-800 card-hover">
+              <div key={course.id} className="group bg-gray-900 rounded-2xl overflow-hidden border border-gray-800 card-hover transition-all duration-300">
                 <div className="h-48 relative overflow-hidden flex items-center justify-center">
                   <div className={`absolute inset-0 bg-gradient-to-br ${course.color} opacity-40`} />
                   <img 
@@ -149,7 +149,7 @@ export default function Home() {
                   <p className="text-gray-400 text-sm mb-5 line-clamp-2">{course.description}</p>
                   <div className="flex justify-between items-center pt-4 border-t border-gray-800">
                     <span className="font-extrabold text-primary">{course.priceRange}</span>
-                    <Link href={`/enroll?course=${course.id}`} className="text-xs font-bold bg-white text-dark px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-all">
+                    <Link href={`/enroll?course=${course.id}`} className="text-xs font-bold bg-white text-dark px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5">
                       Enroll
                     </Link>
                   </div>
@@ -163,7 +163,7 @@ export default function Home() {
       {/* ── Gallery Preview ───────────────────────────────── */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 animate-fade-in">
             <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Student Work</span>
             <h2 className="text-3xl md:text-4xl font-extrabold mb-4">Real Projects by Real Students</h2>
             <div className="w-20 h-1.5 bg-primary mx-auto rounded-full" />
@@ -177,14 +177,14 @@ export default function Home() {
               { emoji: "📱", color: "from-purple-400 to-pink-500", label: "Social Media Kit — Photoshop" },
               { emoji: "🎯", color: "from-teal-400 to-cyan-500", label: "Icon Set — Illustrator" },
             ].map((item, i) => (
-              <div key={i} className={`bg-gradient-to-br ${item.color} rounded-2xl aspect-square flex flex-col items-center justify-center text-white group hover:scale-[1.02] transition-all cursor-pointer`}>
-                <span className="text-5xl mb-2 group-hover:scale-110 transition-transform">{item.emoji}</span>
+              <div key={i} className={`bg-gradient-to-br ${item.color} rounded-2xl aspect-square flex flex-col items-center justify-center text-white group hover:scale-[1.02] transition-all duration-300 cursor-pointer motion-safe:hover:-translate-y-1`}>
+                <span className="text-5xl mb-2 group-hover:scale-110 transition-transform duration-300">{item.emoji}</span>
                 <span className="text-xs font-bold text-white/80 text-center px-3">{item.label}</span>
               </div>
             ))}
           </div>
           <div className="text-center">
-            <Link href="/gallery" className="inline-block bg-dark text-white px-10 py-4 rounded-full font-bold hover:bg-primary transition-all shadow-lg">
+            <Link href="/gallery" className="inline-block bg-dark text-white px-10 py-4 rounded-full font-bold hover:bg-primary transition-all duration-300 shadow-lg motion-safe:hover:-translate-y-1">
               View Full Gallery →
             </Link>
           </div>
@@ -196,7 +196,7 @@ export default function Home() {
       {/* ── CTA ──────────────────────────────────────────── */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-6">
-          <div className="bg-primary rounded-3xl p-12 md:p-20 text-center text-white relative overflow-hidden shadow-2xl shadow-primary/30">
+          <div className="bg-primary rounded-3xl p-12 md:p-20 text-center text-white relative overflow-hidden shadow-2xl shadow-primary/30 animate-fade-in">
             <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -mr-40 -mt-40" />
             <div className="absolute bottom-0 left-0 w-60 h-60 bg-black/10 rounded-full -ml-30 -mb-30" />
             <div className="relative z-10">
@@ -206,10 +206,10 @@ export default function Home() {
                 Don&apos;t wait to build the skills that will shape your future. Join hundreds of students mastering design and engineering with Samuel Kimiri.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/enroll" className="inline-block bg-dark text-white px-12 py-5 rounded-full font-bold text-xl hover:scale-105 transition-all shadow-xl">
+                <Link href="/enroll" className="inline-block bg-dark text-white px-12 py-5 rounded-full font-bold text-xl hover:scale-105 transition-all duration-300 shadow-xl">
                   Enroll Now
                 </Link>
-                <Link href="/faq" className="inline-block bg-white/20 border border-white/30 text-white px-12 py-5 rounded-full font-bold text-xl hover:bg-white/30 transition-all">
+                <Link href="/faq" className="inline-block bg-white/20 border border-white/30 text-white px-12 py-5 rounded-full font-bold text-xl hover:bg-white/30 transition-all duration-300 motion-safe:hover:-translate-y-1">
                   Read FAQ
                 </Link>
               </div>

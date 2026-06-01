@@ -102,10 +102,42 @@ interface AdminAssignment {
   createdAt: string;
 }
 
+type AdminTab = "analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "content";
+
+type AdminResponse<T> = {
+  success?: boolean;
+  message?: string;
+  data?: T;
+  summary?: AnalyticsSummary;
+  sessions?: VisitorSession[];
+  events?: AnalyticsEvent[];
+};
+
+type SectionLoad<T> =
+  | { ok: true; status: number; data: AdminResponse<T> }
+  | { ok: false; status: number; message: string };
+
+const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "reviews", "projects", "assignments", "content"];
+
+const statusClass = {
+  approved: "bg-green-50 text-green-700 border-green-200",
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  rejected: "bg-red-50 text-red-700 border-red-200",
+  submitted: "bg-blue-50 text-blue-700 border-blue-200",
+  reviewed: "bg-green-50 text-green-700 border-green-200",
+  revision: "bg-yellow-50 text-yellow-800 border-yellow-200",
+};
+
+const adminCardMotion = "motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:-translate-y-0.5 hover:shadow-md";
+const adminPanelMotion = "motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out hover:-translate-y-0.5 hover:shadow-md";
+const adminRowMotion = "motion-safe:transition-colors motion-safe:duration-150 hover:bg-gray-50";
+const adminActionMotion = "motion-safe:transition-all motion-safe:duration-150 motion-safe:ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+const adminTabMotion = "motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:-translate-y-px active:translate-y-0";
+
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
-  const [tab, setTab] = useState<"analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "content">("analytics");
+  const [tab, setTab] = useState<AdminTab>("analytics");
   const [students, setStudents] = useState<Student[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [reviews, setReviews] = useState<AdminReview[]>([]);
@@ -117,42 +149,61 @@ export default function AdminDashboard() {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [pendingAction, setPendingAction] = useState("");
 
   const fetchData = async (pw?: string) => {
     setLoading(true);
+    setError("");
+    setNotice("");
     try {
       const headers = { "Content-Type": "application/json" };
       const body = JSON.stringify({ password: pw });
-      
-      const [sRes, eRes, aRes, rRes, pRes, asRes] = await Promise.all([
-        fetch("/api/admin/students", { method: "POST", headers, body }),
-        fetch("/api/admin/enrollments", { method: "POST", headers, body }),
-        fetch("/api/admin/analytics", { method: "POST", headers, body }),
-        fetch("/api/admin/reviews", { method: "POST", headers, body }),
-        fetch("/api/admin/projects", { method: "POST", headers, body }),
-        fetch("/api/admin/assignments", { method: "POST", headers, body }),
-      ]);
-      
-      const [sData, eData, aData, rData, pData, asData] = await Promise.all([sRes.json(), eRes.json(), aRes.json(), rRes.json(), pRes.json(), asRes.json()]);
-      
-      if (sData.success) {
-        setStudents(sData.data);
-        setEnrollments(eData.data);
-        if (aData.success) {
-          setVisitorSessions(aData.sessions);
-          setAnalyticsEvents(aData.events);
-          setAnalyticsSummary(aData.summary);
+
+      const loadSection = async <T,>(url: string): Promise<SectionLoad<T>> => {
+        const res = await fetch(url, { method: "POST", headers, body });
+        const data = await res.json().catch(() => ({ success: false, message: "Invalid server response" })) as AdminResponse<T>;
+        if (!res.ok || !data.success) {
+          return { ok: false, status: res.status, message: data.message || "Could not load dashboard data" };
         }
-        if (rData.success) setReviews(rData.data);
-        if (pData.success) setProjects(pData.data);
-        if (asData.success) setAssignments(asData.data);
+        return { ok: true, status: res.status, data };
+      };
+
+      const [sData, eData, aData, rData, pData, asData] = await Promise.all([
+        loadSection<Student[]>("/api/admin/students"),
+        loadSection<Enrollment[]>("/api/admin/enrollments"),
+        loadSection<never>("/api/admin/analytics"),
+        loadSection<AdminReview[]>("/api/admin/reviews"),
+        loadSection<AdminProject[]>("/api/admin/projects"),
+        loadSection<AdminAssignment[]>("/api/admin/assignments"),
+      ]);
+
+      const results = [sData, eData, aData, rData, pData, asData];
+      const authorized = results.some((result) => result.ok);
+
+      if (authorized) {
+        if (sData.ok) setStudents(Array.isArray(sData.data.data) ? sData.data.data : []);
+        if (eData.ok) setEnrollments(Array.isArray(eData.data.data) ? eData.data.data : []);
+        if (aData.ok) {
+          setVisitorSessions(Array.isArray(aData.data.sessions) ? aData.data.sessions : []);
+          setAnalyticsEvents(Array.isArray(aData.data.events) ? aData.data.events : []);
+          setAnalyticsSummary(aData.data.summary ?? null);
+        }
+        if (rData.ok) setReviews(Array.isArray(rData.data.data) ? rData.data.data : []);
+        if (pData.ok) setProjects(Array.isArray(pData.data.data) ? pData.data.data : []);
+        if (asData.ok) setAssignments(Array.isArray(asData.data.data) ? asData.data.data : []);
         setAuthed(true);
         if (pw) setPassword(pw);
+        const failedSections = results.filter((result) => !result.ok && result.status !== 401).length;
+        if (failedSections > 0) {
+          setNotice(`${failedSections} dashboard section${failedSections === 1 ? "" : "s"} could not load. Try refreshing.`);
+        }
       } else if (pw) {
-        setError("Incorrect password");
+        setError("Incorrect password.");
       }
     } catch (err) {
       console.error(err);
+      setError("Could not load dashboard data. Try again.");
     } finally {
       setLoading(false);
     }
@@ -164,40 +215,104 @@ export default function AdminDashboard() {
   }, []);
 
   const confirmEnrollment = async (enrollmentId: string) => {
-    await fetch("/api/admin/enrollments", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, enrollmentId, status: "confirmed" }),
-    });
-    setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, status: "confirmed" } : e));
+    await runMutation<Enrollment>(
+      `enrollment-${enrollmentId}`,
+      "/api/admin/enrollments",
+      { password, enrollmentId, status: "confirmed" },
+      (updated) => {
+        setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, ...updated } : e));
+        void fetchData(password);
+      }
+    );
   };
 
   const setReviewApproval = async (id: string, approved: boolean) => {
-    await fetch("/api/admin/reviews", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, id, approved }),
-    });
-    setReviews((prev) => prev.map((review) => review.id === id ? { ...review, approved } : review));
+    await runMutation<AdminReview>(
+      `review-${id}`,
+      "/api/admin/reviews",
+      { password, id, approved },
+      (updated) => setReviews((prev) => prev.map((review) => review.id === id ? { ...review, ...updated } : review))
+    );
+  };
+
+  const deleteReview = async (id: string, name: string) => {
+    if (!window.confirm(`Delete ${name}'s review permanently? This removes it from the public reviews too.`)) return;
+    await runMutation<AdminReview>(
+      `review-delete-${id}`,
+      "/api/admin/reviews",
+      { password, id },
+      () => setReviews((prev) => prev.filter((review) => review.id !== id)),
+      "DELETE"
+    );
   };
 
   const setProjectStatus = async (id: string, status: AdminProject["status"]) => {
-    await fetch("/api/admin/projects", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, id, status }),
-    });
-    setProjects((prev) => prev.map((project) => project.id === id ? { ...project, status } : project));
+    await runMutation<AdminProject>(
+      `project-${id}`,
+      "/api/admin/projects",
+      { password, id, status },
+      (updated) => setProjects((prev) => prev.map((project) => project.id === id ? { ...project, ...updated } : project))
+    );
+  };
+
+  const deleteProject = async (id: string, title: string) => {
+    if (!window.confirm(`Delete "${title}" permanently? This removes it from the gallery and student project lists.`)) return;
+    await runMutation<AdminProject>(
+      `project-delete-${id}`,
+      "/api/admin/projects",
+      { password, id },
+      () => setProjects((prev) => prev.filter((project) => project.id !== id)),
+      "DELETE"
+    );
   };
 
   const markAssignment = async (id: string, status: "reviewed" | "revision") => {
     const feedback = window.prompt("Feedback for the student?") || "";
-    await fetch("/api/admin/assignments", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, id, status, feedback }),
-    });
-    setAssignments((prev) => prev.map((item) => item.id === id ? { ...item, status, feedback } : item));
+    await runMutation<AdminAssignment>(
+      `assignment-${id}`,
+      "/api/admin/assignments",
+      { password, id, status, feedback },
+      (updated) => setAssignments((prev) => prev.map((item) => item.id === id ? { ...item, ...updated } : item))
+    );
+  };
+
+  const deleteAssignment = async (id: string, studentName: string) => {
+    if (!window.confirm(`Delete ${studentName}'s assignment permanently? This removes it from the student's assignment records too.`)) return;
+    await runMutation<AdminAssignment>(
+      `assignment-delete-${id}`,
+      "/api/admin/assignments",
+      { password, id },
+      () => setAssignments((prev) => prev.filter((assignment) => assignment.id !== id)),
+      "DELETE"
+    );
+  };
+
+  const runMutation = async <T,>(
+    actionKey: string,
+    url: string,
+    payload: Record<string, unknown>,
+    onSuccess: (data: T) => void,
+    method: "PATCH" | "DELETE" = "PATCH"
+  ) => {
+    setPendingAction(actionKey);
+    setNotice("");
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({ success: false, message: "Invalid server response" })) as AdminResponse<T>;
+      if (!res.ok || !data.success || !data.data) {
+        setNotice(data.message || "Action failed. Refresh and try again.");
+        return;
+      }
+      onSuccess(data.data);
+    } catch {
+      setNotice("Action failed. Check your connection and try again.");
+    } finally {
+      setPendingAction("");
+    }
   };
 
   if (!authed) {
@@ -219,7 +334,7 @@ export default function AdminDashboard() {
               className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary placeholder:text-gray-500"
               required
             />
-            <button type="submit" disabled={loading} className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50">
+            <button type="submit" disabled={loading} className={`w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 disabled:opacity-50 ${adminActionMotion}`}>
               {loading ? "Verifying..." : "Enter Dashboard"}
             </button>
           </form>
@@ -250,7 +365,7 @@ export default function AdminDashboard() {
             { label: "Today's Visitors", value: analyticsSummary?.todayVisitors ?? 0, icon: "📈", color: "bg-blue-50 text-blue-600" },
             { label: "Engagements", value: analyticsSummary?.engagements ?? 0, icon: "🖱️", color: "bg-orange-50 text-orange-600" },
           ].map((stat, i) => (
-            <div key={i} className={`rounded-2xl p-5 ${stat.color}`}>
+            <div key={i} className={`rounded-2xl p-5 ${stat.color} ${adminCardMotion}`}>
               <div className="text-3xl mb-2">{stat.icon}</div>
               <div className="text-2xl font-extrabold">{stat.value}</div>
               <div className="text-xs font-medium opacity-70">{stat.label}</div>
@@ -258,13 +373,19 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        {notice && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-800">
+            {notice}
+          </div>
+        )}
+
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          {(["analytics", "enrollments", "students", "reviews", "projects", "assignments", "content"] as const).map((t) => (
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+          {adminTabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${tab === t ? "bg-dark text-white" : "bg-white text-gray-500 hover:text-dark border border-gray-200"}`}
+              className={`shrink-0 px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm ${adminTabMotion} ${tab === t ? "bg-dark text-white shadow-sm" : "bg-white text-gray-500 hover:text-dark border border-gray-200 hover:border-gray-300"}`}
             >
               {t === "analytics" ? "Visitors" : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
@@ -274,12 +395,12 @@ export default function AdminDashboard() {
         {tab === "analytics" && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+              <div className={`bg-white rounded-2xl border border-gray-100 p-6 shadow-sm ${adminPanelMotion}`}>
                 <h3 className="font-bold text-dark mb-4">Top Pages</h3>
                 {analyticsSummary?.topPages.length ? (
                   <ul className="space-y-3">
                     {analyticsSummary.topPages.map((p) => (
-                      <li key={p.path} className="flex justify-between items-center text-sm">
+                      <li key={p.path} className={`flex justify-between items-center text-sm rounded-xl px-2 py-1 ${adminRowMotion}`}>
                         <span className="text-gray-700 truncate mr-4">{p.path}</span>
                         <span className="font-bold text-primary shrink-0">{p.count} views</span>
                       </li>
@@ -289,12 +410,12 @@ export default function AdminDashboard() {
                   <p className="text-gray-400 text-sm">No page views yet. Browse the site to collect data.</p>
                 )}
               </div>
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+              <div className={`bg-white rounded-2xl border border-gray-100 p-6 shadow-sm ${adminPanelMotion}`}>
                 <h3 className="font-bold text-dark mb-4">Top Clicks &amp; Actions</h3>
                 {analyticsSummary?.topClicks.length ? (
                   <ul className="space-y-3">
                     {analyticsSummary.topClicks.map((c) => (
-                      <li key={c.label} className="flex justify-between items-center text-sm gap-4">
+                      <li key={c.label} className={`flex justify-between items-center text-sm gap-4 rounded-xl px-2 py-1 ${adminRowMotion}`}>
                         <span className="text-gray-700 truncate">{c.label}</span>
                         <span className="font-bold text-primary shrink-0">{c.count}</span>
                       </li>
@@ -306,7 +427,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
               <div className="px-6 py-4 border-b border-gray-100">
                 <h3 className="font-bold text-dark">Visitor Sessions</h3>
                 <p className="text-xs text-gray-500 mt-1">Everyone who viewed or engaged with the website</p>
@@ -328,7 +449,7 @@ export default function AdminDashboard() {
                     {visitorSessions.length === 0 ? (
                       <tr><td colSpan={7} className="text-center py-12 text-gray-400">No visitors tracked yet</td></tr>
                     ) : visitorSessions.map((s) => (
-                      <tr key={s.sessionId} className="hover:bg-gray-50">
+                      <tr key={s.sessionId} className={adminRowMotion}>
                         <td className="px-6 py-4">
                           {s.userName ? (
                             <>
@@ -361,7 +482,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
               <div className="px-6 py-4 border-b border-gray-100">
                 <h3 className="font-bold text-dark">Live Activity Feed</h3>
                 <p className="text-xs text-gray-500 mt-1">Recent page views, clicks, and form submissions</p>
@@ -381,7 +502,7 @@ export default function AdminDashboard() {
                     {analyticsEvents.length === 0 ? (
                       <tr><td colSpan={5} className="text-center py-8 text-gray-400">No activity yet</td></tr>
                     ) : analyticsEvents.map((ev) => (
-                      <tr key={ev.id} className="hover:bg-gray-50">
+                      <tr key={ev.id} className={adminRowMotion}>
                         <td className="px-6 py-3 text-gray-500 whitespace-nowrap text-xs">
                           {new Date(ev.createdAt).toLocaleString()}
                         </td>
@@ -408,7 +529,7 @@ export default function AdminDashboard() {
 
         {/* Enrollments Table */}
         {tab === "enrollments" && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
@@ -426,7 +547,7 @@ export default function AdminDashboard() {
                   {enrollments.length === 0 ? (
                     <tr><td colSpan={7} className="text-center py-12 text-gray-400">No enrollments yet</td></tr>
                   ) : enrollments.map((e) => (
-                    <tr key={e.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={e.id} className={adminRowMotion}>
                       <td className="px-6 py-4">
                         <div className="font-bold text-dark">{e.studentName}</div>
                         <div className="text-gray-500 text-xs">{e.studentEmail || e.phone}</div>
@@ -449,9 +570,10 @@ export default function AdminDashboard() {
                         {e.status === "pending" && (
                           <button
                             onClick={() => confirmEnrollment(e.id)}
-                            className="bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 transition-all"
+                            disabled={pendingAction === `enrollment-${e.id}`}
+                            className={`bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 disabled:opacity-50 ${adminActionMotion}`}
                           >
-                            Confirm
+                            {pendingAction === `enrollment-${e.id}` ? "Saving..." : "Confirm"}
                           </button>
                         )}
                       </td>
@@ -465,7 +587,7 @@ export default function AdminDashboard() {
 
         {/* Students Table */}
         {tab === "students" && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
@@ -481,7 +603,7 @@ export default function AdminDashboard() {
                   {students.length === 0 ? (
                     <tr><td colSpan={5} className="text-center py-12 text-gray-400">No registered students yet</td></tr>
                   ) : students.map((s) => (
-                    <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={s.id} className={adminRowMotion}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden">
@@ -498,7 +620,7 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-gray-600">{s.phone}</td>
                       <td className="px-6 py-4">
                         <span className="bg-primary/10 text-primary font-bold text-xs px-2 py-1 rounded-full">
-                          {s.enrolledCourses.length} enrolled
+                          {(s.enrolledCourses ?? []).length} enrolled
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-500">{new Date(s.createdAt).toLocaleDateString()}</td>
@@ -511,24 +633,25 @@ export default function AdminDashboard() {
         )}
 
         {tab === "reviews" && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-dark">Review Moderation</h3>
-              <p className="text-xs text-gray-500 mt-1">Only approved reviews appear on the public website.</p>
+              <p className="text-xs text-gray-500 mt-1">Approve, hide, or permanently delete submitted reviews. Deleted reviews are removed from public review lists too.</p>
             </div>
             <div className="divide-y divide-gray-100">
               {reviews.length === 0 ? (
                 <p className="p-6 text-sm text-gray-400">No student reviews submitted yet.</p>
               ) : reviews.map((review) => (
-                <div key={review.id} className="p-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div key={review.id} className={`p-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between ${adminRowMotion}`}>
                   <div>
                     <p className="font-bold text-dark">{review.name} · {review.rating}/5</p>
                     <p className="text-xs text-gray-400">{review.role || "Student"} · {review.approved ? "Approved" : "Pending"}</p>
                     <p className="mt-3 text-sm text-gray-600">{review.text}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setReviewApproval(review.id, true)} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white">Approve</button>
-                    <button onClick={() => setReviewApproval(review.id, false)} className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-dark">Hide</button>
+                  <div className="flex flex-wrap gap-2">
+                    <button disabled={pendingAction === `review-${review.id}`} onClick={() => setReviewApproval(review.id, true)} className={`rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50 ${adminActionMotion}`}>{pendingAction === `review-${review.id}` ? "Saving..." : "Approve"}</button>
+                    <button disabled={pendingAction === `review-${review.id}`} onClick={() => setReviewApproval(review.id, false)} className={`rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}>Hide</button>
+                    <button disabled={pendingAction === `review-delete-${review.id}`} onClick={() => deleteReview(review.id, review.name)} className={`rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}>{pendingAction === `review-delete-${review.id}` ? "Deleting..." : "Delete"}</button>
                   </div>
                 </div>
               ))}
@@ -537,28 +660,33 @@ export default function AdminDashboard() {
         )}
 
         {tab === "projects" && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-dark">Student Project Gallery Moderation</h3>
-              <p className="text-xs text-gray-500 mt-1">Approve finished work before it appears publicly.</p>
+              <p className="text-xs text-gray-500 mt-1">Approve finished work, reject drafts, or delete records from the shared gallery feed.</p>
             </div>
             <div className="divide-y divide-gray-100">
               {projects.length === 0 ? (
                 <p className="p-6 text-sm text-gray-400">No projects submitted yet.</p>
               ) : projects.map((project) => (
-                <div key={project.id} className="p-6 grid gap-4 md:grid-cols-4">
+                <div key={project.id} className={`p-6 grid gap-4 md:grid-cols-4 ${adminRowMotion}`}>
                   <div className="h-24 overflow-hidden rounded-xl bg-gray-100">
-                    {project.imageUrl && <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover" />}
+                    {project.imageUrl && <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover motion-safe:transition-transform motion-safe:duration-300 hover:scale-[1.03]" />}
                   </div>
                   <div className="md:col-span-2">
                     <p className="font-bold text-dark">{project.title}</p>
                     <p className="text-xs text-primary font-bold">{project.courseName} · {project.studentName}</p>
                     <p className="mt-2 text-sm text-gray-600">{project.description}</p>
-                    <p className="mt-2 text-xs text-gray-400">Status: {project.status}</p>
+                    <p className="mt-2">
+                      <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${statusClass[project.status]}`}>
+                        {project.status}
+                      </span>
+                    </p>
                   </div>
-                  <div className="flex gap-2 md:flex-col">
-                    <button onClick={() => setProjectStatus(project.id, "approved")} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white">Approve</button>
-                    <button onClick={() => setProjectStatus(project.id, "rejected")} className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-dark">Reject</button>
+                  <div className="flex flex-wrap gap-2 md:flex-col">
+                    <button disabled={pendingAction === `project-${project.id}`} onClick={() => setProjectStatus(project.id, "approved")} className={`rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50 ${adminActionMotion}`}>{pendingAction === `project-${project.id}` ? "Saving..." : "Approve"}</button>
+                    <button disabled={pendingAction === `project-${project.id}`} onClick={() => setProjectStatus(project.id, "rejected")} className={`rounded-xl bg-gray-100 px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}>Reject</button>
+                    <button disabled={pendingAction === `project-delete-${project.id}`} onClick={() => deleteProject(project.id, project.title)} className={`rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}>{pendingAction === `project-delete-${project.id}` ? "Deleting..." : "Delete"}</button>
                   </div>
                 </div>
               ))}
@@ -567,26 +695,27 @@ export default function AdminDashboard() {
         )}
 
         {tab === "assignments" && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-dark">Course Assignment Uploads</h3>
-              <p className="text-xs text-gray-500 mt-1">Mark submitted work and leave feedback.</p>
+              <p className="text-xs text-gray-500 mt-1">Review submissions, request revisions, leave feedback, or delete invalid assignment records.</p>
             </div>
             <div className="divide-y divide-gray-100">
               {assignments.length === 0 ? (
                 <p className="p-6 text-sm text-gray-400">No assignments submitted yet.</p>
               ) : assignments.map((assignment) => (
-                <div key={assignment.id} className="p-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div key={assignment.id} className={`p-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between ${adminRowMotion}`}>
                   <div>
                     <p className="font-bold text-dark">{assignment.studentName}</p>
                     <p className="text-xs text-primary font-bold">{assignment.courseName} · {assignment.lessonTitle}</p>
-                    {assignment.fileUrl && <a href={assignment.fileUrl} className="mt-2 block text-sm font-bold text-primary" target="_blank">Open submitted file</a>}
+                    {assignment.fileUrl && <a href={assignment.fileUrl} className={`mt-2 block text-sm font-bold text-primary ${adminTabMotion}`} target="_blank">Open submitted file</a>}
                     {assignment.notes && <p className="mt-2 text-sm text-gray-600">{assignment.notes}</p>}
                     <p className="mt-2 text-xs text-gray-400">Status: {assignment.status}{assignment.feedback ? ` · Feedback: ${assignment.feedback}` : ""}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => markAssignment(assignment.id, "reviewed")} className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white">Mark Reviewed</button>
-                    <button onClick={() => markAssignment(assignment.id, "revision")} className="rounded-xl bg-yellow-100 px-4 py-2 text-sm font-bold text-yellow-800">Needs Revision</button>
+                  <div className="flex flex-wrap gap-2">
+                    <button disabled={pendingAction === `assignment-${assignment.id}`} onClick={() => markAssignment(assignment.id, "reviewed")} className={`rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50 ${adminActionMotion}`}>{pendingAction === `assignment-${assignment.id}` ? "Saving..." : "Mark Reviewed"}</button>
+                    <button disabled={pendingAction === `assignment-${assignment.id}`} onClick={() => markAssignment(assignment.id, "revision")} className={`rounded-xl bg-yellow-100 px-4 py-2 text-sm font-bold text-yellow-800 disabled:opacity-50 ${adminActionMotion}`}>Needs Revision</button>
+                    <button disabled={pendingAction === `assignment-delete-${assignment.id}`} onClick={() => deleteAssignment(assignment.id, assignment.studentName)} className={`rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}>{pendingAction === `assignment-delete-${assignment.id}` ? "Deleting..." : "Delete"}</button>
                   </div>
                 </div>
               ))}
@@ -602,7 +731,7 @@ export default function AdminDashboard() {
                 <button
                   key={course.id}
                   onClick={() => setSelectedCourseId(course.id)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center gap-4 ${
+                  className={`w-full text-left p-4 rounded-2xl border flex items-center gap-4 ${adminPanelMotion} ${
                     selectedCourseId === course.id ? "bg-primary text-white border-primary shadow-lg" : "bg-white border-gray-100 hover:border-gray-300"
                   }`}
                 >
@@ -617,24 +746,24 @@ export default function AdminDashboard() {
 
             <div className="lg:col-span-2">
               {selectedCourseId ? (
-                <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+                <div className={`bg-white rounded-3xl border border-gray-100 p-8 shadow-sm ${adminPanelMotion}`}>
                   <div className="flex items-center gap-4 mb-8">
                     <span className="text-4xl">{courses.find(c => c.id === selectedCourseId)?.icon}</span>
                     <h2 className="text-2xl font-bold text-dark">{courses.find(c => c.id === selectedCourseId)?.title}</h2>
                   </div>
                   <div className="space-y-6">
                     {lessons.filter(l => l.courseId === selectedCourseId).sort((a, b) => a.order - b.order).map((lesson) => (
-                      <div key={lesson.id} className="border border-gray-100 rounded-2xl p-5">
+                      <div key={lesson.id} className={`border border-gray-100 rounded-2xl p-5 ${adminCardMotion}`}>
                         <h4 className="font-bold text-dark mb-2 flex items-center gap-2">
                           <span className="text-primary">{lesson.order}.</span> {lesson.title}
                         </h4>
                         <p className="text-gray-600 text-sm mb-4 leading-relaxed bg-gray-50 p-4 rounded-xl italic">&quot;{lesson.content}&quot;</p>
                         {lesson.quiz && (
-                          <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
+                          <div className={`bg-blue-50/50 rounded-xl p-4 border border-blue-100 ${adminCardMotion}`}>
                             <p className="text-xs font-bold text-primary uppercase mb-2">Quiz Preview ({lesson.quiz.questions.length} Qs)</p>
                             <div className="space-y-2">
                               {lesson.quiz.questions.map((q, i) => (
-                                <div key={i} className="text-xs text-gray-700">
+                                <div key={i} className={`text-xs text-gray-700 rounded-lg px-2 py-1 ${adminRowMotion}`}>
                                   <span className="font-bold">{i+1}.</span> {q.question}
                                 </div>
                               ))}
@@ -646,7 +775,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-3xl border border-dashed border-gray-300 p-12 text-center">
+                <div className={`bg-white rounded-3xl border border-dashed border-gray-300 p-12 text-center ${adminPanelMotion}`}>
                   <div className="text-5xl mb-4">📚</div>
                   <h3 className="font-bold text-xl text-dark">Course Material Review</h3>
                   <p className="text-gray-500">Select a course to view all lessons, notes, and quiz questions.</p>

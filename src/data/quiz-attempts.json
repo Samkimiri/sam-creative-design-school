@@ -1,0 +1,42 @@
+[
+  {
+    "studentId": "cecyp72",
+    "courseId": "illustrator-training",
+    "lessonId": "ai-1",
+    "score": 2,
+    "total": 5,
+    "percentage": 40,
+    "passed": false,
+    "date": "2026-05-31T13:10:43.136Z"
+  },
+  {
+    "studentId": "cecyp72",
+    "courseId": "illustrator-training",
+    "lessonId": "ai-1",
+    "score": 4,
+    "total": 5,
+    "percentage": 80,
+    "passed": true,
+    "date": "2026-05-31T13:13:02.744Z"
+  },
+  {
+    "studentId": "admin-1",
+    "courseId": "photoshop-masterclass",
+    "lessonId": "ps-1",
+    "score": 1,
+    "total": 5,
+    "percentage": 20,
+    "passed": false,
+    "date": "2026-05-31T13:18:17.254Z"
+  },
+  {
+    "studentId": "admin-1",
+    "courseId": "photoshop-masterclass",
+    "lessonId": "ps-1",
+    "score": 5,
+    "total": 5,
+    "percentage": 100,
+    "passed": true,
+    "date": "2026-05-31T13:18:48.255Z"
+  }
+]

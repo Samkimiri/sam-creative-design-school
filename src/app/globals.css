@@ -10,16 +10,18 @@
   --primary-light: #5AB4F0;
   --dark: #0a0f1e;
   --light-gray: #F0F6FF;
+  --font-inter: Inter, Arial, Helvetica, sans-serif;
+  --font-poppins: Poppins, Arial, Helvetica, sans-serif;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-inter);
   background-color: var(--background);
   color: var(--foreground);
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-poppins);
   font-weight: 700;
 }
 
@@ -48,6 +50,116 @@ h1, h2, h3, h4, h5, h6 {
 .card-hover:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(26, 143, 227, 0.15);
+}
+
+.motion-soft {
+  animation: motion-soft 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-rise {
+  animation: motion-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-scale {
+  animation: motion-scale 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-fade {
+  animation: motion-fade 0.45s ease both;
+}
+
+.motion-delay-1 { animation-delay: 90ms; }
+.motion-delay-2 { animation-delay: 180ms; }
+.motion-delay-3 { animation-delay: 270ms; }
+.motion-delay-4 { animation-delay: 360ms; }
+.motion-delay-5 { animation-delay: 450ms; }
+
+.interactive-lift {
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease;
+}
+
+.interactive-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(10, 15, 30, 0.08);
+}
+
+.interactive-press {
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+.interactive-press:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.image-zoom {
+  overflow: hidden;
+}
+
+.image-zoom img {
+  transition: transform 500ms ease;
+}
+
+.image-zoom:hover img {
+  transform: scale(1.05);
+}
+
+.tab-panel-motion {
+  animation: tab-panel-motion 0.35s ease both;
+}
+
+.progress-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.38), transparent);
+  animation: progress-sheen 2.8s ease-in-out infinite;
+}
+
+.loading-shimmer {
+  background-size: 220% 100%;
+  background-image: linear-gradient(90deg, rgba(240, 246, 255, 0.7), rgba(255, 255, 255, 0.95), rgba(240, 246, 255, 0.7));
+  animation: loading-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes motion-soft {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes motion-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes motion-scale {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes motion-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tab-panel-motion {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes progress-sheen {
+  0%, 45% { transform: translateX(-100%); }
+  75%, 100% { transform: translateX(100%); }
+}
+
+@keyframes loading-shimmer {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
 }
 
 @keyframes fadeIn {
@@ -441,5 +553,22 @@ h1, h2, h3, h4, h5, h6 {
     transform: scale(1);
     width: 220px;
     height: 210px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .interactive-lift:hover,
+  .image-zoom:hover img,
+  .interactive-press:active {
+    transform: none !important;
   }
 }

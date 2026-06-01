@@ -50,9 +50,9 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-10">
+        <div className="animate-fade-in text-center mb-10">
           <Link href="/" className="inline-flex flex-col items-center gap-3 group">
-            <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg group-hover:scale-105 transition-transform">
+            <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg group-hover:scale-105 transition-transform duration-300">
               <img src="/images/logo.jpg" alt="Sam Creative" className="w-full h-full object-cover rounded-xl" />
             </div>
             <span className="text-white font-extrabold text-2xl tracking-tight">Sam Creative <span className="text-primary">Graphics</span></span>
@@ -61,9 +61,9 @@ export default function LoginPage() {
           <p className="text-gray-400">Sign in to continue your learning journey</p>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8">
+        <div className="animate-fade-in bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 transition duration-300 hover:border-white/20 hover:bg-white/[0.07]" style={{ animationDelay: "120ms" }}>
           {status === "error" && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm font-medium">
+            <div className="animate-fade-in bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm font-medium">
               {errorMsg}
             </div>
           )}
@@ -76,7 +76,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 autoFocus
-                className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-gray-500"
+                className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 focus:-translate-y-0.5 focus:shadow-lg focus:shadow-primary/10 placeholder:text-gray-500"
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -88,7 +88,7 @@ export default function LoginPage() {
                 required
                 type="password"
                 autoComplete="current-password"
-                className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-gray-500"
+                className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 focus:-translate-y-0.5 focus:shadow-lg focus:shadow-primary/10 placeholder:text-gray-500"
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -98,7 +98,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={status === "loading"}
-              className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50 mt-2"
+              className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:hover:translate-y-0 mt-2 active:translate-y-0"
             >
               {status === "loading" ? (
                 <span className="flex items-center justify-center gap-2">

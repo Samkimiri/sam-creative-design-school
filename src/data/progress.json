@@ -9,15 +9,6 @@
     "lastAccessed": "2026-05-01T00:09:04.026Z"
   },
   {
-    "studentId": "xw5uerb",
-    "lessonId": "cc-1",
-    "type": "quiz",
-    "score": 0,
-    "total": 2,
-    "percent": 0,
-    "date": "2026-05-01T00:09:26.556Z"
-  },
-  {
     "studentId": "itskzk3",
     "courseId": "photoshop-masterclass",
     "completedLessons": [
@@ -34,39 +25,34 @@
     "lastAccessed": "2026-05-01T00:55:36.260Z"
   },
   {
-    "studentId": "itskzk3",
-    "lessonId": "ps-2",
-    "type": "quiz",
-    "score": 0,
-    "total": 2,
-    "percent": 0,
-    "date": "2026-05-01T00:36:02.299Z"
+    "studentId": "cecyp72",
+    "courseId": "photoshop-masterclass",
+    "completedLessons": [
+      "ps-1",
+      "ps-5",
+      "ps-2",
+      "ps-4",
+      "ps-3"
+    ],
+    "quizScores": [],
+    "lastAccessed": "2026-05-31T12:58:17.445Z"
   },
   {
-    "studentId": "itskzk3",
-    "lessonId": "ps-2",
-    "type": "quiz",
-    "score": 0,
-    "total": 2,
-    "percent": 0,
-    "date": "2026-05-01T00:36:12.454Z"
+    "studentId": "cecyp72",
+    "courseId": "illustrator-training",
+    "completedLessons": [
+      "ai-1"
+    ],
+    "quizScores": [],
+    "lastAccessed": "2026-05-31T13:13:05.259Z"
   },
   {
-    "studentId": "itskzk3",
-    "lessonId": "ps-8",
-    "type": "quiz",
-    "score": 0,
-    "total": 2,
-    "percent": 0,
-    "date": "2026-05-01T00:55:55.761Z"
-  },
-  {
-    "studentId": "itskzk3",
-    "lessonId": "ps-8",
-    "type": "quiz",
-    "score": 0,
-    "total": 2,
-    "percent": 0,
-    "date": "2026-05-01T00:56:10.425Z"
+    "studentId": "admin-1",
+    "courseId": "photoshop-masterclass",
+    "completedLessons": [
+      "ps-1"
+    ],
+    "quizScores": [],
+    "lastAccessed": "2026-05-31T13:19:25.978Z"
   }
 ]

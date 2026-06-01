@@ -19,7 +19,7 @@ export default function GalleryPage() {
     <div className="pt-32 pb-24">
       {/* Hero */}
       <div className="bg-dark text-white py-16 mb-16">
-        <div className="container mx-auto px-6 text-center">
+        <div className="container mx-auto px-6 text-center animate-fade-in">
           <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Student Work</span>
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
             Our Student <span className="text-primary">Gallery</span>
@@ -36,7 +36,7 @@ export default function GalleryPage() {
           {categories.map((cat) => (
             <button
               key={cat}
-              className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all ${
+              className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 motion-safe:hover:-translate-y-0.5 ${
                 cat === "All"
                   ? "bg-primary text-white shadow-lg shadow-primary/20"
                   : "bg-light-gray text-dark hover:bg-primary hover:text-white"
@@ -50,7 +50,7 @@ export default function GalleryPage() {
         {/* Gallery Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {projects.map((project) => (
-            <div key={project.id} className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <div key={project.id} className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden motion-safe:hover:-translate-y-1">
               {/* Thumbnail */}
               <div className={`h-52 bg-gradient-to-br ${project.color} flex items-center justify-center relative overflow-hidden`}>
                 {project.image ? (
@@ -59,7 +59,7 @@ export default function GalleryPage() {
                   <span className="text-7xl group-hover:scale-110 transition-transform duration-300">{project.emoji}</span>
                 )}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
-                <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-white/10">
+                <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-white/10 transition-transform duration-300 motion-safe:group-hover:scale-105">
                   {project.course}
                 </div>
               </div>
@@ -77,7 +77,7 @@ export default function GalleryPage() {
         <StudentProjects />
 
         {/* CTA */}
-        <div className="text-center mt-16 bg-light-gray rounded-3xl p-12">
+        <div className="text-center mt-16 bg-light-gray rounded-3xl p-12 animate-fade-in transition-shadow duration-300 hover:shadow-lg">
           <div className="text-5xl mb-4">🌟</div>
           <h2 className="text-3xl font-extrabold mb-4">Your Work Could Be Here</h2>
           <p className="text-gray-600 mb-8 max-w-lg mx-auto">
@@ -85,7 +85,7 @@ export default function GalleryPage() {
           </p>
           <a
             href="/enroll"
-            className="inline-block bg-primary text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-all shadow-lg shadow-primary/20"
+            className="inline-block bg-primary text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-all duration-300 shadow-lg shadow-primary/20"
           >
             Start Learning Today
           </a>

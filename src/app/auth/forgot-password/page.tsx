@@ -23,9 +23,9 @@ export default function ForgotPassword() {
       <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
 
       <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-10">
+        <div className="animate-fade-in text-center mb-10">
           <Link href="/" className="inline-flex flex-col items-center gap-3 group">
-            <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg group-hover:scale-105 transition-transform">
+            <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg group-hover:scale-105 transition-transform duration-300">
               <img src="/images/logo.jpg" alt="Sam Creative" className="w-full h-full object-cover rounded-xl" />
             </div>
             <span className="text-white font-extrabold text-2xl tracking-tight">Sam Creative <span className="text-primary">Graphics</span></span>
@@ -34,13 +34,13 @@ export default function ForgotPassword() {
           <p className="text-gray-400">Enter your email to receive a reset link</p>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8">
+        <div className="animate-fade-in bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 transition duration-300 hover:border-white/20 hover:bg-white/[0.07]" style={{ animationDelay: "120ms" }}>
           {status === "success" ? (
-            <div className="text-center py-6">
-              <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-6">📧</div>
+            <div className="animate-fade-in text-center py-6">
+              <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-6 animate-pulse">📧</div>
               <h3 className="text-xl font-bold text-white mb-2">Check Your Email</h3>
               <p className="text-gray-400 mb-8">We&apos;ve sent a password reset link to <span className="text-white font-bold">{email}</span>.</p>
-              <Link href="/auth/login" className="block w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 transition-all">
+              <Link href="/auth/login" className="block w-full bg-primary text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary/90 transition-all duration-300 active:translate-y-0">
                 Back to Login
               </Link>
             </div>
@@ -52,7 +52,7 @@ export default function ForgotPassword() {
                   type="email"
                   required
                   placeholder="name@example.com"
-                  className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-4 outline-none focus:border-primary transition-all placeholder:text-gray-600"
+                  className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-4 outline-none focus:border-primary transition-all duration-300 focus:-translate-y-0.5 focus:shadow-lg focus:shadow-primary/10 placeholder:text-gray-600"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -61,9 +61,14 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={status === "loading"}
-                className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+                className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:hover:translate-y-0 active:translate-y-0"
               >
-                {status === "loading" ? "Sending link..." : "Send Reset Link"}
+                {status === "loading" ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    Sending link...
+                  </span>
+                ) : "Send Reset Link"}
               </button>
 
               <div className="text-center pt-4">

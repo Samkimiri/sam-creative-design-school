@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { readJSON } from "@/lib/db";
-import { getSession } from "@/lib/auth";
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "sam-admin-2026";
+import { getDB } from "@/lib/db";
+import { requireAdminRequest } from "@/lib/adminAuth";
 
 interface Student {
   id: string;
@@ -10,27 +8,22 @@ interface Student {
   email: string;
   phone: string;
   password?: string;
+  avatar?: string | null;
+  profileImage?: string | null;
   enrolledCourses: string[];
   createdAt: string;
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
-  const { password } = body;
+  const auth = await requireAdminRequest(request);
+  if ("response" in auth) return auth.response;
 
-  const session = await getSession();
-  const isAdminSession = session?.user.role === "admin";
-
-  if (password !== ADMIN_PASSWORD && !isAdminSession) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-  }
-
-  const students = readJSON<Student>("students.json");
-  // Remove sensitive data
-  const safeStudents = students.map((s) => {
-    const safeStudent = { ...s };
-    delete safeStudent.password;
-    return safeStudent;
+  const students = await getDB<Student>("students.json");
+  const safeStudents = students.map(({ password: _password, avatar: _avatar, profileImage: _profileImage, ...student }) => {
+    void _password;
+    void _avatar;
+    void _profileImage;
+    return student;
   });
   
   return NextResponse.json({ success: true, data: safeStudents });

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readJSON, writeJSON, getDB, saveDB } from "@/lib/db";
+import { getDB, saveDB } from "@/lib/db";
 import { hashPassword, setSession, UserSession } from "@/lib/auth";
 
 interface Student {
@@ -31,9 +31,7 @@ export async function POST(request: Request) {
     const hashedPassword = await hashPassword(password);
     const id = Math.random().toString(36).substring(2, 9);
     
-    // Auto-admin for the owner's emails
-    const ownerEmails = ["samcreativegraphics7@gmail.com", "samcreativesgraphics7@gmail.com"];
-    const role = ownerEmails.includes(email.toLowerCase()) ? "admin" : "student";
+    const role = "student";
 
     const newStudent: Student = {
       id,

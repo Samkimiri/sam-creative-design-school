@@ -106,7 +106,7 @@ export default async function LMSDashboard() {
                 {continueCourse && (
                   <Link
                     href={`/lms/${continueCourse.course.id}`}
-                    className="rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary-light"
+                  className="rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/25 transition duration-300 hover:-translate-y-0.5 hover:bg-primary-light hover:shadow-primary/35 active:translate-y-0"
                   >
                     Continue Learning
                   </Link>
@@ -114,7 +114,7 @@ export default async function LMSDashboard() {
                 {!session && (
                   <Link
                     href="/auth/login"
-                    className="rounded-xl border border-white/20 px-6 py-3 font-bold text-white transition hover:border-primary-light hover:text-primary-light"
+                    className="rounded-xl border border-white/20 px-6 py-3 font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light"
                   >
                     Sign In to Save Progress
                   </Link>
@@ -122,7 +122,7 @@ export default async function LMSDashboard() {
                 {session && (
                   <Link
                     href="/lms/profile"
-                    className="rounded-xl border border-white/20 px-6 py-3 font-bold text-white transition hover:border-primary-light hover:text-primary-light"
+                    className="rounded-xl border border-white/20 px-6 py-3 font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light"
                   >
                     View Profile
                   </Link>
@@ -159,7 +159,7 @@ export default async function LMSDashboard() {
             { label: "Total Lessons", value: totalAssignedLessons },
             { label: "Certificates", value: certificatesEarned },
           ].map((stat, index) => (
-            <div key={stat.label} className="animate-lms-rise rounded-2xl border border-white bg-white p-5 shadow-sm" style={{ animationDelay: `${index * 80}ms` }}>
+            <div key={stat.label} className="animate-lms-rise rounded-2xl border border-white bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md" style={{ animationDelay: `${index * 80}ms` }}>
               <p className="text-sm font-bold text-gray-500">{stat.label}</p>
               <p className="mt-2 text-3xl font-extrabold text-dark">{stat.value}</p>
             </div>
@@ -167,7 +167,7 @@ export default async function LMSDashboard() {
         </section>
 
         {continueCourse && (
-          <section className="mb-10 rounded-3xl border border-primary/15 bg-white p-6 shadow-sm">
+          <section className="mb-10 animate-fade-in rounded-3xl border border-primary/15 bg-white p-6 shadow-sm">
             <div className="grid gap-6 lg:grid-cols-[1fr_220px_320px] lg:items-center">
               <div>
                 <p className="text-sm font-black uppercase tracking-widest text-primary">Continue Where You Left Off</p>
@@ -176,10 +176,10 @@ export default async function LMSDashboard() {
                   {continueCourse.course.title} · {continueCourse.progress}% complete · next lesson ready.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <Link href={`/lms/${continueCourse.course.id}`} className="rounded-xl bg-dark px-6 py-3 font-bold text-white transition hover:-translate-y-0.5 hover:bg-primary">
+                  <Link href={`/lms/${continueCourse.course.id}`} className="rounded-xl bg-dark px-6 py-3 font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-primary active:translate-y-0">
                     Open Lesson
                   </Link>
-                  <a href={`/api/notes/${continueCourse.nextLesson?.id}`} className="rounded-xl border border-gray-200 px-6 py-3 font-bold text-dark transition hover:border-primary hover:text-primary">
+                  <a href={`/api/notes/${continueCourse.nextLesson?.id}`} className="rounded-xl border border-gray-200 px-6 py-3 font-bold text-dark transition duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary">
                     Download Notes
                   </a>
                 </div>
@@ -219,13 +219,13 @@ export default async function LMSDashboard() {
                   <span className="font-black text-primary">{continueCourse.progress}%</span>
                 </div>
                 <div className="h-3 overflow-hidden rounded-full bg-white">
-                  <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${continueCourse.progress}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-all duration-1000 ease-out" style={{ width: `${continueCourse.progress}%` }} />
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   {continueCourse.courseLessons.slice(0, 6).map((lesson) => (
                     <span
                       key={lesson.id}
-                      className={`h-2 rounded-full ${continueCourse.completedLessons.includes(lesson.id) ? "bg-primary" : "bg-white"}`}
+                      className={`h-2 rounded-full transition-colors duration-500 ${continueCourse.completedLessons.includes(lesson.id) ? "bg-primary" : "bg-white"}`}
                     />
                   ))}
                 </div>
@@ -293,8 +293,8 @@ export default async function LMSDashboard() {
                         {previewLessons.map((lesson) => {
                           const isDone = completedLessons.includes(lesson.id);
                           return (
-                            <div key={lesson.id} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2">
-                              <span className={`h-3 w-3 rounded-full ${isDone ? "bg-green-500" : "bg-primary/25"}`} />
+                            <div key={lesson.id} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2 transition duration-300 hover:border-primary/20 hover:bg-primary/5">
+                              <span className={`h-3 w-3 rounded-full transition-colors duration-500 ${isDone ? "bg-green-500" : "bg-primary/25"}`} />
                               <span className="min-w-0 flex-1 truncate text-sm font-bold text-dark">{lesson.title}</span>
                               <span className="text-xs text-gray-400">{lesson.duration}</span>
                             </div>
@@ -328,7 +328,7 @@ export default async function LMSDashboard() {
                       </a>
                     )}
 
-                    <Link href={`/lms/${course.id}`} className="block rounded-xl bg-dark py-3.5 text-center font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-primary">
+                    <Link href={`/lms/${course.id}`} className="block rounded-xl bg-dark py-3.5 text-center font-bold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-primary active:translate-y-0">
                       {meta.action}
                     </Link>
                   </div>
@@ -346,7 +346,7 @@ export default async function LMSDashboard() {
             </div>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               {lockedCourses.map((course) => (
-                <article key={course.id} className="rounded-2xl border border-gray-100 bg-white p-5 opacity-85 shadow-sm transition hover:opacity-100 hover:shadow-md">
+                <article key={course.id} className="rounded-2xl border border-gray-100 bg-white p-5 opacity-85 shadow-sm transition duration-300 hover:-translate-y-1 hover:opacity-100 hover:shadow-md">
                   <div className={`mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br ${course.color} text-2xl grayscale`}>
                     {course.shortTitle.slice(0, 1)}
                   </div>
@@ -355,7 +355,7 @@ export default async function LMSDashboard() {
                   </div>
                   <h3 className="font-extrabold text-dark">{course.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-gray-500">{course.description}</p>
-                  <Link href={`/enroll?course=${course.id}`} className="mt-5 block rounded-xl border border-primary py-2.5 text-center text-sm font-bold text-primary transition hover:bg-primary hover:text-white">
+                  <Link href={`/enroll?course=${course.id}`} className="mt-5 block rounded-xl border border-primary py-2.5 text-center text-sm font-bold text-primary transition duration-300 hover:-translate-y-0.5 hover:bg-primary hover:text-white">
                     Enroll to Unlock
                   </Link>
                 </article>

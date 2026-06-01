@@ -1,20 +1,11 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
 import { getDB, saveDB } from "@/lib/db";
 import type { Review } from "@/types";
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "sam-admin-2026";
-
-async function isAllowed(password?: string) {
-  const session = await getSession();
-  return password === ADMIN_PASSWORD || session?.user.role === "admin";
-}
+import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
-  if (!(await isAllowed(body.password))) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAdminRequest(request);
+  if ("response" in auth) return auth.response;
 
   const reviews = await getDB<Review>("reviews.json");
   return NextResponse.json({
@@ -24,21 +15,43 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const body = await request.json().catch(() => ({}));
-  if (!(await isAllowed(body.password))) {
-    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAdminRequest(request);
+  if ("response" in auth) return auth.response;
+
+  const id = getRequiredString(auth.body, "id", "Review ID");
+  if ("response" in id) return id.response;
+  if (typeof auth.body.approved !== "boolean") {
+    return badRequest("Approved must be true or false");
   }
 
   const reviews = await getDB<Review>("reviews.json");
-  const index = reviews.findIndex((review) => review.id === body.id && !review.id.startsWith("seed-"));
+  const index = reviews.findIndex((review) => review.id === id.value && !review.id.startsWith("seed-"));
   if (index === -1) {
-    return NextResponse.json({ success: false, message: "Review not found" }, { status: 404 });
+    return notFound("Review not found");
   }
 
   reviews[index] = {
     ...reviews[index],
-    approved: Boolean(body.approved),
+    approved: auth.body.approved,
   };
   await saveDB("reviews.json", reviews);
   return NextResponse.json({ success: true, data: reviews[index] });
+}
+
+export async function DELETE(request: Request) {
+  const auth = await requireAdminRequest(request);
+  if ("response" in auth) return auth.response;
+
+  const id = getRequiredString(auth.body, "id", "Review ID");
+  if ("response" in id) return id.response;
+
+  const reviews = await getDB<Review>("reviews.json");
+  const index = reviews.findIndex((review) => review.id === id.value && !review.id.startsWith("seed-"));
+  if (index === -1) {
+    return notFound("Review not found");
+  }
+
+  const [deleted] = reviews.splice(index, 1);
+  await saveDB("reviews.json", reviews);
+  return NextResponse.json({ success: true, data: deleted, message: "Review deleted" });
 }

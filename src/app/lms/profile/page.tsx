@@ -116,7 +116,7 @@ export default function ProfilePage() {
           
           {/* Left Column: Avatar & Basic Info */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm text-center">
+            <div className="animate-fade-in bg-white rounded-3xl p-8 border border-gray-100 shadow-sm text-center transition duration-300 hover:-translate-y-1 hover:shadow-md">
               <div className="relative w-32 h-32 mx-auto mb-6">
                 <div className="w-full h-full rounded-3xl bg-primary/10 overflow-hidden flex items-center justify-center border-4 border-white shadow-xl">
                   {student.profileImage ? (
@@ -127,7 +127,7 @@ export default function ProfilePage() {
                 </div>
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute -bottom-2 -right-2 bg-dark text-white p-2.5 rounded-xl shadow-lg hover:bg-primary transition-all"
+                  className="absolute -bottom-2 -right-2 bg-dark text-white p-2.5 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary active:translate-y-0"
                 >
                   📸
                 </button>
@@ -146,7 +146,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="bg-dark rounded-3xl p-6 text-white overflow-hidden relative">
+            <div className="animate-fade-in bg-dark rounded-3xl p-6 text-white overflow-hidden relative transition duration-300 hover:-translate-y-1 hover:shadow-xl" style={{ animationDelay: "80ms" }}>
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl" />
               <h3 className="font-bold text-sm uppercase tracking-widest text-primary mb-4 relative z-10">Study Stats</h3>
               <div className="space-y-4 relative z-10">
@@ -171,13 +171,13 @@ export default function ProfilePage() {
             
             {/* Success/Error Message */}
             {message.text && (
-              <div className={`p-4 rounded-2xl font-bold text-center animate-bounce ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              <div className={`animate-fade-in p-4 rounded-2xl font-bold text-center shadow-sm ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                 {message.text}
               </div>
             )}
 
             {/* Profile Settings */}
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+            <div className="animate-fade-in bg-white rounded-3xl p-8 border border-gray-100 shadow-sm transition duration-300 hover:shadow-md" style={{ animationDelay: "120ms" }}>
               <h3 className="text-xl font-bold text-dark mb-6 flex items-center gap-2">
                 <span className="text-primary">⚙️</span> Profile Settings
               </h3>
@@ -188,7 +188,7 @@ export default function ProfilePage() {
                     <input 
                       name="name"
                       defaultValue={student.name}
-                      className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:border-primary font-medium"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:border-primary font-medium transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
                     />
                   </div>
                   <div>
@@ -196,13 +196,13 @@ export default function ProfilePage() {
                     <input 
                       name="phone"
                       defaultValue={student.phone}
-                      className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:border-primary font-medium"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 outline-none focus:border-primary font-medium transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
                     />
                   </div>
                 </div>
                 <button 
                   disabled={saving}
-                  className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+                  className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:hover:translate-y-0"
                 >
                   {saving ? "Saving Changes..." : "Update Profile Info"}
                 </button>
@@ -210,7 +210,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Courses Progress */}
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+            <div className="animate-fade-in bg-white rounded-3xl p-8 border border-gray-100 shadow-sm transition duration-300 hover:shadow-md" style={{ animationDelay: "180ms" }}>
               <h3 className="text-xl font-bold text-dark mb-6 flex items-center gap-2">
                 <span className="text-primary">📈</span> Your Courses
               </h3>
@@ -221,7 +221,7 @@ export default function ProfilePage() {
                   const completed = record?.completedLessons?.length || 0;
                   const pct = Math.round((completed / courseLessons.length) * 100);
                   return (
-                    <div key={course.id} className="group">
+                    <div key={course.id} className="group rounded-2xl p-3 -mx-3 transition duration-300 hover:-translate-y-0.5 hover:bg-gray-50">
                       <div className="flex justify-between items-center mb-3">
                         <div>
                           <h4 className="font-bold text-dark group-hover:text-primary transition-colors">{course.title}</h4>
@@ -229,18 +229,18 @@ export default function ProfilePage() {
                         </div>
                         <div className="flex flex-wrap justify-end gap-2">
                           {pct === 100 && (
-                            <a href={`/api/certificates/${course.id}`} className="text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-4 py-2 rounded-lg hover:bg-green-100 transition-all">
+                            <a href={`/api/certificates/${course.id}`} className="text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-4 py-2 rounded-lg hover:-translate-y-0.5 hover:bg-green-100 transition-all duration-300">
                               Certificate
                             </a>
                           )}
-                          <Link href={`/lms/${course.id}`} className="text-xs font-bold bg-dark text-white px-4 py-2 rounded-lg hover:bg-primary transition-all">
+                          <Link href={`/lms/${course.id}`} className="text-xs font-bold bg-dark text-white px-4 py-2 rounded-lg hover:-translate-y-0.5 hover:bg-primary transition-all duration-300">
                             {pct === 100 ? "Review" : pct > 0 ? "Continue" : "Start"}
                           </Link>
                         </div>
                       </div>
                       <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-primary rounded-full transition-all duration-1000" 
+                          className="h-full bg-primary rounded-full transition-all duration-1000 ease-out"
                           style={{ width: `${pct}%` }} 
                         />
                       </div>
@@ -249,7 +249,7 @@ export default function ProfilePage() {
                 }) : (
                   <div className="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                     <p className="text-gray-500 text-sm mb-4">You haven&apos;t enrolled in any courses yet.</p>
-                    <Link href="/courses" className="bg-dark text-white px-6 py-2 rounded-lg text-sm font-bold">
+                    <Link href="/courses" className="bg-dark text-white px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary">
                       Browse Courses
                     </Link>
                   </div>
