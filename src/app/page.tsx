@@ -10,6 +10,12 @@ export default function Home() {
     { value: "5+", label: "Years of Excellence" },
     { value: "95%", label: "Completion Rate" },
   ];
+  const intakeDetails = [
+    { label: "Next Intake", value: "June 10, 2026" },
+    { label: "Learning Mode", value: "Online LMS + WhatsApp mentorship" },
+    { label: "Class Duration", value: "2 to 6 weeks, based on course" },
+    { label: "Available Seats", value: "24 seats open" },
+  ];
 
   return (
     <div>
@@ -83,6 +89,71 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Upcoming Intake */}
+      <section className="bg-light-gray py-16">
+        <div className="container mx-auto px-6">
+          <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+            <div className="animate-fade-in">
+              <span className="mb-3 block text-sm font-bold uppercase tracking-widest text-primary">
+                Upcoming Intake
+              </span>
+              <h2 className="mb-4 text-3xl font-extrabold text-dark md:text-4xl">
+                Join the Next SCDS Class
+              </h2>
+              <p className="max-w-xl text-base leading-7 text-gray-600">
+                The next class is open for enrollment with a structured schedule, guided assignments, and mentor feedback so students know exactly what happens after joining.
+              </p>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/enroll"
+                  className="inline-flex justify-center rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
+                >
+                  Reserve Your Seat
+                </Link>
+                <Link
+                  href="/courses"
+                  className="inline-flex justify-center rounded-xl border border-gray-200 bg-white px-7 py-3.5 text-sm font-bold text-dark transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+                >
+                  Compare Courses
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {intakeDetails.map((item, index) => (
+                <div
+                  key={item.label}
+                  className="animate-fade-in rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+                  style={{ animationDelay: `${index * 80}ms` }}
+                >
+                  <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">
+                    {item.label}
+                  </p>
+                  <p className="text-xl font-extrabold leading-snug text-dark">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+              <div className="animate-fade-in rounded-2xl border border-primary/20 bg-primary/10 p-6 sm:col-span-2">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest text-primary">
+                      Weekly Schedule
+                    </p>
+                    <p className="mt-2 text-lg font-extrabold text-dark">
+                      Lessons unlock weekly, with assignments reviewed before certification.
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-white px-5 py-2 text-sm font-bold text-primary shadow-sm">
+                    Limited batch
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <GamifiedRegistration />
 
       {/* ── Why Choose Us ────────────────────────────────── */}
@@ -111,6 +182,78 @@ export default function Home() {
                 <p className="text-gray-600 text-sm leading-relaxed">{item.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Instructor Preview */}
+      <section className="bg-white py-20">
+        <div className="container mx-auto px-6">
+          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div className="animate-fade-in">
+              <div className="relative mx-auto aspect-[4/5] max-w-sm overflow-hidden rounded-3xl bg-light-gray shadow-2xl lg:mx-0">
+                <img
+                  src="/images/samuel.png"
+                  alt="Samuel Kimiri, instructor at Sam Creative Design School"
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
+                  <p className="text-sm font-bold uppercase tracking-widest text-primary-light">
+                    Lead Instructor
+                  </p>
+                  <h3 className="mt-1 text-2xl font-extrabold">Samuel Kimiri</h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="animate-fade-in" style={{ animationDelay: "100ms" }}>
+              <span className="mb-3 block text-sm font-bold uppercase tracking-widest text-primary">
+                Meet Your Trainer
+              </span>
+              <h2 className="mb-5 text-3xl font-extrabold text-dark md:text-4xl">
+                Learn Directly From a Practical Design Coach
+              </h2>
+              <p className="max-w-2xl text-base leading-7 text-gray-600">
+                Samuel Kimiri guides students through Photoshop, Illustrator, CapCut, and SolidWorks using real projects, clear weekly targets, and personal feedback. The focus is simple: help every learner build practical work they can show, improve, and confidently use.
+              </p>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                {[
+                  { value: "5+", label: "Years mentoring creatives" },
+                  { value: "500+", label: "Students trained" },
+                  { value: "4", label: "Professional programs" },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-gray-100 bg-light-gray p-5">
+                    <p className="text-3xl font-extrabold text-primary">{item.value}</p>
+                    <p className="mt-1 text-sm font-medium text-gray-600">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 rounded-2xl border-l-4 border-primary bg-primary/5 p-6">
+                <p className="text-sm font-black uppercase tracking-widest text-primary">
+                  Teaching Promise
+                </p>
+                <p className="mt-2 text-lg font-bold leading-7 text-dark">
+                  Every student gets structured lessons, assignment guidance, and honest feedback before certification.
+                </p>
+              </div>
+
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/about"
+                  className="inline-flex justify-center rounded-xl bg-dark px-7 py-3.5 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary"
+                >
+                  View Instructor Profile
+                </Link>
+                <Link
+                  href="/contact"
+                  className="inline-flex justify-center rounded-xl border border-gray-200 px-7 py-3.5 text-sm font-bold text-dark transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+                >
+                  Ask a Question
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
