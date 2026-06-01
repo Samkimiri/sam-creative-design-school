@@ -102,7 +102,24 @@ interface AdminAssignment {
   createdAt: string;
 }
 
-type AdminTab = "analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "content";
+interface UpcomingIntakeSettings {
+  id: "upcoming-intake";
+  title: string;
+  subtitle: string;
+  nextIntake: string;
+  learningMode: string;
+  classDuration: string;
+  availableSeats: string;
+  weeklySchedule: string;
+  badge: string;
+  updatedAt: string;
+}
+
+interface AdminSettings {
+  intake: UpcomingIntakeSettings;
+}
+
+type AdminTab = "analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "settings" | "content";
 
 type AdminResponse<T> = {
   success?: boolean;
@@ -117,7 +134,19 @@ type SectionLoad<T> =
   | { ok: true; status: number; data: AdminResponse<T> }
   | { ok: false; status: number; message: string };
 
-const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "reviews", "projects", "assignments", "content"];
+const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "reviews", "projects", "assignments", "settings", "content"];
+const defaultIntakeSettings: UpcomingIntakeSettings = {
+  id: "upcoming-intake",
+  title: "Join the Next SCDS Class",
+  subtitle: "The next class is open for enrollment with a structured schedule, guided assignments, and mentor feedback so students know exactly what happens after joining.",
+  nextIntake: "June 10, 2026",
+  learningMode: "Online LMS + WhatsApp mentorship",
+  classDuration: "2 to 6 weeks, based on course",
+  availableSeats: "24 seats open",
+  weeklySchedule: "Lessons unlock weekly, with assignments reviewed before certification.",
+  badge: "Limited batch",
+  updatedAt: "",
+};
 
 const statusClass = {
   approved: "bg-green-50 text-green-700 border-green-200",
@@ -146,6 +175,7 @@ export default function AdminDashboard() {
   const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
+  const [intakeSettings, setIntakeSettings] = useState<UpcomingIntakeSettings>(defaultIntakeSettings);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -169,16 +199,17 @@ export default function AdminDashboard() {
         return { ok: true, status: res.status, data };
       };
 
-      const [sData, eData, aData, rData, pData, asData] = await Promise.all([
+      const [sData, eData, aData, rData, pData, asData, settingsData] = await Promise.all([
         loadSection<Student[]>("/api/admin/students"),
         loadSection<Enrollment[]>("/api/admin/enrollments"),
         loadSection<never>("/api/admin/analytics"),
         loadSection<AdminReview[]>("/api/admin/reviews"),
         loadSection<AdminProject[]>("/api/admin/projects"),
         loadSection<AdminAssignment[]>("/api/admin/assignments"),
+        loadSection<AdminSettings>("/api/admin/settings"),
       ]);
 
-      const results = [sData, eData, aData, rData, pData, asData];
+      const results = [sData, eData, aData, rData, pData, asData, settingsData];
       const authorized = results.some((result) => result.ok);
 
       if (authorized) {
@@ -192,6 +223,7 @@ export default function AdminDashboard() {
         if (rData.ok) setReviews(Array.isArray(rData.data.data) ? rData.data.data : []);
         if (pData.ok) setProjects(Array.isArray(pData.data.data) ? pData.data.data : []);
         if (asData.ok) setAssignments(Array.isArray(asData.data.data) ? asData.data.data : []);
+        if (settingsData.ok && settingsData.data.data?.intake) setIntakeSettings(settingsData.data.data.intake);
         setAuthed(true);
         if (pw) setPassword(pw);
         const failedSections = results.filter((result) => !result.ok && result.status !== 401).length;
@@ -285,6 +317,30 @@ export default function AdminDashboard() {
       () => setAssignments((prev) => prev.filter((assignment) => assignment.id !== id)),
       "DELETE"
     );
+  };
+
+  const saveIntakeSettings = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPendingAction("settings-intake");
+    setNotice("");
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, ...intakeSettings }),
+      });
+      const data = await res.json().catch(() => ({ success: false, message: "Invalid server response" })) as AdminResponse<AdminSettings>;
+      if (!res.ok || !data.success || !data.data?.intake) {
+        setNotice(data.message || "Could not update intake settings.");
+        return;
+      }
+      setIntakeSettings(data.data.intake);
+      setNotice("Upcoming intake updated. Refresh the homepage to see the latest version.");
+    } catch {
+      setNotice("Could not update intake settings. Check your connection and try again.");
+    } finally {
+      setPendingAction("");
+    }
   };
 
   const runMutation = async <T,>(
@@ -717,6 +773,121 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {tab === "settings" && (
+          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="font-bold text-dark">Homepage Upcoming Intake</h3>
+              <p className="text-xs text-gray-500 mt-1">Update the intake section shown on the homepage. Changes are saved to the backend and appear after the homepage is refreshed.</p>
+            </div>
+            <form onSubmit={saveIntakeSettings} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Section Title</label>
+                  <input
+                    value={intakeSettings.title}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, title: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={90}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Next Intake Date</label>
+                  <input
+                    value={intakeSettings.nextIntake}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, nextIntake: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={60}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Learning Mode</label>
+                  <input
+                    value={intakeSettings.learningMode}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, learningMode: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={90}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Class Duration</label>
+                  <input
+                    value={intakeSettings.classDuration}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, classDuration: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={90}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Available Seats</label>
+                  <input
+                    value={intakeSettings.availableSeats}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, availableSeats: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={60}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Badge</label>
+                  <input
+                    value={intakeSettings.badge}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, badge: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={40}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Intro Text</label>
+                <textarea
+                  value={intakeSettings.subtitle}
+                  onChange={(e) => setIntakeSettings((prev) => ({ ...prev, subtitle: e.target.value }))}
+                  className="min-h-28 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                  maxLength={260}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Weekly Schedule Note</label>
+                <textarea
+                  value={intakeSettings.weeklySchedule}
+                  onChange={(e) => setIntakeSettings((prev) => ({ ...prev, weeklySchedule: e.target.value }))}
+                  className="min-h-24 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                  maxLength={180}
+                  required
+                />
+              </div>
+
+              <div className="rounded-2xl bg-light-gray p-5">
+                <p className="text-xs font-black uppercase tracking-widest text-primary">Homepage Preview</p>
+                <h4 className="mt-2 text-2xl font-extrabold text-dark">{intakeSettings.title}</h4>
+                <p className="mt-2 text-sm text-gray-600">{intakeSettings.subtitle}</p>
+                <div className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                  <span><strong>Next:</strong> {intakeSettings.nextIntake}</span>
+                  <span><strong>Mode:</strong> {intakeSettings.learningMode}</span>
+                  <span><strong>Duration:</strong> {intakeSettings.classDuration}</span>
+                  <span><strong>Seats:</strong> {intakeSettings.availableSeats}</span>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={pendingAction === "settings-intake"}
+                className={`rounded-xl bg-primary px-6 py-3 font-bold text-white disabled:opacity-50 ${adminActionMotion}`}
+              >
+                {pendingAction === "settings-intake" ? "Saving..." : "Save Homepage Intake"}
+              </button>
+            </form>
           </div>
         )}
 

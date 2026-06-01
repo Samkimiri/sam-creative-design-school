@@ -120,3 +120,16 @@ export interface AssignmentSubmission {
   createdAt: string;
   updatedAt?: string;
 }
+
+export interface UpcomingIntakeSettings {
+  id: "upcoming-intake";
+  title: string;
+  subtitle: string;
+  nextIntake: string;
+  learningMode: string;
+  classDuration: string;
+  availableSeats: string;
+  weeklySchedule: string;
+  badge: string;
+  updatedAt: string;
+}

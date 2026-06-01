@@ -2,8 +2,12 @@ import Link from "next/link";
 import { courses } from "@/data/courses";
 import GamifiedRegistration from "@/components/GamifiedRegistration";
 import ReviewsSection from "@/components/ReviewsSection";
+import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const intake = await getUpcomingIntakeSettings();
   const stats = [
     { value: "500+", label: "Students Trained" },
     { value: "4", label: "Professional Courses" },
@@ -11,10 +15,10 @@ export default function Home() {
     { value: "95%", label: "Completion Rate" },
   ];
   const intakeDetails = [
-    { label: "Next Intake", value: "June 10, 2026" },
-    { label: "Learning Mode", value: "Online LMS + WhatsApp mentorship" },
-    { label: "Class Duration", value: "2 to 6 weeks, based on course" },
-    { label: "Available Seats", value: "24 seats open" },
+    { label: "Next Intake", value: intake.nextIntake },
+    { label: "Learning Mode", value: intake.learningMode },
+    { label: "Class Duration", value: intake.classDuration },
+    { label: "Available Seats", value: intake.availableSeats },
   ];
 
   return (
@@ -98,10 +102,10 @@ export default function Home() {
                 Upcoming Intake
               </span>
               <h2 className="mb-4 text-3xl font-extrabold text-dark md:text-4xl">
-                Join the Next SCDS Class
+                {intake.title}
               </h2>
               <p className="max-w-xl text-base leading-7 text-gray-600">
-                The next class is open for enrollment with a structured schedule, guided assignments, and mentor feedback so students know exactly what happens after joining.
+                {intake.subtitle}
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -141,11 +145,11 @@ export default function Home() {
                       Weekly Schedule
                     </p>
                     <p className="mt-2 text-lg font-extrabold text-dark">
-                      Lessons unlock weekly, with assignments reviewed before certification.
+                      {intake.weeklySchedule}
                     </p>
                   </div>
                   <span className="shrink-0 rounded-full bg-white px-5 py-2 text-sm font-bold text-primary shadow-sm">
-                    Limited batch
+                    {intake.badge}
                   </span>
                 </div>
               </div>

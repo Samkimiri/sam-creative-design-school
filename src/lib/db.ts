@@ -24,6 +24,7 @@ const HIGH_WRITE_FILES = new Set([
   "analytics-sessions.json",
   "enrollments.json",
   "messages.json",
+  "site-settings.json",
   "students.json",
 ]);
 
