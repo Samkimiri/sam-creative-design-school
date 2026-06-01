@@ -81,7 +81,6 @@ export async function PATCH(request: Request) {
 
       if (updated) {
         await saveDB("students.json", students);
-        console.log(`Successfully enrolled student ${enrollment.studentEmail} in courses: ${courseIds.join(", ")}`);
       }
     } else {
       console.warn(`Could not find student record for email: ${enrollment.studentEmail} or phone: ${enrollment.phone}`);

@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 type Step = "start" | "login" | "identity" | "contact" | "security" | "ambition" | "success";
@@ -17,55 +18,56 @@ export default function GamifiedRegistration() {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Login and session states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginStatus, setLoginStatus] = useState<"idle" | "loading" | "error">("idle");
   const [loginError, setLoginError] = useState("");
+  const [formError, setFormError] = useState("");
 
-  // Check if user is already logged in on mount
   useEffect(() => {
     async function checkSession() {
       try {
         const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.student) {
-            setIsLoggedIn(true);
-            setFormData({
-              name: data.student.name || "",
-              email: data.student.email || "",
-              phone: data.student.phone || "",
-              password: "••••••••",
-              interest: data.student.interest || "",
-              avatar: data.student.profileImage || data.student.avatar || null,
-            });
-          }
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data.success && data.student) {
+          setIsLoggedIn(true);
+          setFormData({
+            name: data.student.name || "",
+            email: data.student.email || "",
+            phone: data.student.phone || "",
+            password: "********",
+            interest: data.student.interest || "",
+            avatar: data.student.profileImage || data.student.avatar || null,
+          });
         }
       } catch (err) {
         console.error("Failed checking auth status:", err);
       }
     }
+
     checkSession();
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, avatar: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData((prev) => ({ ...prev, avatar: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const register = async () => {
     setLoading(true);
+    setFormError("");
+
     try {
       if (isLoggedIn) {
-        // Update existing member details
         const res = await fetch("/api/auth/profile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -81,10 +83,9 @@ export default function GamifiedRegistration() {
         if (data.success) {
           setStep("success");
         } else {
-          alert(data.message || "Failed to update details");
+          setFormError(data.message || "Failed to update details.");
         }
       } else {
-        // Register new member
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -94,33 +95,57 @@ export default function GamifiedRegistration() {
         if (data.success) {
           setStep("success");
         } else {
-          alert(data.message || data.error || "Registration failed");
+          setFormError(data.message || data.error || "Registration failed.");
         }
       }
     } catch {
-      alert("An error occurred. Please try again.");
+      setFormError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const nextStep = (current: Step) => {
-    if (current === "start") setStep("identity");
+    setFormError("");
+
+    if (current === "start") {
+      setStep("identity");
+      return;
+    }
+
     if (current === "identity") {
-      if (!formData.name) return alert("Please enter your name");
+      if (!formData.name.trim()) {
+        setFormError("Please enter your name.");
+        return;
+      }
       setStep("contact");
+      return;
     }
+
     if (current === "contact") {
-      if (!formData.email || !formData.phone) return alert("Please enter your details");
+      if (!formData.email.trim() || !formData.phone.trim()) {
+        setFormError("Please enter your email and phone number.");
+        return;
+      }
       setStep("security");
+      return;
     }
+
     if (current === "security") {
-      if (!isLoggedIn && !formData.password) return alert("Please set a password");
+      if (!isLoggedIn && !formData.password) {
+        setFormError("Please set a password.");
+        return;
+      }
       setStep("ambition");
+      return;
     }
+
     if (current === "ambition") {
-      if (!formData.interest) return alert("Please choose a path");
-      register();
+      if (!formData.interest) {
+        setFormError("Please choose a learning path.");
+        return;
+      }
+      void register();
     }
   };
 
@@ -133,11 +158,12 @@ export default function GamifiedRegistration() {
               Ready to START the Journey?
             </h2>
             <button
+              type="button"
               onClick={() => setStep("identity")}
               className="group relative bg-primary text-white px-12 py-6 rounded-2xl font-black text-2xl hover:scale-105 transition-all shadow-[0_0_50px_rgba(26,143,227,0.4)] overflow-hidden"
             >
               <span className="relative z-10">To START the Journey Click here</span>
-              <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 ease-in-out" />
+              <span className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 ease-in-out" />
             </button>
             <p className="mt-8 text-gray-400 font-bold uppercase tracking-[0.3em] text-sm">
               Press Start to Begin Your Quest
@@ -148,18 +174,20 @@ export default function GamifiedRegistration() {
                   <span>
                     Welcome back, <span className="text-primary">{formData.name}</span>!
                   </span>
-                  <button 
-                    onClick={() => setStep("identity")} 
+                  <button
+                    type="button"
+                    onClick={() => setStep("identity")}
                     className="text-primary underline hover:text-primary/80 transition-all text-lg"
                   >
-                    Resume Quest & Review Details →
+                    Resume Quest & Review Details
                   </button>
                 </div>
               ) : (
                 <span>
                   Already a member?{" "}
-                  <button 
-                    onClick={() => setStep("login")} 
+                  <button
+                    type="button"
+                    onClick={() => setStep("login")}
                     className="text-primary underline hover:text-primary/80 ml-1 transition-all"
                   >
                     Sign In
@@ -175,37 +203,40 @@ export default function GamifiedRegistration() {
           <div className="max-w-md mx-auto text-center animate-slide-up">
             <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Welcome Back</h3>
             <p className="text-gray-400 mb-8 font-medium">Sign in to resume your SCDS quest</p>
-            
+
             {loginError && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm font-medium">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 text-sm font-medium" role="alert">
                 {loginError}
               </div>
             )}
 
             <div className="space-y-4 mb-6">
-              <input 
+              <input
                 required
                 type="email"
+                aria-label="Email address"
                 placeholder="Email Address"
                 className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg transition-all"
                 value={loginEmail}
-                onChange={e => setLoginEmail(e.target.value)}
+                onChange={(event) => setLoginEmail(event.target.value)}
               />
-              <input 
+              <input
                 required
                 type="password"
+                aria-label="Password"
                 placeholder="Password"
                 className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg transition-all"
                 value={loginPassword}
-                onChange={e => setLoginPassword(e.target.value)}
+                onChange={(event) => setLoginPassword(event.target.value)}
               />
             </div>
-            
+
             <button
+              type="button"
               disabled={loginStatus === "loading"}
               onClick={async () => {
                 if (!loginEmail || !loginPassword) {
-                  setLoginError("Please enter your details");
+                  setLoginError("Please enter your details.");
                   return;
                 }
                 setLoginStatus("loading");
@@ -225,19 +256,19 @@ export default function GamifiedRegistration() {
                         name: student.name || "",
                         email: student.email || "",
                         phone: student.phone || "",
-                        password: "••••••••",
+                        password: "********",
                         interest: student.interest || "",
                         avatar: student.profileImage || student.avatar || null,
                       });
-                      setStep("identity"); // Go to step 1 with their pre-filled details!
+                      setStep("identity");
                     }
                   } else {
                     setLoginStatus("error");
-                    setLoginError(data.message || data.error || "Login failed");
+                    setLoginError(data.message || data.error || "Login failed.");
                   }
                 } catch {
                   setLoginStatus("error");
-                  setLoginError("An error occurred during sign in");
+                  setLoginError("An error occurred during sign in.");
                 } finally {
                   setLoginStatus("idle");
                 }
@@ -245,15 +276,16 @@ export default function GamifiedRegistration() {
               className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg hover:bg-primary/95 transition-all shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loginStatus === "loading" ? (
-                <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : "Sign In & Resume Quest →"}
+                <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-label="Signing in" />
+              ) : "Sign In & Resume Quest"}
             </button>
 
-            <button 
+            <button
+              type="button"
               onClick={() => setStep("start")}
               className="mt-6 text-sm text-gray-500 hover:text-white font-bold transition-all"
             >
-              ← Back to Start
+              Back to Start
             </button>
           </div>
         );
@@ -262,37 +294,42 @@ export default function GamifiedRegistration() {
         return (
           <div className="max-w-md mx-auto text-center animate-slide-up">
             <div className="mb-8 relative inline-block">
-              <div 
-                className="w-32 h-32 rounded-full border-4 border-primary overflow-hidden bg-dark flex items-center justify-center text-4xl cursor-pointer hover:opacity-80 transition-opacity"
+              <button
+                type="button"
+                className="w-32 h-32 rounded-full border-4 border-primary overflow-hidden bg-dark flex items-center justify-center text-sm font-black text-primary cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => fileInputRef.current?.click()}
+                aria-label="Choose profile photo"
               >
                 {formData.avatar ? (
-                  <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                ) : "👤"}
-              </div>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full text-xs shadow-xl"
-              >
-                📷
+                  <img src={formData.avatar} alt="Selected profile preview" className="w-full h-full object-cover" />
+                ) : "Avatar"}
               </button>
-              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-0 right-0 bg-primary text-white px-3 py-2 rounded-full text-xs shadow-xl"
+              >
+                Photo
+              </button>
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" aria-label="Upload profile photo" />
             </div>
             <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Choose Your Identity</h3>
             <p className="text-gray-400 mb-8 font-medium">What should we call you in the LMS?</p>
-            <input 
+            <input
               required
               type="text"
+              aria-label="Full name"
               placeholder="Your Full Name"
               className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg mb-6 transition-all"
               value={formData.name}
-              onChange={e => setFormData({...formData, name: e.target.value})}
+              onChange={(event) => setFormData({ ...formData, name: event.target.value })}
             />
             <button
+              type="button"
               onClick={() => nextStep("identity")}
               className="w-full bg-white text-dark py-5 rounded-2xl font-black text-lg hover:bg-primary hover:text-white transition-all shadow-xl"
             >
-              Next Phase →
+              Next Phase
             </button>
           </div>
         );
@@ -303,28 +340,31 @@ export default function GamifiedRegistration() {
             <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Establish Connection</h3>
             <p className="text-gray-400 mb-8 font-medium">Where should we send your certificates?</p>
             <div className="space-y-4">
-              <input 
+              <input
                 required
                 type="email"
+                aria-label="Email address"
                 placeholder="Email Address"
                 className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg transition-all"
                 value={formData.email}
-                onChange={e => setFormData({...formData, email: e.target.value})}
+                onChange={(event) => setFormData({ ...formData, email: event.target.value })}
               />
-              <input 
+              <input
                 required
                 type="tel"
+                aria-label="M-Pesa phone number"
                 placeholder="M-Pesa Phone Number"
                 className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg transition-all"
                 value={formData.phone}
-                onChange={e => setFormData({...formData, phone: e.target.value})}
+                onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
               />
             </div>
             <button
+              type="button"
               onClick={() => nextStep("contact")}
               className="w-full bg-white text-dark py-5 rounded-2xl font-black text-lg hover:bg-primary hover:text-white transition-all shadow-xl mt-8"
             >
-              Sync Channels →
+              Sync Channels
             </button>
           </div>
         );
@@ -337,24 +377,26 @@ export default function GamifiedRegistration() {
               {isLoggedIn ? "You are logged in. Your account is already secure." : "Create a strong master key for your portal."}
             </p>
             {!isLoggedIn ? (
-              <input 
+              <input
                 required
                 type="password"
+                aria-label="Password"
                 placeholder="Strong Password"
                 className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg mb-6 transition-all"
                 value={formData.password}
-                onChange={e => setFormData({...formData, password: e.target.value})}
+                onChange={(event) => setFormData({ ...formData, password: event.target.value })}
               />
             ) : (
               <div className="w-full bg-green-500/10 border border-green-500/20 text-green-400 rounded-2xl p-5 font-bold mb-6">
-                ✓ Account Authenticated
+                Account Authenticated
               </div>
             )}
             <button
+              type="button"
               onClick={() => nextStep("security")}
               className="w-full bg-white text-dark py-5 rounded-2xl font-black text-lg hover:bg-primary hover:text-white transition-all shadow-xl"
             >
-              {isLoggedIn ? "Continue Quest →" : "Lock It In →"}
+              {isLoggedIn ? "Continue Quest" : "Lock It In"}
             </button>
           </div>
         );
@@ -366,31 +408,33 @@ export default function GamifiedRegistration() {
             <p className="text-gray-400 mb-8 font-medium">Which skill are you aiming to master first?</p>
             <div className="grid grid-cols-2 gap-3 mb-8">
               {[
-                { id: "ps", label: "Graphic Design", emoji: "🎨" },
-                { id: "ai", label: "Branding", emoji: "✏️" },
-                { id: "cc", label: "Video Editing", emoji: "🎬" },
-                { id: "sw", label: "Engineering", emoji: "⚙️" },
-              ].map(path => (
+                { id: "ps", label: "Graphic Design", tag: "Design" },
+                { id: "ai", label: "Branding", tag: "Brand" },
+                { id: "cc", label: "Video Editing", tag: "Video" },
+                { id: "sw", label: "Engineering", tag: "Tech" },
+              ].map((path) => (
                 <button
                   key={path.id}
-                  onClick={() => setFormData({...formData, interest: path.label})}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, interest: path.label })}
                   className={`p-4 rounded-xl border-2 font-bold transition-all ${
                     formData.interest === path.label ? "border-primary bg-primary/10 text-white" : "border-white/10 text-gray-400 hover:border-white/20"
                   }`}
                 >
-                  <div className="text-2xl mb-1">{path.emoji}</div>
-                  <div className="text-sm">{path.label}</div>
+                  <span className="block text-xs uppercase tracking-widest mb-1">{path.tag}</span>
+                  <span className="block text-sm">{path.label}</span>
                 </button>
               ))}
             </div>
             <button
+              type="button"
               disabled={loading}
               onClick={() => nextStep("ambition")}
-              className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg hover:bg-primary/90 transition-all shadow-xl flex items-center justify-center gap-3"
+              className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg hover:bg-primary/90 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50"
             >
               {loading ? (
-                <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : "Initialize Quest! 🚀"}
+                <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-label="Creating account" />
+              ) : "Initialize Quest!"}
             </button>
           </div>
         );
@@ -398,11 +442,10 @@ export default function GamifiedRegistration() {
       case "success":
         return (
           <div className="text-center py-10 animate-scale-up">
-            <div className="text-7xl mb-6">🏆</div>
+            <div className="text-5xl mb-6 font-black text-primary">SCDS</div>
             <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Level Up!</h2>
             <p className="text-gray-400 mb-10 text-lg">
-              Welcome to SCDS, <span className="text-primary font-bold">{formData.name}</span>. 
-              Your student account is now active.
+              Welcome to SCDS, <span className="text-primary font-bold">{formData.name}</span>. Your student account is now active.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/auth/login" className="bg-primary text-white px-10 py-4 rounded-xl font-bold hover:scale-105 transition-all shadow-lg">
@@ -431,11 +474,16 @@ export default function GamifiedRegistration() {
                 </span>
               </div>
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-primary transition-all duration-500" 
+                <div
+                  className="h-full bg-primary transition-all duration-500"
                   style={{ width: step === "identity" ? "25%" : step === "contact" ? "50%" : step === "security" ? "75%" : "90%" }}
                 />
               </div>
+            </div>
+          )}
+          {formError && (
+            <div className="mb-8 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300" role="alert">
+              {formError}
             </div>
           )}
           {renderStep()}

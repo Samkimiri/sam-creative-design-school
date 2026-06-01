@@ -18,7 +18,10 @@ function createClientPromise(): Promise<MongoClient> {
     );
   }
 
-  const client = new MongoClient(uri, {});
+  const client = new MongoClient(uri, {
+    connectTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 5000,
+  });
 
   return client.connect().catch((err) => {
     const globalWithMongo = global as GlobalMongo;

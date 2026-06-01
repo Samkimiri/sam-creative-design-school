@@ -12,6 +12,7 @@ type SupabaseRow<T> = {
 const supabaseUrl = process.env.SCDS_DB_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey =
   process.env.SCDS_DB_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const requestTimeoutMs = Number(process.env.SCDS_DB_TIMEOUT_MS || 5000);
 
 function getRestUrl(path: string) {
   if (!supabaseUrl) throw new Error("Supabase URL is not configured");
@@ -42,6 +43,20 @@ export function hasSupabaseConfig() {
   return Boolean(supabaseUrl && supabaseServiceKey);
 }
 
+async function fetchSupabase(input: string, init: RequestInit = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function getSupabaseCollection<T>(collection: string): Promise<T[]> {
   const query = new URLSearchParams({
     collection: `eq.${collection}`,
@@ -49,7 +64,7 @@ export async function getSupabaseCollection<T>(collection: string): Promise<T[]>
     order: "position.asc",
   });
 
-  const response = await fetch(getRestUrl(`app_records?${query.toString()}`), {
+  const response = await fetchSupabase(getRestUrl(`app_records?${query.toString()}`), {
     headers: getHeaders(),
     cache: "no-store",
   });
@@ -70,7 +85,7 @@ export async function getSupabaseRecord<T>(collection: string, recordId: string)
     limit: "1",
   });
 
-  const response = await fetch(getRestUrl(`app_records?${query.toString()}`), {
+  const response = await fetchSupabase(getRestUrl(`app_records?${query.toString()}`), {
     headers: getHeaders(),
     cache: "no-store",
   });
@@ -95,7 +110,7 @@ export async function findSupabaseRecordByJsonField<T>(
   });
   query.set(`data->>${field}`, `eq.${value}`);
 
-  const response = await fetch(getRestUrl(`app_records?${query.toString()}`), {
+  const response = await fetchSupabase(getRestUrl(`app_records?${query.toString()}`), {
     headers: getHeaders(),
     cache: "no-store",
   });
@@ -109,7 +124,7 @@ export async function findSupabaseRecordByJsonField<T>(
 }
 
 export async function saveSupabaseCollection<T>(collection: string, data: T[]): Promise<void> {
-  const deleteResponse = await fetch(
+  const deleteResponse = await fetchSupabase(
     getRestUrl(`app_records?collection=eq.${encodeURIComponent(collection)}`),
     {
       method: "DELETE",
@@ -133,7 +148,7 @@ export async function saveSupabaseCollection<T>(collection: string, data: T[]): 
     };
   });
 
-  const insertResponse = await fetch(getRestUrl("app_records"), {
+  const insertResponse = await fetchSupabase(getRestUrl("app_records"), {
     method: "POST",
     headers: getHeaders({ Prefer: "return=minimal" }),
     body: JSON.stringify(rows),
@@ -157,7 +172,7 @@ export async function upsertSupabaseRecord<T>(
     data,
   };
 
-  const response = await fetch(getRestUrl("app_records?on_conflict=collection,record_id"), {
+  const response = await fetchSupabase(getRestUrl("app_records?on_conflict=collection,record_id"), {
     method: "POST",
     headers: getHeaders({ Prefer: "resolution=merge-duplicates,return=minimal" }),
     body: JSON.stringify(row),

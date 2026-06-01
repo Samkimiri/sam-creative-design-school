@@ -37,10 +37,10 @@ export default function Contact() {
   ];
 
   const socials = [
-    { name: "Facebook", handle: "Sam Creatives", icon: "f", href: "https://facebook.com" },
-    { name: "Instagram", handle: "@samcreativegraphics", icon: "📸", href: "https://instagram.com" },
-    { name: "TikTok", handle: "@samkim7", icon: "🎵", href: "https://tiktok.com" },
-    { name: "LinkedIn", handle: "Samuel Ndung'u Kimiri", icon: "in", href: "https://linkedin.com" },
+    { name: "Facebook", handle: "Sam Creatives", icon: "f", href: "https://www.facebook.com/SamCreatives" },
+    { name: "Instagram", handle: "@samcreativegraphics", icon: "ig", href: "https://www.instagram.com/samcreativegraphics" },
+    { name: "TikTok", handle: "@samkim7", icon: "tk", href: "https://www.tiktok.com/@samkim7" },
+    { name: "LinkedIn", handle: "Samuel Ndung'u Kimiri", icon: "in", href: "https://www.linkedin.com/in/samuel-ndungu-kimiri" },
   ];
 
   return (

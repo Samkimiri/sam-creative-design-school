@@ -22,18 +22,23 @@ export default function StudentProjects() {
   const submitProject = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus("Submitting...");
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    if (!data.success) {
-      setStatus(data.message || "Could not submit project.");
-      return;
+
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setStatus(data.message || "Could not submit project.");
+        return;
+      }
+      setForm({ studentName: "", courseId: courses[0]?.id || "", title: "", description: "", imageUrl: "" });
+      setStatus("Project submitted. It will appear publicly after admin approval.");
+    } catch {
+      setStatus("Could not submit project. Please try again.");
     }
-    setForm({ studentName: "", courseId: courses[0]?.id || "", title: "", description: "", imageUrl: "" });
-    setStatus("Project submitted. It will appear publicly after admin approval.");
   };
 
   return (
@@ -72,18 +77,33 @@ export default function StudentProjects() {
         <form onSubmit={submitProject} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
           <h3 className="mb-5 text-xl font-extrabold text-dark">Submit your project</h3>
           <div className="space-y-4">
-            <input value={form.studentName} onChange={(e) => setForm({ ...form, studentName: e.target.value })} placeholder="Your name" className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
-            <select value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value })} className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary">
+            <div>
+              <label htmlFor="project-student-name" className="mb-2 block text-sm font-bold text-dark">Your name</label>
+              <input id="project-student-name" required value={form.studentName} onChange={(e) => setForm({ ...form, studentName: e.target.value })} placeholder="Your name" className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
+            </div>
+            <div>
+              <label htmlFor="project-course" className="mb-2 block text-sm font-bold text-dark">Course</label>
+              <select id="project-course" required value={form.courseId} onChange={(e) => setForm({ ...form, courseId: e.target.value })} className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary">
               {courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
-            </select>
-            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Project title" className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
-            <input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="Image link or uploaded file URL" className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe what you created" rows={4} className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
+              </select>
+            </div>
+            <div>
+              <label htmlFor="project-title" className="mb-2 block text-sm font-bold text-dark">Project title</label>
+              <input id="project-title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Project title" className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
+            </div>
+            <div>
+              <label htmlFor="project-image-url" className="mb-2 block text-sm font-bold text-dark">Image URL</label>
+              <input id="project-image-url" type="url" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="Image link or uploaded file URL" className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
+            </div>
+            <div>
+              <label htmlFor="project-description" className="mb-2 block text-sm font-bold text-dark">Description</label>
+              <textarea id="project-description" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe what you created" rows={4} className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
+            </div>
           </div>
-          <button className="mt-5 w-full rounded-xl bg-primary px-5 py-3 font-bold text-white transition-all duration-300 hover:bg-primary/90 motion-safe:hover:-translate-y-0.5">
-            Submit for Review
+          <button disabled={status === "Submitting..."} className="mt-5 w-full rounded-xl bg-primary px-5 py-3 font-bold text-white transition-all duration-300 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 motion-safe:hover:-translate-y-0.5">
+            {status === "Submitting..." ? "Submitting..." : "Submit for Review"}
           </button>
-          {status && <p className="mt-4 text-sm font-medium text-gray-600">{status}</p>}
+          {status && <p className="mt-4 text-sm font-medium text-gray-600" role="status" aria-live="polite">{status}</p>}
         </form>
       </div>
     </section>

@@ -4,16 +4,16 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   const socials = [
-    { name: "Facebook", handle: "Sam Creatives", href: "https://facebook.com", icon: (
+    { name: "Facebook", handle: "Sam Creatives", href: "https://www.facebook.com/SamCreatives", icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
     )},
-    { name: "Instagram", handle: "@samcreativegraphics", href: "https://instagram.com", icon: (
+    { name: "Instagram", handle: "@samcreativegraphics", href: "https://www.instagram.com/samcreativegraphics", icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
     )},
-    { name: "TikTok", handle: "@samkim7", href: "https://tiktok.com", icon: (
+    { name: "TikTok", handle: "@samkim7", href: "https://www.tiktok.com/@samkim7", icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.35 6.35 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.13a8.32 8.32 0 0 0 4.87 1.56V7.24a4.85 4.85 0 0 1-1.1-.55z"/></svg>
     )},
-    { name: "LinkedIn", handle: "Samuel Ndung'u Kimiri", href: "https://linkedin.com", icon: (
+    { name: "LinkedIn", handle: "Samuel Ndung'u Kimiri", href: "https://www.linkedin.com/in/samuel-ndungu-kimiri", icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
     )},
   ];

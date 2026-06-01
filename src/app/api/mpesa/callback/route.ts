@@ -5,8 +5,6 @@ import type { Enrollment, Student } from "@/types";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log("M-Pesa Callback:", JSON.stringify(body, null, 2));
-
     const { Body } = body;
     if (!Body?.stkCallback) {
       return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
@@ -20,7 +18,6 @@ export async function POST(request: Request) {
     );
 
     if (String(ResultCode) !== "0") {
-      console.log(`M-Pesa payment failed: ${ResultDesc}`);
       if (idx > -1) {
         enrollments[idx].status = "failed";
         enrollments[idx].mpesaResultCode = String(ResultCode);
