@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
 
@@ -22,7 +22,7 @@ interface Enrollment {
   amount: number;
   phone: string;
   reference: string;
-  status: "pending" | "confirmed";
+  status: "pending" | "confirmed" | "failed";
   whatsappConfirmed?: boolean;
   createdAt: string;
 }
@@ -162,6 +162,7 @@ const adminPanelMotion = "motion-safe:transition-all motion-safe:duration-300 mo
 const adminRowMotion = "motion-safe:transition-colors motion-safe:duration-150 hover:bg-gray-50";
 const adminActionMotion = "motion-safe:transition-all motion-safe:duration-150 motion-safe:ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 const adminTabMotion = "motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:-translate-y-px active:translate-y-0";
+const adminFetchTimeoutMs = 12000;
 
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
@@ -181,8 +182,22 @@ export default function AdminDashboard() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pendingAction, setPendingAction] = useState("");
+  const [assignmentFeedback, setAssignmentFeedback] = useState<Record<string, string>>({});
 
-  const fetchData = async (pw?: string) => {
+  const fetchAdminJson = useCallback(async <T,>(url: string, init: RequestInit): Promise<{ res: Response; data: AdminResponse<T> }> => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), adminFetchTimeoutMs);
+
+    try {
+      const res = await fetch(url, { ...init, signal: controller.signal });
+      const data = await res.json().catch(() => ({ success: false, message: "Invalid server response" })) as AdminResponse<T>;
+      return { res, data };
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }, []);
+
+  const fetchData = useCallback(async (pw?: string) => {
     setLoading(true);
     setError("");
     setNotice("");
@@ -191,8 +206,7 @@ export default function AdminDashboard() {
       const body = JSON.stringify({ password: pw });
 
       const loadSection = async <T,>(url: string): Promise<SectionLoad<T>> => {
-        const res = await fetch(url, { method: "POST", headers, body });
-        const data = await res.json().catch(() => ({ success: false, message: "Invalid server response" })) as AdminResponse<T>;
+        const { res, data } = await fetchAdminJson<T>(url, { method: "POST", headers, body });
         if (!res.ok || !data.success) {
           return { ok: false, status: res.status, message: data.message || "Could not load dashboard data" };
         }
@@ -234,17 +248,18 @@ export default function AdminDashboard() {
         setError("Incorrect password.");
       }
     } catch (err) {
-      console.error(err);
-      setError("Could not load dashboard data. Try again.");
+      setError(err instanceof DOMException && err.name === "AbortError"
+        ? "The admin backend took too long to respond. Try again."
+        : "Could not load dashboard data. Try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchAdminJson]);
 
   // Check for session-based auth on mount
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const confirmEnrollment = async (enrollmentId: string) => {
     await runMutation<Enrollment>(
@@ -299,7 +314,7 @@ export default function AdminDashboard() {
   };
 
   const markAssignment = async (id: string, status: "reviewed" | "revision") => {
-    const feedback = window.prompt("Feedback for the student?") || "";
+    const feedback = assignmentFeedback[id] || "";
     await runMutation<AdminAssignment>(
       `assignment-${id}`,
       "/api/admin/assignments",
@@ -324,20 +339,21 @@ export default function AdminDashboard() {
     setPendingAction("settings-intake");
     setNotice("");
     try {
-      const res = await fetch("/api/admin/settings", {
+      const { res, data } = await fetchAdminJson<AdminSettings>("/api/admin/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password, ...intakeSettings }),
       });
-      const data = await res.json().catch(() => ({ success: false, message: "Invalid server response" })) as AdminResponse<AdminSettings>;
       if (!res.ok || !data.success || !data.data?.intake) {
         setNotice(data.message || "Could not update intake settings.");
         return;
       }
       setIntakeSettings(data.data.intake);
       setNotice("Upcoming intake updated. Refresh the homepage to see the latest version.");
-    } catch {
-      setNotice("Could not update intake settings. Check your connection and try again.");
+    } catch (err) {
+      setNotice(err instanceof DOMException && err.name === "AbortError"
+        ? "The settings update took too long. Please try again."
+        : "Could not update intake settings. Check your connection and try again.");
     } finally {
       setPendingAction("");
     }
@@ -353,19 +369,20 @@ export default function AdminDashboard() {
     setPendingAction(actionKey);
     setNotice("");
     try {
-      const res = await fetch(url, {
+      const { res, data } = await fetchAdminJson<T>(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json().catch(() => ({ success: false, message: "Invalid server response" })) as AdminResponse<T>;
       if (!res.ok || !data.success || !data.data) {
         setNotice(data.message || "Action failed. Refresh and try again.");
         return;
       }
       onSuccess(data.data);
-    } catch {
-      setNotice("Action failed. Check your connection and try again.");
+    } catch (err) {
+      setNotice(err instanceof DOMException && err.name === "AbortError"
+        ? "The admin action took too long. Please try again."
+        : "Action failed. Check your connection and try again.");
     } finally {
       setPendingAction("");
     }
@@ -376,23 +393,31 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-dark flex items-center justify-center px-6">
         <div className="bg-white/5 border border-white/10 rounded-3xl p-10 w-full max-w-sm">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4">🔐</div>
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-sm font-black text-white mx-auto mb-4">ADMIN</div>
             <h1 className="text-2xl font-extrabold text-white">Admin Access</h1>
             <p className="text-gray-400 text-sm mt-1">Sam Creative Design School</p>
           </div>
-          {error && <p className="text-red-400 text-sm text-center mb-4">{error}</p>}
+          {error && <p className="text-red-400 text-sm text-center mb-4" role="alert">{error}</p>}
           <form onSubmit={(e) => { e.preventDefault(); fetchData(password); }} className="space-y-4">
-            <input
-              type="password"
-              placeholder="Admin password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary placeholder:text-gray-500"
-              required
-            />
+            <div>
+              <label htmlFor="admin-password" className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Admin password</label>
+              <input
+                id="admin-password"
+                type="password"
+                placeholder="Enter admin password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary placeholder:text-gray-500"
+                required
+              />
+            </div>
             <button type="submit" disabled={loading} className={`w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 disabled:opacity-50 ${adminActionMotion}`}>
               {loading ? "Verifying..." : "Enter Dashboard"}
             </button>
+            <p className="text-center text-xs leading-5 text-gray-400">
+              Admin accounts can also sign in first, then return here.
+              <Link href="/auth/login" className="ml-1 font-bold text-primary hover:text-white">Open login</Link>
+            </p>
           </form>
         </div>
       </div>
@@ -407,19 +432,31 @@ export default function AdminDashboard() {
             <p className="text-primary font-bold uppercase tracking-widest text-sm mb-1">Admin Panel</p>
             <h1 className="text-3xl font-extrabold text-dark">School Dashboard</h1>
           </div>
-          <Link href="/" className="text-sm text-gray-500 hover:text-primary font-bold">← Back to Website</Link>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => void fetchData(password)}
+              disabled={loading}
+              className={`rounded-xl bg-white px-4 py-2 text-sm font-bold text-dark border border-gray-200 disabled:opacity-50 ${adminActionMotion}`}
+            >
+              {loading ? "Refreshing..." : "Refresh Data"}
+            </button>
+            <Link href="/" className={`rounded-xl bg-white px-4 py-2 text-sm font-bold text-gray-500 hover:text-primary border border-gray-200 ${adminActionMotion}`}>
+              Back to Website
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           {[
-            { label: "Unique Visitors", value: analyticsSummary?.uniqueVisitors ?? 0, icon: "👁️", color: "bg-purple-50 text-purple-600" },
-            { label: "Page Views", value: analyticsSummary?.pageViews ?? 0, icon: "📄", color: "bg-indigo-50 text-indigo-600" },
-            { label: "Today's Visitors", value: analyticsSummary?.todayVisitors ?? 0, icon: "📈", color: "bg-blue-50 text-blue-600" },
-            { label: "Engagements", value: analyticsSummary?.engagements ?? 0, icon: "🖱️", color: "bg-orange-50 text-orange-600" },
+            { label: "Unique Visitors", value: analyticsSummary?.uniqueVisitors ?? 0, icon: "UV", color: "bg-purple-50 text-purple-600" },
+            { label: "Page Views", value: analyticsSummary?.pageViews ?? 0, icon: "PV", color: "bg-indigo-50 text-indigo-600" },
+            { label: "Today's Visitors", value: analyticsSummary?.todayVisitors ?? 0, icon: "TD", color: "bg-blue-50 text-blue-600" },
+            { label: "Engagements", value: analyticsSummary?.engagements ?? 0, icon: "EG", color: "bg-orange-50 text-orange-600" },
           ].map((stat, i) => (
             <div key={i} className={`rounded-2xl p-5 ${stat.color} ${adminCardMotion}`}>
-              <div className="text-3xl mb-2">{stat.icon}</div>
+              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 text-xs font-black">{stat.icon}</div>
               <div className="text-2xl font-extrabold">{stat.value}</div>
               <div className="text-xs font-medium opacity-70">{stat.label}</div>
             </div>
@@ -510,7 +547,7 @@ export default function AdminDashboard() {
                               <div className="text-xs text-gray-500">{s.userEmail}</div>
                             </>
                           ) : (
-                            <div className="font-mono text-xs text-gray-600">{s.visitorId.slice(0, 18)}…</div>
+                            <div className="font-mono text-xs text-gray-600">{s.visitorId.slice(0, 18)}...</div>
                           )}
                           <div className="text-xs text-gray-400 mt-1">Landing: {s.landingPage}</div>
                         </td>
@@ -697,8 +734,8 @@ export default function AdminDashboard() {
               ) : reviews.map((review) => (
                 <div key={review.id} className={`p-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between ${adminRowMotion}`}>
                   <div>
-                    <p className="font-bold text-dark">{review.name} · {review.rating}/5</p>
-                    <p className="text-xs text-gray-400">{review.role || "Student"} · {review.approved ? "Approved" : "Pending"}</p>
+                    <p className="font-bold text-dark">{review.name} - {review.rating}/5</p>
+                    <p className="text-xs text-gray-400">{review.role || "Student"} - {review.approved ? "Approved" : "Pending"}</p>
                     <p className="mt-3 text-sm text-gray-600">{review.text}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -728,7 +765,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="md:col-span-2">
                     <p className="font-bold text-dark">{project.title}</p>
-                    <p className="text-xs text-primary font-bold">{project.courseName} · {project.studentName}</p>
+                    <p className="text-xs text-primary font-bold">{project.courseName} - {project.studentName}</p>
                     <p className="mt-2 text-sm text-gray-600">{project.description}</p>
                     <p className="mt-2">
                       <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${statusClass[project.status]}`}>
@@ -758,17 +795,28 @@ export default function AdminDashboard() {
                 <p className="p-6 text-sm text-gray-400">No assignments submitted yet.</p>
               ) : assignments.map((assignment) => (
                 <div key={assignment.id} className={`p-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between ${adminRowMotion}`}>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="font-bold text-dark">{assignment.studentName}</p>
-                    <p className="text-xs text-primary font-bold">{assignment.courseName} · {assignment.lessonTitle}</p>
-                    {assignment.fileUrl && <a href={assignment.fileUrl} className={`mt-2 block text-sm font-bold text-primary ${adminTabMotion}`} target="_blank">Open submitted file</a>}
+                    <p className="text-xs text-primary font-bold">{assignment.courseName} - {assignment.lessonTitle}</p>
+                    {assignment.fileUrl && <a href={assignment.fileUrl} className={`mt-2 block text-sm font-bold text-primary ${adminTabMotion}`} target="_blank" rel="noreferrer">Open submitted file</a>}
                     {assignment.notes && <p className="mt-2 text-sm text-gray-600">{assignment.notes}</p>}
-                    <p className="mt-2 text-xs text-gray-400">Status: {assignment.status}{assignment.feedback ? ` · Feedback: ${assignment.feedback}` : ""}</p>
+                    <p className="mt-2 text-xs text-gray-400">Status: {assignment.status}{assignment.feedback ? ` - Feedback: ${assignment.feedback}` : ""}</p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="w-full space-y-3 md:w-80">
+                    <label htmlFor={`assignment-feedback-${assignment.id}`} className="block text-xs font-black uppercase tracking-widest text-gray-400">Feedback</label>
+                    <textarea
+                      id={`assignment-feedback-${assignment.id}`}
+                      value={assignmentFeedback[assignment.id] ?? assignment.feedback ?? ""}
+                      onChange={(e) => setAssignmentFeedback((prev) => ({ ...prev, [assignment.id]: e.target.value }))}
+                      className="min-h-24 w-full resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary"
+                      maxLength={800}
+                      placeholder="Write clear next steps for the student"
+                    />
+                    <div className="flex flex-wrap gap-2">
                     <button disabled={pendingAction === `assignment-${assignment.id}`} onClick={() => markAssignment(assignment.id, "reviewed")} className={`rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50 ${adminActionMotion}`}>{pendingAction === `assignment-${assignment.id}` ? "Saving..." : "Mark Reviewed"}</button>
                     <button disabled={pendingAction === `assignment-${assignment.id}`} onClick={() => markAssignment(assignment.id, "revision")} className={`rounded-xl bg-yellow-100 px-4 py-2 text-sm font-bold text-yellow-800 disabled:opacity-50 ${adminActionMotion}`}>Needs Revision</button>
                     <button disabled={pendingAction === `assignment-delete-${assignment.id}`} onClick={() => deleteAssignment(assignment.id, assignment.studentName)} className={`rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}>{pendingAction === `assignment-delete-${assignment.id}` ? "Deleting..." : "Delete"}</button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -944,7 +992,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className={`bg-white rounded-3xl border border-dashed border-gray-300 p-12 text-center ${adminPanelMotion}`}>
-                  <div className="text-5xl mb-4">📚</div>
+                  <div className="mb-4 text-sm font-black uppercase tracking-widest text-primary">Content</div>
                   <h3 className="font-bold text-xl text-dark">Course Material Review</h3>
                   <p className="text-gray-500">Select a course to view all lessons, notes, and quiz questions.</p>
                 </div>
