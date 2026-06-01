@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB, saveDB } from "@/lib/db";
+import { appendDBRecord, getDB, upsertDBRecord } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { initiateStkPush, isMpesaConfigured } from "@/lib/mpesa";
 import { courses } from "@/data/courses";
@@ -49,7 +49,6 @@ export async function POST(request: Request) {
     const courseName = selectedCourses.map((course) => course.title).join(", ");
     const parsedAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
-    const enrollments = await getDB<Enrollment>("enrollments.json");
     const session = await getSession();
 
     let pushSuccess = false;
@@ -103,8 +102,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    enrollments.push(newEnrollment);
-    await saveDB("enrollments.json", enrollments);
+    await appendDBRecord("enrollments.json", newEnrollment);
 
     return NextResponse.json({
       success: true,
@@ -139,7 +137,7 @@ export async function PATCH(request: Request) {
 
     if (idx > -1) {
       enrollments[idx].whatsappConfirmed = Boolean(whatsappConfirmed);
-      await saveDB("enrollments.json", enrollments);
+      await upsertDBRecord("enrollments.json", enrollments[idx]);
       return NextResponse.json({ success: true });
     }
     return NextResponse.json({ success: false, message: "Enrollment not found" }, { status: 404 });

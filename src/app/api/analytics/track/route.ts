@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { getDB, saveDB } from "@/lib/db";
+import { appendDBRecord, getDBRecord, upsertDBRecord } from "@/lib/db";
 import {
   isValidEventType,
   parseUserAgent,
-  trimEvents,
   upsertSession,
 } from "@/lib/analytics";
 import type { AnalyticsEvent, VisitorSession } from "@/types";
@@ -56,17 +55,18 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    const [events, sessions] = await Promise.all([
-      getDB<AnalyticsEvent>("analytics-events.json"),
-      getDB<VisitorSession>("analytics-sessions.json"),
-    ]);
-
-    const updatedEvents = trimEvents([...events, event]);
-    const updatedSessions = upsertSession(sessions, event);
+    const currentSession = await getDBRecord<VisitorSession>(
+      "analytics-sessions.json",
+      sessionId
+    );
+    const updatedSessions = upsertSession(currentSession ? [currentSession] : [], event);
+    const updatedSession = updatedSessions.find((session) => session.sessionId === event.sessionId);
 
     await Promise.all([
-      saveDB("analytics-events.json", updatedEvents),
-      saveDB("analytics-sessions.json", updatedSessions),
+      appendDBRecord("analytics-events.json", event),
+      updatedSession
+        ? upsertDBRecord("analytics-sessions.json", updatedSession, { idKey: "sessionId" })
+        : Promise.resolve(),
     ]);
 
     return NextResponse.json({ success: true });

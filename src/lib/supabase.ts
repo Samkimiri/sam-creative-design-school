@@ -62,6 +62,52 @@ export async function getSupabaseCollection<T>(collection: string): Promise<T[]>
   return rows.map((row) => row.data);
 }
 
+export async function getSupabaseRecord<T>(collection: string, recordId: string): Promise<T | null> {
+  const query = new URLSearchParams({
+    collection: `eq.${collection}`,
+    record_id: `eq.${recordId}`,
+    select: "data",
+    limit: "1",
+  });
+
+  const response = await fetch(getRestUrl(`app_records?${query.toString()}`), {
+    headers: getHeaders(),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase record read failed: ${await parseSupabaseError(response)}`);
+  }
+
+  const rows = (await response.json()) as SupabaseRecord<T>[];
+  return rows[0]?.data ?? null;
+}
+
+export async function findSupabaseRecordByJsonField<T>(
+  collection: string,
+  field: string,
+  value: string
+): Promise<T | null> {
+  const query = new URLSearchParams({
+    collection: `eq.${collection}`,
+    select: "data",
+    limit: "1",
+  });
+  query.set(`data->>${field}`, `eq.${value}`);
+
+  const response = await fetch(getRestUrl(`app_records?${query.toString()}`), {
+    headers: getHeaders(),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase field read failed: ${await parseSupabaseError(response)}`);
+  }
+
+  const rows = (await response.json()) as SupabaseRecord<T>[];
+  return rows[0]?.data ?? null;
+}
+
 export async function saveSupabaseCollection<T>(collection: string, data: T[]): Promise<void> {
   const deleteResponse = await fetch(
     getRestUrl(`app_records?collection=eq.${encodeURIComponent(collection)}`),
@@ -95,5 +141,29 @@ export async function saveSupabaseCollection<T>(collection: string, data: T[]): 
 
   if (!insertResponse.ok) {
     throw new Error(`Supabase write failed: ${await parseSupabaseError(insertResponse)}`);
+  }
+}
+
+export async function upsertSupabaseRecord<T>(
+  collection: string,
+  recordId: string,
+  data: T,
+  position = Date.now()
+): Promise<void> {
+  const row: SupabaseRow<T> = {
+    collection,
+    record_id: recordId,
+    position,
+    data,
+  };
+
+  const response = await fetch(getRestUrl("app_records?on_conflict=collection,record_id"), {
+    method: "POST",
+    headers: getHeaders({ Prefer: "resolution=merge-duplicates,return=minimal" }),
+    body: JSON.stringify(row),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase upsert failed: ${await parseSupabaseError(response)}`);
   }
 }

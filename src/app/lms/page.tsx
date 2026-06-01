@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { courses, lessons } from "@/data/courses";
 import { getSession } from "@/lib/auth";
-import { getDB } from "@/lib/db";
+import { getDB, getDBRecord } from "@/lib/db";
 
 interface ProgressRecord {
   studentId: string;
@@ -48,8 +48,7 @@ export default async function LMSDashboard() {
   let student: Student | undefined = undefined;
 
   if (session) {
-    const allStudents = await getDB<Student>("students.json");
-    student = allStudents.find((s) => s.id === session.user.id);
+    student = await getDBRecord<Student>("students.json", session.user.id) ?? undefined;
     studentName = session.user.name;
 
     const studentEnrolledIds = student?.enrolledCourses || ["photoshop-masterclass"];

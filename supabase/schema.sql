@@ -11,6 +11,21 @@ create table if not exists public.app_records (
 create index if not exists app_records_collection_position_idx
   on public.app_records (collection, position);
 
+create index if not exists app_records_collection_updated_idx
+  on public.app_records (collection, updated_at desc);
+
+create index if not exists app_records_students_email_idx
+  on public.app_records (lower(data->>'email'))
+  where collection = 'students';
+
+create index if not exists app_records_enrollments_reference_idx
+  on public.app_records ((data->>'reference'))
+  where collection = 'enrollments';
+
+create index if not exists app_records_enrollments_checkout_idx
+  on public.app_records ((data->>'checkoutRequestId'))
+  where collection = 'enrollments';
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql

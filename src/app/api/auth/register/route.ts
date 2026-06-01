@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB, saveDB } from "@/lib/db";
+import { appendDBRecord, findDBRecordByField } from "@/lib/db";
 import { hashPassword, setSession, UserSession } from "@/lib/auth";
 
 interface Student {
@@ -58,8 +58,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const students = await getDB<Student>("students.json");
-    if (students.find((s) => s.email.toLowerCase() === email.toLowerCase())) {
+    const existingStudent = await findDBRecordByField<Student>("students.json", "email", email);
+    if (existingStudent) {
       return NextResponse.json(
         { success: false, message: "An account with this email already exists." },
         { status: 400 }
@@ -84,8 +84,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    students.push(newStudent);
-    await saveDB("students.json", students);
+    await appendDBRecord("students.json", newStudent);
 
     // Create session user object
     const userSession: UserSession = {

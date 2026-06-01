@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { getDB } from "@/lib/db";
-import type { Student } from "@/types";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,8 +13,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    await getDB<Student>("students.json");
 
     return NextResponse.json({
       success: true,

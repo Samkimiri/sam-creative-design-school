@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB, saveDB } from "@/lib/db";
+import { getDB, upsertDBRecord } from "@/lib/db";
 import { isMpesaConfigured, queryStkPushStatus } from "@/lib/mpesa";
 import type { Enrollment, Student } from "@/types";
 
@@ -12,7 +12,7 @@ async function confirmEnrollment(checkoutRequestId: string): Promise<boolean> {
 
   enrollments[idx].status = "confirmed";
   enrollments[idx].mpesaResultCode = "0";
-  await saveDB("enrollments.json", enrollments);
+  await upsertDBRecord("enrollments.json", enrollments[idx]);
 
   const enrollment = enrollments[idx];
   const students = await getDB<Student>("students.json");
@@ -29,7 +29,7 @@ async function confirmEnrollment(checkoutRequestId: string): Promise<boolean> {
       if (trimmed && !enrolled.includes(trimmed)) enrolled.push(trimmed);
     });
     students[studentIdx].enrolledCourses = enrolled;
-    await saveDB("students.json", students);
+    await upsertDBRecord("students.json", students[studentIdx]);
   }
 
   return true;
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
         enrollments[idx].status = "failed";
         enrollments[idx].mpesaResultCode = query.resultCode;
         enrollments[idx].mpesaResultDesc = query.resultDesc || "Payment failed";
-        await saveDB("enrollments.json", enrollments);
+        await upsertDBRecord("enrollments.json", enrollments[idx]);
       }
     }
 

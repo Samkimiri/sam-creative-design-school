@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, saveDB } from "@/lib/db";
+import { getDBRecord, upsertDBRecord } from "@/lib/db";
 import type { Student } from "@/types";
 
 export async function POST(request: Request) {
@@ -11,17 +11,16 @@ export async function POST(request: Request) {
     }
 
     const { name, phone, profileImage, avatar, interest } = await request.json();
-    const students = await getDB<Student>("students.json");
-    const index = students.findIndex((s) => s.id === session.user.id);
+    const student = await getDBRecord<Student>("students.json", session.user.id);
 
-    if (index > -1) {
-      if (name) students[index].name = name;
-      if (phone) students[index].phone = phone;
-      if (profileImage) students[index].profileImage = profileImage;
-      if (avatar) students[index].avatar = avatar;
-      if (interest) students[index].interest = interest;
+    if (student) {
+      if (name) student.name = name;
+      if (phone) student.phone = phone;
+      if (profileImage) student.profileImage = profileImage;
+      if (avatar) student.avatar = avatar;
+      if (interest) student.interest = interest;
       
-      await saveDB("students.json", students);
+      await upsertDBRecord("students.json", student);
       return NextResponse.json({ success: true });
     }
 

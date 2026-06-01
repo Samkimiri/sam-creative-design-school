@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB } from "@/lib/db";
+import { findDBRecordByField } from "@/lib/db";
 import { verifyPassword, setSession, UserSession } from "@/lib/auth";
 
 interface Student {
@@ -25,8 +25,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Missing fields" }, { status: 400 });
     }
 
-    const students = await getDB<Student>("students.json");
-    const student = students.find((s) => s.email.toLowerCase() === normalizedEmail);
+    const student = await findDBRecordByField<Student>("students.json", "email", normalizedEmail);
 
     if (!student) {
       return NextResponse.json({ success: false, message: "Invalid credentials" }, { status: 401 });

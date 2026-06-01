@@ -1,7 +1,14 @@
 import fs from "fs";
 import path from "path";
 import getMongoClient from "./mongodb";
-import { getSupabaseCollection, hasSupabaseConfig, saveSupabaseCollection } from "./supabase";
+import {
+  findSupabaseRecordByJsonField,
+  getSupabaseCollection,
+  getSupabaseRecord,
+  hasSupabaseConfig,
+  saveSupabaseCollection,
+  upsertSupabaseRecord,
+} from "./supabase";
 
 const DATA_DIR = path.join(process.cwd(), "src", "data");
 
@@ -12,6 +19,17 @@ function getCollectionName(filename: string): string {
 type MemoryDB = Record<string, unknown[]>;
 const globalDb = globalThis as typeof globalThis & { memoryDB?: MemoryDB };
 const memoryDB: MemoryDB = globalDb.memoryDB ?? (globalDb.memoryDB = {});
+const HIGH_WRITE_FILES = new Set([
+  "analytics-events.json",
+  "analytics-sessions.json",
+  "enrollments.json",
+  "messages.json",
+  "students.json",
+]);
+
+function shouldUseMemoryCache(filename: string) {
+  return !HIGH_WRITE_FILES.has(filename);
+}
 
 export function readJSON<T>(filename: string): T[] {
   if (memoryDB[filename]) return memoryDB[filename] as T[];
@@ -29,7 +47,7 @@ export function readJSON<T>(filename: string): T[] {
 }
 
 export async function getDB<T>(filename: string): Promise<T[]> {
-  if (memoryDB[filename]) return memoryDB[filename] as T[];
+  if (shouldUseMemoryCache(filename) && memoryDB[filename]) return memoryDB[filename] as T[];
 
   if (hasSupabaseConfig()) {
     try {
@@ -45,7 +63,7 @@ export async function getDB<T>(filename: string): Promise<T[]> {
         }
       }
 
-      memoryDB[filename] = data as unknown[];
+      if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
       return data;
     } catch (error) {
       console.error("Supabase getDB error:", error);
@@ -74,7 +92,7 @@ export async function getDB<T>(filename: string): Promise<T[]> {
       void _unused;
       return rest as T;
     });
-    memoryDB[filename] = data as unknown[];
+    if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
     return data;
   } catch (error) {
     console.error("MongoDB getDB error:", error);
@@ -82,8 +100,73 @@ export async function getDB<T>(filename: string): Promise<T[]> {
   }
 }
 
+export async function getDBRecord<T>(filename: string, recordId: string): Promise<T | null> {
+  if (!recordId.trim()) return null;
+
+  if (hasSupabaseConfig()) {
+    try {
+      return await getSupabaseRecord<T>(getCollectionName(filename), recordId.trim());
+    } catch (error) {
+      console.error("Supabase getDBRecord error:", error);
+    }
+  }
+
+  try {
+    const client = await getMongoClient();
+    const db = client.db("scds_db");
+    const collection = db.collection(getCollectionName(filename));
+    const document = await collection.findOne({ id: recordId.trim() });
+    if (!document) return null;
+    const { _id: _unused, ...rest } = document as Record<string, unknown> & { _id?: unknown };
+    void _unused;
+    return rest as T;
+  } catch (error) {
+    console.error("MongoDB getDBRecord error:", error);
+  }
+
+  const data = readJSON<T>(filename);
+  return data.find((item) => String((item as Record<string, unknown>).id || "") === recordId.trim()) ?? null;
+}
+
+export async function findDBRecordByField<T>(
+  filename: string,
+  field: string,
+  value: string
+): Promise<T | null> {
+  const cleanValue = value.trim();
+  if (!field || !cleanValue) return null;
+
+  if (hasSupabaseConfig()) {
+    try {
+      return await findSupabaseRecordByJsonField<T>(
+        getCollectionName(filename),
+        field,
+        cleanValue
+      );
+    } catch (error) {
+      console.error("Supabase findDBRecordByField error:", error);
+    }
+  }
+
+  try {
+    const client = await getMongoClient();
+    const db = client.db("scds_db");
+    const collection = db.collection(getCollectionName(filename));
+    const document = await collection.findOne({ [field]: cleanValue });
+    if (!document) return null;
+    const { _id: _unused, ...rest } = document as Record<string, unknown> & { _id?: unknown };
+    void _unused;
+    return rest as T;
+  } catch (error) {
+    console.error("MongoDB findDBRecordByField error:", error);
+  }
+
+  const data = readJSON<T>(filename);
+  return data.find((item) => String((item as Record<string, unknown>)[field] || "") === cleanValue) ?? null;
+}
+
 export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
-  memoryDB[filename] = data as unknown[];
+  if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
 
   const filePath = path.join(DATA_DIR, filename);
   try {
@@ -123,4 +206,48 @@ export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
 
 export function writeJSON<T>(filename: string, data: T[]): void {
   void saveDB(filename, data);
+}
+
+export async function upsertDBRecord<T extends object>(
+  filename: string,
+  record: T,
+  options?: { idKey?: string; position?: number }
+): Promise<void> {
+  const idKey = options?.idKey ?? "id";
+  const recordData = record as Record<string, unknown>;
+  const recordId = String(recordData[idKey] || "").trim();
+  if (!recordId) throw new Error(`Cannot upsert ${filename}: missing record id`);
+
+  if (hasSupabaseConfig()) {
+    await upsertSupabaseRecord(getCollectionName(filename), recordId, record, options?.position);
+    return;
+  }
+
+  try {
+    const client = await getMongoClient();
+    const db = client.db("scds_db");
+    const collection = db.collection(getCollectionName(filename));
+    await collection.updateOne(
+      { [String(idKey)]: recordId },
+      { $set: record },
+      { upsert: true }
+    );
+    return;
+  } catch (error) {
+    console.error("MongoDB upsertDBRecord error:", error);
+  }
+
+  const data = await getDB<T>(filename);
+  const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
+  if (index > -1) data[index] = record;
+  else data.push(record);
+  await saveDB(filename, data);
+}
+
+export async function appendDBRecord<T extends object>(
+  filename: string,
+  record: T,
+  options?: { idKey?: string; position?: number }
+): Promise<void> {
+  await upsertDBRecord(filename, record, options);
 }

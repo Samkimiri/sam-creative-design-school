@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB, saveDB } from "@/lib/db";
+import { getDB, upsertDBRecord } from "@/lib/db";
 import type { Enrollment, Student } from "@/types";
 
 export async function POST(request: Request) {
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         enrollments[idx].status = "failed";
         enrollments[idx].mpesaResultCode = String(ResultCode);
         enrollments[idx].mpesaResultDesc = String(ResultDesc || "Payment failed");
-        await saveDB("enrollments.json", enrollments);
+        await upsertDBRecord("enrollments.json", enrollments[idx]);
       }
       return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
     }
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       enrollments[idx].status = "confirmed";
       enrollments[idx].mpesaResultCode = String(ResultCode);
       enrollments[idx].mpesaResultDesc = String(ResultDesc || "Success");
-      await saveDB("enrollments.json", enrollments);
+      await upsertDBRecord("enrollments.json", enrollments[idx]);
 
       const enrollment = enrollments[idx];
       const students = await getDB<Student>("students.json");
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
           if (trimmed && !enrolled.includes(trimmed)) enrolled.push(trimmed);
         });
         students[studentIdx].enrolledCourses = enrolled;
-        await saveDB("students.json", students);
+        await upsertDBRecord("students.json", students[studentIdx]);
       }
     }
 

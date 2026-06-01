@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB } from "@/lib/db";
+import { getDB, getDBRecord } from "@/lib/db";
 import type { ProgressRecord, Student } from "@/types";
 
 export async function GET() {
@@ -10,8 +10,7 @@ export async function GET() {
       return NextResponse.json({ success: false }, { status: 401 });
     }
 
-    const students = await getDB<Student>("students.json");
-    const student = students.find((s) => s.id === session.user.id);
+    const student = await getDBRecord<Student>("students.json", session.user.id);
     
     if (!student) {
       return NextResponse.json({ success: false, message: "Student record not found" }, { status: 404 });

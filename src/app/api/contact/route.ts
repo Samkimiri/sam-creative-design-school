@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB, saveDB } from "@/lib/db";
+import { appendDBRecord } from "@/lib/db";
 
 interface ContactMessage {
   id: string;
@@ -37,7 +37,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const messages = await getDB<ContactMessage>("messages.json");
     const newMessage: ContactMessage = {
       id: `MSG-${Date.now()}`,
       name,
@@ -48,7 +47,7 @@ export async function POST(request: Request) {
       status: "unread",
     };
 
-    await saveDB("messages.json", [newMessage, ...messages].slice(0, 500));
+    await appendDBRecord("messages.json", newMessage);
 
     return NextResponse.json({
       success: true,
