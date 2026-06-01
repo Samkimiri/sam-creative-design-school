@@ -2,16 +2,25 @@ import { NextResponse } from "next/server";
 import { getDB, saveDB } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { initiateStkPush, isMpesaConfigured } from "@/lib/mpesa";
+import { courses } from "@/data/courses";
 import type { Enrollment } from "@/types";
+
+const clean = (value: unknown, maxLength: number) =>
+  String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, phone, courseId, courseName, amount } = body;
+    const name = clean(body.name, 80);
+    const phone = clean(body.phone, 20);
+    const courseIds = String(body.courseId || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
 
-    if (!name || !phone || !courseId) {
+    if (!name || !phone || courseIds.length === 0) {
       return NextResponse.json(
-        { success: false, message: "All fields are required" },
+        { success: false, message: "Name, phone, and at least one course are required." },
         { status: 400 }
       );
     }
@@ -27,14 +36,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const parsedAmount = Number(amount);
-    if (!parsedAmount || parsedAmount < 1) {
+    const selectedCourses = courses.filter((course) => courseIds.includes(course.id));
+    const missingCourse = selectedCourses.length !== new Set(courseIds).size;
+
+    if (missingCourse || selectedCourses.length === 0) {
       return NextResponse.json(
-        { success: false, message: "Invalid payment amount" },
+        { success: false, message: "Select a valid course before enrolling." },
         { status: 400 }
       );
     }
 
+    const courseName = selectedCourses.map((course) => course.title).join(", ");
+    const parsedAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
     const enrollments = await getDB<Enrollment>("enrollments.json");
     const session = await getSession();
@@ -43,7 +56,7 @@ export async function POST(request: Request) {
     let checkoutRequestId: string | undefined;
     let merchantRequestId: string | undefined;
     let mpesaMessage = "";
-    let mpesaConfigured = isMpesaConfigured();
+    const mpesaConfigured = isMpesaConfigured();
 
     if (mpesaConfigured) {
       const stk = await initiateStkPush(phone, parsedAmount, reference);
@@ -79,7 +92,7 @@ export async function POST(request: Request) {
       studentId: session?.user.id || "guest",
       studentName: name,
       studentEmail: session?.user.email || "",
-      courseId: String(courseId),
+      courseId: selectedCourses.map((course) => course.id).join(","),
       courseName: courseName || "Course",
       amount: parsedAmount,
       phone,
@@ -117,11 +130,15 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const { reference, whatsappConfirmed } = await request.json();
+    if (typeof reference !== "string" || reference.trim() === "") {
+      return NextResponse.json({ success: false, message: "Reference is required" }, { status: 400 });
+    }
+
     const enrollments = await getDB<Enrollment>("enrollments.json");
-    const idx = enrollments.findIndex((e) => e.reference === reference);
+    const idx = enrollments.findIndex((e) => e.reference === reference.trim());
 
     if (idx > -1) {
-      enrollments[idx].whatsappConfirmed = whatsappConfirmed;
+      enrollments[idx].whatsappConfirmed = Boolean(whatsappConfirmed);
       await saveDB("enrollments.json", enrollments);
       return NextResponse.json({ success: true });
     }
@@ -132,6 +149,8 @@ export async function PATCH(request: Request) {
 }
 
 export async function GET() {
-  const enrollments = await getDB<Enrollment>("enrollments.json");
-  return NextResponse.json({ success: true, data: enrollments });
+  return NextResponse.json(
+    { success: false, message: "Use the admin enrollments endpoint." },
+    { status: 405 }
+  );
 }

@@ -15,17 +15,55 @@ interface Student {
   createdAt: string;
 }
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^(?:0[17]\d{8}|\+254[17]\d{8}|254[17]\d{8})$/;
+const clean = (value: unknown, maxLength: number) =>
+  String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
+
 export async function POST(request: Request) {
   try {
-    const { name, email, phone, password, avatar, interest } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const name = clean(body.name, 80);
+    const email = clean(body.email, 120).toLowerCase();
+    const phone = clean(body.phone, 20);
+    const password = String(body.password || "");
+    const avatar = clean(body.avatar, 300);
+    const interest = clean(body.interest, 80);
 
     if (!name || !email || !password) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Name, email, and password are required." },
+        { status: 400 }
+      );
+    }
+
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { success: false, message: "Enter a valid email address." },
+        { status: 400 }
+      );
+    }
+
+    if (phone && !phoneRegex.test(phone)) {
+      return NextResponse.json(
+        { success: false, message: "Enter a valid Kenyan phone number." },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { success: false, message: "Password must be at least 6 characters." },
+        { status: 400 }
+      );
     }
 
     const students = await getDB<Student>("students.json");
     if (students.find((s) => s.email.toLowerCase() === email.toLowerCase())) {
-      return NextResponse.json({ error: "User already exists" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "An account with this email already exists." },
+        { status: 400 }
+      );
     }
 
     const hashedPassword = await hashPassword(password);
@@ -40,9 +78,9 @@ export async function POST(request: Request) {
       phone: phone || "",
       password: hashedPassword,
       role,
-      avatar: avatar || null,
-      interest: interest || "",
-      enrolledCourses: ["photoshop-masterclass"], // Auto-enroll in Photoshop course for immediate access
+      avatar: avatar || undefined,
+      interest,
+      enrolledCourses: [],
       createdAt: new Date().toISOString(),
     };
 

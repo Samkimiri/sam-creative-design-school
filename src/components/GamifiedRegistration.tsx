@@ -97,7 +97,7 @@ export default function GamifiedRegistration() {
           alert(data.message || data.error || "Registration failed");
         }
       }
-    } catch (err) {
+    } catch {
       alert("An error occurred. Please try again.");
     } finally {
       setLoading(false);

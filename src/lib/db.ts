@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import getMongoClient from "./mongodb";
+import { getSupabaseCollection, hasSupabaseConfig, saveSupabaseCollection } from "./supabase";
 
 const DATA_DIR = path.join(process.cwd(), "src", "data");
 
@@ -29,6 +30,27 @@ export function readJSON<T>(filename: string): T[] {
 
 export async function getDB<T>(filename: string): Promise<T[]> {
   if (memoryDB[filename]) return memoryDB[filename] as T[];
+
+  if (hasSupabaseConfig()) {
+    try {
+      const collection = getCollectionName(filename);
+      const data = await getSupabaseCollection<T>(collection);
+
+      if (data.length === 0) {
+        const fallbackData = readJSON<T>(filename);
+        if (fallbackData.length > 0) {
+          await saveSupabaseCollection(collection, fallbackData);
+          memoryDB[filename] = fallbackData as unknown[];
+          return fallbackData;
+        }
+      }
+
+      memoryDB[filename] = data as unknown[];
+      return data;
+    } catch (error) {
+      console.error("Supabase getDB error:", error);
+    }
+  }
 
   try {
     const client = await getMongoClient();
@@ -68,6 +90,15 @@ export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
   } catch {
     // Local file write is optional when MongoDB is available
+  }
+
+  if (hasSupabaseConfig()) {
+    try {
+      await saveSupabaseCollection(getCollectionName(filename), data);
+      return;
+    } catch (error) {
+      console.error("Supabase saveDB error:", error);
+    }
   }
 
   try {

@@ -8,23 +8,32 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === "loading") return;
+
     setStatus("loading");
-    const res = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-    const data = await res.json();
-    setStatus(data.success ? "success" : "error");
-    setMsg(data.message);
-    if (data.success) setFormData({ name: "", email: "", message: "" });
+    setMsg("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      setStatus(data.success ? "success" : "error");
+      setMsg(data.message || "Unable to send message.");
+      if (data.success) setFormData({ name: "", email: "", message: "" });
+    } catch {
+      setStatus("error");
+      setMsg("Unable to send message. Please use WhatsApp or call us.");
+    }
   };
 
   const contacts = [
     { icon: "📞", label: "Phone", value: "0748201131", href: "tel:0748201131" },
     { icon: "✉️", label: "Email", value: "samcreativegraphics7@gmail.com", href: "mailto:samcreativegraphics7@gmail.com" },
     { icon: "💬", label: "WhatsApp", value: "0748201131 (Instant Support)", href: "https://wa.me/254748201131" },
-    { icon: "💳", label: "MPESA Payments", value: "0743475247 — Samuel Kimiri", href: "#" },
+    { icon: "M", label: "MPESA Payments", value: "0743475247 - Samuel Kimiri", href: "tel:0743475247" },
   ];
 
   const socials = [
@@ -96,21 +105,23 @@ export default function Contact() {
               <p className="text-gray-500 text-sm mb-8">We usually respond within 2–4 hours.</p>
 
               {status === "success" && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-5 py-4 rounded-xl mb-6 font-medium text-sm">
+                <div className="bg-green-50 border border-green-200 text-green-700 px-5 py-4 rounded-xl mb-6 font-medium text-sm" role="status" aria-live="polite">
                   ✓ {msg}
                 </div>
               )}
               {status === "error" && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl mb-6 font-medium text-sm">
+                <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl mb-6 font-medium text-sm" role="alert">
                   {msg}
                 </div>
               )}
 
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div>
-                  <label className="block text-sm font-bold mb-2">Your Name</label>
+                  <label htmlFor="contact-name" className="block text-sm font-bold mb-2">Your Name</label>
                   <input
+                    id="contact-name"
                     required type="text"
+                    autoComplete="name"
                     className="w-full bg-light-gray border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-primary transition-all"
                     placeholder="Full Name"
                     value={formData.name}
@@ -118,9 +129,11 @@ export default function Contact() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold mb-2">Email Address</label>
+                  <label htmlFor="contact-email" className="block text-sm font-bold mb-2">Email Address</label>
                   <input
+                    id="contact-email"
                     required type="email"
+                    autoComplete="email"
                     className="w-full bg-light-gray border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-primary transition-all"
                     placeholder="email@example.com"
                     value={formData.email}
@@ -128,9 +141,11 @@ export default function Contact() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold mb-2">Message</label>
+                  <label htmlFor="contact-message" className="block text-sm font-bold mb-2">Message</label>
                   <textarea
+                    id="contact-message"
                     required rows={5}
+                    maxLength={2000}
                     className="w-full bg-light-gray border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-primary transition-all resize-none"
                     placeholder="How can we help you?"
                     value={formData.message}
@@ -138,6 +153,7 @@ export default function Contact() {
                   />
                 </div>
                 <button
+                  type="submit"
                   disabled={status === "loading"}
                   className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all disabled:opacity-50"
                 >

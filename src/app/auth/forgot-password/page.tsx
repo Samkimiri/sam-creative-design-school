@@ -4,16 +4,29 @@ import Link from "next/link";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === "loading") return;
+
     setStatus("loading");
+    setMessage("");
     
-    // In this mock version, we just simulate a reset
-    setTimeout(() => {
-      setStatus("success");
-    }, 1500);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      setStatus(data.success ? "success" : "error");
+      setMessage(data.message || "Could not send reset instructions.");
+    } catch {
+      setStatus("error");
+      setMessage("Could not send reset instructions. Please try again.");
+    }
   };
 
   return (
@@ -39,18 +52,27 @@ export default function ForgotPassword() {
             <div className="animate-fade-in text-center py-6">
               <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-6 animate-pulse">📧</div>
               <h3 className="text-xl font-bold text-white mb-2">Check Your Email</h3>
-              <p className="text-gray-400 mb-8">We&apos;ve sent a password reset link to <span className="text-white font-bold">{email}</span>.</p>
+              <p className="text-gray-400 mb-8">
+                {message || "If this email is registered, password reset instructions will be sent."}
+              </p>
               <Link href="/auth/login" className="block w-full bg-primary text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary/90 transition-all duration-300 active:translate-y-0">
                 Back to Login
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {status === "error" && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-300 px-4 py-3 rounded-xl text-sm font-medium" role="alert">
+                  {message}
+                </div>
+              )}
               <div>
-                <label className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">Email Address</label>
+                <label htmlFor="reset-email" className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">Email Address</label>
                 <input
+                  id="reset-email"
                   type="email"
                   required
+                  autoComplete="email"
                   placeholder="name@example.com"
                   className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-4 outline-none focus:border-primary transition-all duration-300 focus:-translate-y-0.5 focus:shadow-lg focus:shadow-primary/10 placeholder:text-gray-600"
                   value={email}

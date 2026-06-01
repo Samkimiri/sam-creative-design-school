@@ -52,6 +52,23 @@ Important notes:
 - If you are developing locally, use a tunneling service like `ngrok` or `localtunnel`.
 - `MPESA_TRANSACTION_TYPE` defaults to `CustomerPayBillOnline` in code.
 
+## Supabase Database Setup
+
+The app can use Supabase as the primary production database while keeping the current MongoDB/local JSON fallback for development.
+
+1. Create a Supabase project.
+2. Open the Supabase SQL editor and run [supabase/schema.sql](supabase/schema.sql).
+3. Add these server-side environment variables locally and in Vercel:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+The service role key must stay server-only. Do not expose it with a `NEXT_PUBLIC_` prefix.
+
+When these variables are present, `src/lib/db.ts` reads and writes app collections through Supabase. If Supabase is not configured or a read fails, the app falls back to MongoDB and then local JSON files.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

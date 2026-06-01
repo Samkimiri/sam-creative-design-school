@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { courses } from "@/data/courses";
 
@@ -25,7 +25,7 @@ function EnrollForm() {
             phone: data.student.phone || "",
           }));
         }
-      } catch (err) {
+      } catch {
         // Not logged in or error, silent fail
       }
     };
@@ -38,7 +38,7 @@ function EnrollForm() {
   const [stkMessage, setStkMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const checkPaymentStatus = async () => {
+  const checkPaymentStatus = useCallback(async () => {
     if (!checkoutRequestId) return;
 
     const res = await fetch("/api/mpesa/status", {
@@ -55,12 +55,15 @@ function EnrollForm() {
     } else if (data.resultDesc) {
       setStkMessage(data.resultDesc);
     }
-  };
+  }, [checkoutRequestId, ref]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === "submitting") return;
+
     if (formData.selectedCourses.length === 0) {
-      alert("Please select at least one course");
+      setErrorMessage("Please select at least one course.");
+      setStatus("failed");
       return;
     }
     setStatus("submitting");
@@ -116,7 +119,7 @@ function EnrollForm() {
     const interval = setInterval(poll, 5000);
     poll();
     return () => clearInterval(interval);
-  }, [status, checkoutRequestId, ref]);
+  }, [status, checkoutRequestId, ref, checkPaymentStatus]);
 
   const toggleCourse = (id: string) => {
     setFormData(prev => ({
@@ -235,7 +238,7 @@ function EnrollForm() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ reference: ref, whatsappConfirmed: true }),
                 });
-              } catch (e) {}
+              } catch {}
               
               const selected = courses.filter(c => formData.selectedCourses.includes(c.id));
               const courseNames = selected.map((course) => course.title).join(", ");
@@ -258,10 +261,12 @@ function EnrollForm() {
       <form className="space-y-8" onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Full Name</label>
+            <label htmlFor="enroll-name" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Full Name</label>
             <input 
+              id="enroll-name"
               required
               type="text" 
+              autoComplete="name"
               className="w-full bg-light-gray border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
               placeholder="e.g., John Kamau"
               value={formData.name}
@@ -269,10 +274,13 @@ function EnrollForm() {
             />
           </div>
           <div>
-            <label className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">MPESA Phone</label>
+            <label htmlFor="enroll-phone" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">MPESA Phone</label>
             <input 
+              id="enroll-phone"
               required
               type="tel" 
+              autoComplete="tel"
+              pattern="0[17][0-9]{8}"
               className="w-full bg-light-gray border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
               placeholder="07XXXXXXXX"
               value={formData.phone}
@@ -289,9 +297,10 @@ function EnrollForm() {
               return (
                 <button
                   type="button"
-                  key={course.id}
-                  onClick={() => toggleCourse(course.id)}
-                  className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+              key={course.id}
+              onClick={() => toggleCourse(course.id)}
+              aria-pressed={isSelected}
+              className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 text-left ${
                     isSelected ? "scale-[1.01] border-primary bg-primary/5 shadow-md shadow-primary/10" : "border-gray-100 hover:-translate-y-0.5 hover:border-gray-200 hover:shadow-sm"
                   }`}
                 >

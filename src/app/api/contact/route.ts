@@ -1,30 +1,63 @@
 import { NextResponse } from "next/server";
-import { readJSON, writeJSON } from "@/lib/db";
+import { getDB, saveDB } from "@/lib/db";
+
+interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  date: string;
+  status: "unread" | "read";
+}
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const clean = (value: unknown, maxLength: number) =>
+  String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
 
 export async function POST(request: Request) {
   try {
-    const { name, email, subject, message } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const name = clean(body.name, 80);
+    const email = clean(body.email, 120).toLowerCase();
+    const subject = clean(body.subject, 120) || "Website inquiry";
+    const message = String(body.message || "").trim().slice(0, 2000);
 
     if (!name || !email || !message) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Name, email, and message are required." },
+        { status: 400 }
+      );
     }
 
-    const messages = readJSON<Record<string, unknown>>("messages.json");
-    const newMessage = {
-      id: Math.random().toString(36).substring(2, 9),
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { success: false, message: "Enter a valid email address." },
+        { status: 400 }
+      );
+    }
+
+    const messages = await getDB<ContactMessage>("messages.json");
+    const newMessage: ContactMessage = {
+      id: `MSG-${Date.now()}`,
       name,
       email,
-      subject: subject || "No Subject",
+      subject,
       message,
       date: new Date().toISOString(),
       status: "unread",
     };
 
-    messages.push(newMessage);
-    writeJSON("messages.json", messages);
+    await saveDB("messages.json", [newMessage, ...messages].slice(0, 500));
 
-    return NextResponse.json({ success: true, message: "Your message has been sent!" });
+    return NextResponse.json({
+      success: true,
+      message: "Your message has been sent. We will respond shortly.",
+    });
   } catch {
-    return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Failed to send message. Please try WhatsApp or call us." },
+      { status: 500 }
+    );
   }
 }

@@ -113,7 +113,7 @@ export default function Navbar() {
               )}
               <Link
                 href="/lms"
-                className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 animate-wobble animate-glow"
+                className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-primary/90 hover:-translate-y-0.5 transition-all shadow-lg shadow-primary/20"
               >
                 <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs font-black">
                   {user.name.charAt(0)}
@@ -133,7 +133,7 @@ export default function Navbar() {
             <>
               <Link
                 href="/auth/login"
-                className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 animate-wobble animate-glow flex items-center gap-2"
+                className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-primary/90 hover:-translate-y-0.5 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
               >
                 <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
                 Sign In
@@ -152,6 +152,9 @@ export default function Navbar() {
 
         {/* Mobile Toggle */}
         <button
+          type="button"
+          aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={mobileOpen}
           onClick={() => setMobileOpen(!mobileOpen)}
           className={`lg:hidden p-2 rounded-lg transition-all ${scrolled || isLmsPage ? "text-dark" : "text-white"}`}
         >
@@ -198,7 +201,7 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                   <Link href="/auth/login" onClick={() => setMobileOpen(false)} className="bg-primary text-white text-center font-bold py-3 rounded-xl animate-wobble animate-glow">Sign In</Link>
+                   <Link href="/auth/login" onClick={() => setMobileOpen(false)} className="bg-primary text-white text-center font-bold py-3 rounded-xl">Sign In</Link>
                    <Link href="/enroll" onClick={() => setMobileOpen(false)} className="text-center font-bold py-3 rounded-xl text-dark border border-gray-200">Enroll Now</Link>
                 </>
               )}

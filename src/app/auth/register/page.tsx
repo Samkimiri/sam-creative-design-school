@@ -11,6 +11,8 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === "loading") return;
+
     if (formData.password !== formData.confirm) {
       setStatus("error");
       setErrorMsg("Passwords do not match");
@@ -24,19 +26,24 @@ export default function RegisterPage() {
     setStatus("loading");
     setErrorMsg("");
 
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: formData.name, email: formData.email, phone: formData.phone, password: formData.password }),
-    });
-    const data = await res.json();
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: formData.name, email: formData.email, phone: formData.phone, password: formData.password }),
+      });
+      const data = await res.json();
 
-    if (data.success) {
-      router.push("/lms");
-      router.refresh();
-    } else {
+      if (data.success) {
+        router.push("/lms");
+        router.refresh();
+      } else {
+        setStatus("error");
+        setErrorMsg(data.message || data.error || "Registration failed");
+      }
+    } catch {
       setStatus("error");
-      setErrorMsg(data.message || "Registration failed");
+      setErrorMsg("Registration failed. Please try again.");
     }
   };
 
@@ -61,7 +68,7 @@ export default function RegisterPage() {
 
         <div className="animate-fade-in bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 transition duration-300 hover:border-white/20 hover:bg-white/[0.07]" style={{ animationDelay: "120ms" }}>
           {status === "error" && (
-            <div className="animate-fade-in bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm font-medium">
+            <div className="animate-fade-in bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm font-medium" role="alert">
               {errorMsg}
             </div>
           )}

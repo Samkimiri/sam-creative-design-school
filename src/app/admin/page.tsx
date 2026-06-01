@@ -343,9 +343,6 @@ export default function AdminDashboard() {
     );
   }
 
-  const pendingCount = enrollments.filter((e) => e.status === "pending").length;
-  const revenue = enrollments.filter((e) => e.status === "confirmed").reduce((s, e) => s + e.amount, 0);
-
   return (
     <div className="pt-24 pb-24 bg-[#F8F8F8] min-h-screen">
       <div className="container mx-auto px-6">

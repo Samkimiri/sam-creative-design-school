@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "test": "node scripts/production-checks.mjs"
   },
   "dependencies": {
     "@vercel/kv": "^1.0.1",
