@@ -31,13 +31,13 @@ export default function LoginPage() {
         signal: controller.signal,
       });
       
-      const data = await res.json();
+      const data = await readLoginResponse(res);
 
       if (data.success) {
         router.replace(getSafeNextPath() || data.redirectTo || "/lms");
       } else {
         setStatus("error");
-        setErrorMsg(data.message || data.error || "Login failed");
+        setErrorMsg(data.message || data.error || "Login failed. Please try again.");
       }
     } catch (err: unknown) {
       setStatus("error");
@@ -146,6 +146,34 @@ export default function LoginPage() {
       </div>
     </div>
   );
+}
+
+async function readLoginResponse(response: Response) {
+  const contentType = response.headers.get("content-type") || "";
+  const text = await response.text();
+
+  if (contentType.includes("application/json") && text.trim()) {
+    try {
+      return JSON.parse(text) as {
+        success?: boolean;
+        message?: string;
+        error?: string;
+        redirectTo?: string;
+      };
+    } catch {
+      return {
+        success: false,
+        message: "The sign in response was invalid. Please try again.",
+      };
+    }
+  }
+
+  return {
+    success: false,
+    message: response.ok
+      ? "The sign in response was empty. Please try again."
+      : "The sign in service is unavailable. Please try again in a moment.",
+  };
 }
 
 function getSafeNextPath() {

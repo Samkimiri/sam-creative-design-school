@@ -28,15 +28,20 @@ export function notFound(message: string) {
   return adminError(message, 404);
 }
 
+export function getConfiguredAdminPassword() {
+  return (
+    process.env.ADMIN_PASSWORD ||
+    process.env.SCDS_ADMIN_PASSWORD ||
+    (process.env.NODE_ENV !== "production" ? DEV_ADMIN_PASSWORD : undefined)
+  );
+}
+
 export async function requireAdminRequest(request: Request): Promise<AdminRequestResult> {
   const parsed = await readRequestBody(request);
   if ("response" in parsed) return parsed;
 
   const password = typeof parsed.body.password === "string" ? parsed.body.password : undefined;
-  const adminPassword =
-    process.env.ADMIN_PASSWORD ||
-    process.env.SCDS_ADMIN_PASSWORD ||
-    (process.env.NODE_ENV !== "production" ? DEV_ADMIN_PASSWORD : undefined);
+  const adminPassword = getConfiguredAdminPassword();
   const passwordAllowed = Boolean(adminPassword && password === adminPassword);
 
   if (passwordAllowed) {
