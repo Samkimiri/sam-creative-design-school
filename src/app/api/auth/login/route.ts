@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         avatar: student.avatar || student.profileImage || "",
         interest: student.interest || "",
       },
-      redirectTo: "/lms",
+      redirectTo: userSession.role === "admin" ? "/admin" : "/lms",
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Login failed";

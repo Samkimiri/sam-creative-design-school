@@ -11,6 +11,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     router.prefetch("/lms");
+    router.prefetch("/admin");
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +30,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.replace(data.redirectTo || "/lms");
+        router.replace(getSafeNextPath() || data.redirectTo || "/lms");
       } else {
         setStatus("error");
         setErrorMsg(data.message || data.error || "Login failed");
@@ -89,7 +90,7 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 focus:-translate-y-0.5 focus:shadow-lg focus:shadow-primary/10 placeholder:text-gray-500"
-                placeholder="••••••••"
+                placeholder="Password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
@@ -138,4 +139,12 @@ export default function LoginPage() {
       </div>
     </div>
   );
+}
+
+function getSafeNextPath() {
+  if (typeof window === "undefined") return "";
+
+  const next = new URLSearchParams(window.location.search).get("next") || "";
+  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/api")) return "";
+  return next;
 }

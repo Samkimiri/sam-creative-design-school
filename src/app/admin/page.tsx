@@ -416,7 +416,7 @@ export default function AdminDashboard() {
             </button>
             <p className="text-center text-xs leading-5 text-gray-400">
               Admin accounts can also sign in first, then return here.
-              <Link href="/auth/login" className="ml-1 font-bold text-primary hover:text-white">Open login</Link>
+              <Link href="/auth/login?next=/admin" className="ml-1 font-bold text-primary hover:text-white">Open login</Link>
             </p>
           </form>
         </div>
