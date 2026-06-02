@@ -32,16 +32,21 @@ export async function requireAdminRequest(request: Request): Promise<AdminReques
   const parsed = await readRequestBody(request);
   if ("response" in parsed) return parsed;
 
-  const session = await getSession();
   const password = typeof parsed.body.password === "string" ? parsed.body.password : undefined;
   const adminPassword =
     process.env.ADMIN_PASSWORD ||
     process.env.SCDS_ADMIN_PASSWORD ||
     (process.env.NODE_ENV !== "production" ? DEV_ADMIN_PASSWORD : undefined);
   const passwordAllowed = Boolean(adminPassword && password === adminPassword);
+
+  if (passwordAllowed) {
+    return parsed;
+  }
+
+  const session = await getSession();
   const sessionAllowed = await hasCurrentAdminRole(session?.user.id, session?.user.email);
 
-  if (!passwordAllowed && !sessionAllowed) {
+  if (!sessionAllowed) {
     return { response: adminError("Unauthorized", 401) };
   }
 

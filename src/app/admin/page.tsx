@@ -162,7 +162,7 @@ const adminPanelMotion = "motion-safe:transition-all motion-safe:duration-300 mo
 const adminRowMotion = "motion-safe:transition-colors motion-safe:duration-150 hover:bg-gray-50";
 const adminActionMotion = "motion-safe:transition-all motion-safe:duration-150 motion-safe:ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 const adminTabMotion = "motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:-translate-y-px active:translate-y-0";
-const adminFetchTimeoutMs = 12000;
+const adminFetchTimeoutMs = 30000;
 
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
