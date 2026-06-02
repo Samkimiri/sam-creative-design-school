@@ -123,6 +123,31 @@ export async function findSupabaseRecordByJsonField<T>(
   return rows[0]?.data ?? null;
 }
 
+export async function findSupabaseRecordByJsonFieldInsensitive<T>(
+  collection: string,
+  field: string,
+  value: string
+): Promise<T | null> {
+  const query = new URLSearchParams({
+    collection: `eq.${collection}`,
+    select: "data",
+    limit: "1",
+  });
+  query.set(`data->>${field}`, `ilike.${value}`);
+
+  const response = await fetchSupabase(getRestUrl(`app_records?${query.toString()}`), {
+    headers: getHeaders(),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase field read failed: ${await parseSupabaseError(response)}`);
+  }
+
+  const rows = (await response.json()) as SupabaseRecord<T>[];
+  return rows[0]?.data ?? null;
+}
+
 export async function saveSupabaseCollection<T>(collection: string, data: T[]): Promise<void> {
   const deleteResponse = await fetchSupabase(
     getRestUrl(`app_records?collection=eq.${encodeURIComponent(collection)}`),

@@ -3,6 +3,7 @@ import path from "path";
 import getMongoClient from "./mongodb";
 import {
   findSupabaseRecordByJsonField,
+  findSupabaseRecordByJsonFieldInsensitive,
   getSupabaseCollection,
   getSupabaseRecord,
   hasSupabaseConfig,
@@ -26,6 +27,7 @@ const HIGH_WRITE_FILES = new Set([
   "messages.json",
   "site-settings.json",
 ]);
+const legacyLookupTimeoutMs = Number(process.env.SCDS_LEGACY_DB_TIMEOUT_MS || 1800);
 
 function shouldUseMemoryCache(filename: string) {
   return !HIGH_WRITE_FILES.has(filename);
@@ -156,25 +158,24 @@ export async function findDBRecordByField<T>(
 
   if (hasSupabaseConfig()) {
     try {
-      return await findSupabaseRecordByJsonField<T>(
-        getCollectionName(filename),
-        field,
-        cleanValue
-      );
+      const collection = getCollectionName(filename);
+      const match = filename === "students.json" && field === "email"
+        ? await findSupabaseRecordByJsonFieldInsensitive<T>(collection, field, cleanValue)
+        : await findSupabaseRecordByJsonField<T>(collection, field, cleanValue);
+      if (match) return match;
     } catch (error) {
       console.error("Supabase findDBRecordByField error:", error);
-      const data = readJSON<T>(filename);
-      return data.find((item) =>
-        String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
-      ) ?? null;
     }
   }
 
   try {
-    const client = await getMongoClient();
+    const client = await withTimeout(getMongoClient(), legacyLookupTimeoutMs);
     const db = client.db("scds_db");
     const collection = db.collection(getCollectionName(filename));
-    const document = await collection.findOne({ [field]: cleanValue });
+    const queryValue = filename === "students.json" && field === "email"
+      ? { $regex: `^${escapeRegex(cleanValue)}$`, $options: "i" }
+      : cleanValue;
+    const document = await collection.findOne({ [field]: queryValue });
     if (!document) return null;
     const { _id: _unused, ...rest } = document as Record<string, unknown> & { _id?: unknown };
     void _unused;
@@ -187,6 +188,23 @@ export async function findDBRecordByField<T>(
   return data.find((item) =>
     String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
   ) ?? null;
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout>;
+  const timer = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timer]);
+  } finally {
+    clearTimeout(timeout!);
+  }
 }
 
 export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
