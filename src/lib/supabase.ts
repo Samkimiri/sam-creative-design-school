@@ -12,7 +12,7 @@ type SupabaseRow<T> = {
 const supabaseUrl = process.env.SCDS_DB_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey =
   process.env.SCDS_DB_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-const requestTimeoutMs = Number(process.env.SCDS_DB_TIMEOUT_MS || 5000);
+const requestTimeoutMs = Number(process.env.SCDS_DB_TIMEOUT_MS || 2500);
 
 function getRestUrl(path: string) {
   if (!supabaseUrl) throw new Error("Supabase URL is not configured");

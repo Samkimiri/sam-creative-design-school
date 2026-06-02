@@ -67,6 +67,7 @@ export async function getDB<T>(filename: string): Promise<T[]> {
       return data;
     } catch (error) {
       console.error("Supabase getDB error:", error);
+      return readJSON<T>(filename);
     }
   }
 
@@ -108,6 +109,8 @@ export async function getDBRecord<T>(filename: string, recordId: string): Promis
       return await getSupabaseRecord<T>(getCollectionName(filename), recordId.trim());
     } catch (error) {
       console.error("Supabase getDBRecord error:", error);
+      const data = readJSON<T>(filename);
+      return data.find((item) => String((item as Record<string, unknown>).id || "") === recordId.trim()) ?? null;
     }
   }
 
@@ -160,6 +163,10 @@ export async function findDBRecordByField<T>(
       );
     } catch (error) {
       console.error("Supabase findDBRecordByField error:", error);
+      const data = readJSON<T>(filename);
+      return data.find((item) =>
+        String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
+      ) ?? null;
     }
   }
 

@@ -119,20 +119,31 @@ interface AdminSettings {
   intake: UpcomingIntakeSettings;
 }
 
+interface AdminDashboardPayload {
+  students?: Student[];
+  enrollments?: Enrollment[];
+  reviews?: AdminReview[];
+  projects?: AdminProject[];
+  assignments?: AdminAssignment[];
+  settings?: AdminSettings;
+  analytics?: {
+    summary?: AnalyticsSummary;
+    sessions?: VisitorSession[];
+    events?: AnalyticsEvent[];
+  };
+}
+
 type AdminTab = "analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "settings" | "content";
 
 type AdminResponse<T> = {
   success?: boolean;
   message?: string;
   data?: T;
+  warnings?: number;
   summary?: AnalyticsSummary;
   sessions?: VisitorSession[];
   events?: AnalyticsEvent[];
 };
-
-type SectionLoad<T> =
-  | { ok: true; status: number; data: AdminResponse<T> }
-  | { ok: false; status: number; message: string };
 
 const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "reviews", "projects", "assignments", "settings", "content"];
 const defaultIntakeSettings: UpcomingIntakeSettings = {
@@ -162,7 +173,7 @@ const adminPanelMotion = "motion-safe:transition-all motion-safe:duration-300 mo
 const adminRowMotion = "motion-safe:transition-colors motion-safe:duration-150 hover:bg-gray-50";
 const adminActionMotion = "motion-safe:transition-all motion-safe:duration-150 motion-safe:ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 const adminTabMotion = "motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:-translate-y-px active:translate-y-0";
-const adminFetchTimeoutMs = 30000;
+const adminFetchTimeoutMs = 15000;
 
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
@@ -205,47 +216,30 @@ export default function AdminDashboard() {
       const headers = { "Content-Type": "application/json" };
       const body = JSON.stringify({ password: pw });
 
-      const loadSection = async <T,>(url: string): Promise<SectionLoad<T>> => {
-        const { res, data } = await fetchAdminJson<T>(url, { method: "POST", headers, body });
-        if (!res.ok || !data.success) {
-          return { ok: false, status: res.status, message: data.message || "Could not load dashboard data" };
-        }
-        return { ok: true, status: res.status, data };
-      };
+      const { res, data } = await fetchAdminJson<AdminDashboardPayload>("/api/admin/dashboard", {
+        method: "POST",
+        headers,
+        body,
+      });
 
-      const [sData, eData, aData, rData, pData, asData, settingsData] = await Promise.all([
-        loadSection<Student[]>("/api/admin/students"),
-        loadSection<Enrollment[]>("/api/admin/enrollments"),
-        loadSection<never>("/api/admin/analytics"),
-        loadSection<AdminReview[]>("/api/admin/reviews"),
-        loadSection<AdminProject[]>("/api/admin/projects"),
-        loadSection<AdminAssignment[]>("/api/admin/assignments"),
-        loadSection<AdminSettings>("/api/admin/settings"),
-      ]);
-
-      const results = [sData, eData, aData, rData, pData, asData, settingsData];
-      const authorized = results.some((result) => result.ok);
-
-      if (authorized) {
-        if (sData.ok) setStudents(Array.isArray(sData.data.data) ? sData.data.data : []);
-        if (eData.ok) setEnrollments(Array.isArray(eData.data.data) ? eData.data.data : []);
-        if (aData.ok) {
-          setVisitorSessions(Array.isArray(aData.data.sessions) ? aData.data.sessions : []);
-          setAnalyticsEvents(Array.isArray(aData.data.events) ? aData.data.events : []);
-          setAnalyticsSummary(aData.data.summary ?? null);
-        }
-        if (rData.ok) setReviews(Array.isArray(rData.data.data) ? rData.data.data : []);
-        if (pData.ok) setProjects(Array.isArray(pData.data.data) ? pData.data.data : []);
-        if (asData.ok) setAssignments(Array.isArray(asData.data.data) ? asData.data.data : []);
-        if (settingsData.ok && settingsData.data.data?.intake) setIntakeSettings(settingsData.data.data.intake);
+      if (res.ok && data.success) {
+        const dashboard = data.data ?? {};
+        setStudents(Array.isArray(dashboard.students) ? dashboard.students : []);
+        setEnrollments(Array.isArray(dashboard.enrollments) ? dashboard.enrollments : []);
+        setReviews(Array.isArray(dashboard.reviews) ? dashboard.reviews : []);
+        setProjects(Array.isArray(dashboard.projects) ? dashboard.projects : []);
+        setAssignments(Array.isArray(dashboard.assignments) ? dashboard.assignments : []);
+        setVisitorSessions(Array.isArray(dashboard.analytics?.sessions) ? dashboard.analytics.sessions : []);
+        setAnalyticsEvents(Array.isArray(dashboard.analytics?.events) ? dashboard.analytics.events : []);
+        setAnalyticsSummary(dashboard.analytics?.summary ?? null);
+        if (dashboard.settings?.intake) setIntakeSettings(dashboard.settings.intake);
         setAuthed(true);
         if (pw) setPassword(pw);
-        const failedSections = results.filter((result) => !result.ok && result.status !== 401).length;
-        if (failedSections > 0) {
-          setNotice(`${failedSections} dashboard section${failedSections === 1 ? "" : "s"} could not load. Try refreshing.`);
+        if (data.warnings && data.warnings > 0) {
+          setNotice(`${data.warnings} dashboard section${data.warnings === 1 ? "" : "s"} used fallback data. Try refreshing if something looks stale.`);
         }
       } else if (pw) {
-        setError("Incorrect password.");
+        setError(data.message || "Incorrect password.");
       }
     } catch (err) {
       setError(err instanceof DOMException && err.name === "AbortError"
