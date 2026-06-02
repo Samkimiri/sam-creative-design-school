@@ -20,11 +20,15 @@ export default function LoginPage() {
     setStatus("loading");
     setErrorMsg("");
 
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 20000);
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
+        signal: controller.signal,
       });
       
       const data = await res.json();
@@ -36,9 +40,12 @@ export default function LoginPage() {
         setErrorMsg(data.message || data.error || "Login failed");
       }
     } catch (err: unknown) {
-      console.error("Login Client Error:", err);
       setStatus("error");
-      setErrorMsg("An unexpected error occurred. Please check your connection.");
+      setErrorMsg(err instanceof DOMException && err.name === "AbortError"
+        ? "Sign in took too long. Please try again."
+        : "An unexpected error occurred. Please check your connection.");
+    } finally {
+      window.clearTimeout(timeout);
     }
   };
 

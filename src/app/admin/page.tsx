@@ -256,6 +256,38 @@ export default function AdminDashboard() {
     }
   }, [fetchAdminJson]);
 
+  const authenticateAdmin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (loading) return;
+
+    setLoading(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const { res, data } = await fetchAdminJson<never>("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!res.ok || !data.success) {
+        setError(data.message || "Incorrect password.");
+        return;
+      }
+
+      setAuthed(true);
+      setNotice("Loading dashboard data...");
+      void fetchData(password);
+    } catch (err) {
+      setError(err instanceof DOMException && err.name === "AbortError"
+        ? "Admin verification took too long. Try again."
+        : "Could not verify admin access. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Check for session-based auth on mount
   useEffect(() => {
     fetchData();
@@ -398,7 +430,7 @@ export default function AdminDashboard() {
             <p className="text-gray-400 text-sm mt-1">Sam Creative Design School</p>
           </div>
           {error && <p className="text-red-400 text-sm text-center mb-4" role="alert">{error}</p>}
-          <form onSubmit={(e) => { e.preventDefault(); fetchData(password); }} className="space-y-4">
+          <form onSubmit={authenticateAdmin} className="space-y-4">
             <div>
               <label htmlFor="admin-password" className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Admin password</label>
               <input

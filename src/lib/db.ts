@@ -25,7 +25,6 @@ const HIGH_WRITE_FILES = new Set([
   "enrollments.json",
   "messages.json",
   "site-settings.json",
-  "students.json",
 ]);
 
 function shouldUseMemoryCache(filename: string) {
@@ -136,6 +135,21 @@ export async function findDBRecordByField<T>(
 ): Promise<T | null> {
   const cleanValue = value.trim();
   if (!field || !cleanValue) return null;
+  const findInMemory = () =>
+    (memoryDB[filename] as T[] | undefined)?.find((item) =>
+      String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
+    ) ?? null;
+
+  const cached = findInMemory();
+  if (cached) return cached;
+
+  if (filename === "students.json") {
+    const localData = readJSON<T>(filename);
+    const localMatch = localData.find((item) =>
+      String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
+    );
+    if (localMatch) return localMatch;
+  }
 
   if (hasSupabaseConfig()) {
     try {
@@ -163,7 +177,9 @@ export async function findDBRecordByField<T>(
   }
 
   const data = readJSON<T>(filename);
-  return data.find((item) => String((item as Record<string, unknown>)[field] || "") === cleanValue) ?? null;
+  return data.find((item) =>
+    String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
+  ) ?? null;
 }
 
 export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
@@ -218,6 +234,14 @@ export async function upsertDBRecord<T extends object>(
   const recordData = record as Record<string, unknown>;
   const recordId = String(recordData[idKey] || "").trim();
   if (!recordId) throw new Error(`Cannot upsert ${filename}: missing record id`);
+
+  if (shouldUseMemoryCache(filename)) {
+    const data = memoryDB[filename] ?? readJSON<T>(filename) as unknown[];
+    const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
+    if (index > -1) data[index] = record as unknown;
+    else data.push(record as unknown);
+    memoryDB[filename] = data;
+  }
 
   if (hasSupabaseConfig()) {
     await upsertSupabaseRecord(getCollectionName(filename), recordId, record, options?.position);
