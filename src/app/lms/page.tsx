@@ -234,12 +234,12 @@ export default async function LMSDashboard() {
         )}
 
         <section className="mb-10">
-          <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div className="mb-7 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-black uppercase tracking-widest text-primary">My Courses</p>
-              <h2 className="text-3xl font-extrabold text-dark">Unlocked learning paths</h2>
+              <h2 className="text-3xl font-extrabold tracking-tight text-dark">Unlocked learning paths</h2>
             </div>
-            <Link href="/resources" className="font-bold text-primary hover:text-dark">
+            <Link href="/resources" className="rounded-full bg-white px-5 py-2.5 text-sm font-extrabold text-primary shadow-sm ring-1 ring-primary/10 transition duration-300 hover:-translate-y-0.5 hover:bg-primary hover:text-white">
               Open Resources
             </Link>
           </div>
@@ -251,38 +251,52 @@ export default async function LMSDashboard() {
               return (
                 <article
                   key={course.id}
-                  className="group animate-lms-rise overflow-hidden rounded-3xl border border-white bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                  className="group animate-lms-rise overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_18px_55px_rgba(10,15,30,0.08)] ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_26px_70px_rgba(26,143,227,0.18)]"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className={`relative min-h-44 bg-gradient-to-br ${course.color} p-6 text-white`}>
-                    <div className="absolute inset-0 bg-black/10 opacity-0 transition group-hover:opacity-100" />
-                    <div className="relative flex items-start justify-between gap-4">
-                      <div>
-                        <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest ${meta.tone}`}>
+                  <div className="relative min-h-48 overflow-hidden p-6 text-white">
+                    <img src={course.image} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                    <div className={`absolute inset-0 bg-gradient-to-br ${course.color} opacity-80 mix-blend-multiply`} />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/72 via-black/38 to-black/10" />
+                    <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full border border-white/20 bg-white/10 blur-[1px]" />
+                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/45 to-transparent" />
+                    <div className="relative flex items-start justify-between gap-5">
+                      <div className="min-w-0">
+                        <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/18 text-lg font-black shadow-lg ring-1 ring-white/20 backdrop-blur">
+                          {course.shortTitle.slice(0, 1)}
+                        </span>
+                        <span className={`ml-3 inline-flex rounded-full border bg-white/90 px-3 py-1 text-xs font-black uppercase tracking-widest shadow-sm ${meta.tone}`}>
                           {meta.label}
                         </span>
-                        <h3 className="mt-4 max-w-sm text-2xl font-extrabold leading-tight">{course.title}</h3>
-                        <p className="mt-2 text-sm text-white/80">{course.level}</p>
+                        <h3 className="mt-4 max-w-sm text-2xl font-extrabold leading-tight drop-shadow-sm">{course.title}</h3>
+                        <p className="mt-2 text-sm font-semibold text-white/82">{course.level}</p>
                       </div>
-                      <div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-full bg-white/15">
+                      <div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-full bg-white/15 shadow-2xl ring-1 ring-white/25 backdrop-blur">
+                        <div className="absolute inset-2 rounded-full bg-white/10" />
                         <div
                           className="lms-progress-ring h-20 w-20"
                           style={{ "--progress": `${progress}%` } as CSSProperties}
                         />
-                        <span className="absolute text-sm font-black">{progress}%</span>
+                        <span className="absolute text-sm font-black drop-shadow">{progress}%</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="p-6">
+                    <div className="mb-5 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="progress-sheen h-full rounded-full bg-gradient-to-r from-primary via-primary-light to-emerald-400 transition-all duration-1000 ease-out"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                     <div className="mb-5 grid grid-cols-2 gap-3 text-sm">
-                      <div className="rounded-2xl bg-light-gray p-4">
-                        <p className="font-black text-dark">{completedLessons.length}/{courseLessons.length}</p>
-                        <p className="text-gray-500">Lessons complete</p>
+                      <div className="rounded-2xl border border-primary/10 bg-gradient-to-br from-light-gray to-white p-4 shadow-sm">
+                        <p className="text-lg font-black text-dark">{completedLessons.length}/{courseLessons.length}</p>
+                        <p className="text-xs font-bold text-gray-500">Lessons complete</p>
                       </div>
-                      <div className="rounded-2xl bg-light-gray p-4">
-                        <p className="font-black text-dark">{course.duration}</p>
-                        <p className="text-gray-500">Course duration</p>
+                      <div className="rounded-2xl border border-primary/10 bg-gradient-to-br from-light-gray to-white p-4 shadow-sm">
+                        <p className="text-lg font-black text-dark">{course.duration}</p>
+                        <p className="text-xs font-bold text-gray-500">Course duration</p>
                       </div>
                     </div>
 
@@ -292,10 +306,12 @@ export default async function LMSDashboard() {
                         {previewLessons.map((lesson) => {
                           const isDone = completedLessons.includes(lesson.id);
                           return (
-                            <div key={lesson.id} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2 transition duration-300 hover:border-primary/20 hover:bg-primary/5">
-                              <span className={`h-3 w-3 rounded-full transition-colors duration-500 ${isDone ? "bg-green-500" : "bg-primary/25"}`} />
+                            <div key={lesson.id} className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white px-3 py-2.5 shadow-sm transition duration-300 hover:border-primary/20 hover:bg-primary/5">
+                              <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-black transition-colors duration-500 ${isDone ? "bg-emerald-500 text-white" : "bg-primary/10 text-primary"}`}>
+                                {isDone ? "OK" : lesson.order}
+                              </span>
                               <span className="min-w-0 flex-1 truncate text-sm font-bold text-dark">{lesson.title}</span>
-                              <span className="text-xs text-gray-400">{lesson.duration}</span>
+                              <span className="rounded-full bg-slate-50 px-2 py-1 text-xs font-bold text-gray-400">{lesson.duration}</span>
                             </div>
                           );
                         })}
@@ -307,7 +323,7 @@ export default async function LMSDashboard() {
                         <span
                           key={badge.label}
                           title={badge.detail}
-                          className="animate-lms-badge rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-primary"
+                          className="animate-lms-badge rounded-full border border-primary/10 bg-primary/10 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-primary shadow-sm"
                           style={{ animationDelay: `${badgeIndex * 120}ms` }}
                         >
                           {badge.label}
@@ -316,7 +332,7 @@ export default async function LMSDashboard() {
                     </div>
 
                     {nextLesson && (
-                      <p className="mb-5 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+                      <p className="mb-5 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
                         Next: <span className="font-black">{nextLesson.title}</span>
                       </p>
                     )}
@@ -327,7 +343,7 @@ export default async function LMSDashboard() {
                       </a>
                     )}
 
-                    <Link href={`/lms/${course.id}`} className="block rounded-xl bg-dark py-3.5 text-center font-bold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-primary active:translate-y-0">
+                    <Link href={`/lms/${course.id}`} className="block rounded-2xl bg-dark py-3.5 text-center font-bold text-white shadow-lg shadow-slate-900/15 transition duration-300 hover:-translate-y-0.5 hover:bg-primary hover:shadow-primary/25 active:translate-y-0">
                       {meta.action}
                     </Link>
                   </div>
@@ -345,18 +361,21 @@ export default async function LMSDashboard() {
             </div>
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               {lockedCourses.map((course) => (
-                <article key={course.id} className="rounded-2xl border border-gray-100 bg-white p-5 opacity-85 shadow-sm transition duration-300 hover:-translate-y-1 hover:opacity-100 hover:shadow-md">
-                  <div className={`mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br ${course.color} text-2xl grayscale`}>
-                    {course.shortTitle.slice(0, 1)}
+                <article key={course.id} className="group overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                  <div className="relative h-36 overflow-hidden">
+                    <img src={course.image} alt="" className="h-full w-full object-cover grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-dark/85 via-dark/30 to-transparent" />
+                    <div className="absolute bottom-4 left-4 inline-flex rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-widest text-white backdrop-blur">
+                      Locked
+                    </div>
                   </div>
-                  <div className="mb-3 inline-flex rounded-full border border-gray-200 px-3 py-1 text-xs font-black uppercase tracking-widest text-gray-500">
-                    Locked
-                  </div>
-                  <h3 className="font-extrabold text-dark">{course.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-gray-500">{course.description}</p>
-                  <Link href={`/enroll?course=${course.id}`} className="mt-5 block rounded-xl border border-primary py-2.5 text-center text-sm font-bold text-primary transition duration-300 hover:-translate-y-0.5 hover:bg-primary hover:text-white">
+                  <div className="p-5">
+                    <h3 className="font-extrabold text-dark">{course.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-gray-500">{course.description}</p>
+                    <Link href={`/enroll?course=${course.id}`} className="mt-5 block rounded-2xl border border-primary/30 bg-primary/5 py-2.5 text-center text-sm font-bold text-primary transition duration-300 hover:-translate-y-0.5 hover:bg-primary hover:text-white">
                     Enroll to Unlock
-                  </Link>
+                    </Link>
+                  </div>
                 </article>
               ))}
             </div>
