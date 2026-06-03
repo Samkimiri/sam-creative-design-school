@@ -90,7 +90,7 @@ export async function POST(request: Request) {
         success: true,
         paid: false,
         status: enrollment.status,
-        message: "M-Pesa not configured — awaiting manual confirmation",
+        message: "M-Pesa not configured - awaiting manual confirmation",
       });
     }
 

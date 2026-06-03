@@ -8,7 +8,9 @@ export interface MpesaConfig {
   passkey: string;
   callbackUrl: string;
   transactionType: string;
-  partyB?: string;
+  partyB: string;
+  paymentMode: "paybill" | "buygoods";
+  paymentLabel: "PayBill" | "Buy Goods Till";
 }
 
 export interface StkPushResult {
@@ -77,13 +79,48 @@ export function isMpesaConfigured(): boolean {
 export function getMpesaConfig(): MpesaConfig {
   const consumerKey = process.env.MPESA_CONSUMER_KEY;
   const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
-  const shortcode = process.env.MPESA_SHORTCODE;
+  const tillNumber =
+    process.env.MPESA_TILL_NUMBER || process.env.MPESA_BUY_GOODS_TILL;
   const passkey = process.env.MPESA_PASSKEY;
   const callbackUrl = process.env.MPESA_CALLBACK_URL;
+  const requestedPaymentMode = (process.env.MPESA_PAYMENT_MODE || "")
+    .trim()
+    .toLowerCase();
+  const requestedTransactionType = process.env.MPESA_TRANSACTION_TYPE;
+  const isBuyGoods =
+    requestedTransactionType === "CustomerBuyGoodsOnline" ||
+    requestedPaymentMode === "buygoods" ||
+    requestedPaymentMode === "buy-goods" ||
+    requestedPaymentMode === "till" ||
+    Boolean(tillNumber && !process.env.MPESA_SHORTCODE);
+  const shortcode = isBuyGoods
+    ? tillNumber || process.env.MPESA_SHORTCODE
+    : process.env.MPESA_SHORTCODE || tillNumber;
+  const transactionType =
+    requestedTransactionType ||
+    (isBuyGoods ? "CustomerBuyGoodsOnline" : "CustomerPayBillOnline");
+  const partyB =
+    process.env.MPESA_PARTY_B ||
+    (isBuyGoods ? tillNumber || shortcode : shortcode);
 
   if (!consumerKey || !consumerSecret || !shortcode || !passkey || !callbackUrl) {
     throw new Error(
-      "M-Pesa is not configured. Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE, MPESA_PASSKEY, and MPESA_CALLBACK_URL."
+      "M-Pesa is not configured. Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE or MPESA_TILL_NUMBER, MPESA_PASSKEY, and MPESA_CALLBACK_URL."
+    );
+  }
+
+  if (
+    transactionType !== "CustomerPayBillOnline" &&
+    transactionType !== "CustomerBuyGoodsOnline"
+  ) {
+    throw new Error(
+      "Invalid MPESA_TRANSACTION_TYPE. Use CustomerBuyGoodsOnline for a Till or CustomerPayBillOnline for a PayBill."
+    );
+  }
+
+  if (!partyB) {
+    throw new Error(
+      "M-Pesa is not configured. Set MPESA_PARTY_B or MPESA_TILL_NUMBER for Buy Goods Till payments."
     );
   }
 
@@ -93,9 +130,10 @@ export function getMpesaConfig(): MpesaConfig {
     shortcode,
     passkey,
     callbackUrl,
-    transactionType:
-      process.env.MPESA_TRANSACTION_TYPE || "CustomerPayBillOnline",
-    partyB: process.env.MPESA_PARTY_B || shortcode,
+    transactionType,
+    partyB,
+    paymentMode: isBuyGoods ? "buygoods" : "paybill",
+    paymentLabel: isBuyGoods ? "Buy Goods Till" : "PayBill",
   };
 }
 
@@ -177,7 +215,7 @@ export async function initiateStkPush(
     TransactionType: config.transactionType,
     Amount: Math.round(amount),
     PartyA: formattedPhone,
-    PartyB: config.partyB || config.shortcode,
+    PartyB: config.partyB,
     PhoneNumber: formattedPhone,
     CallBackURL: config.callbackUrl,
     AccountReference: reference.slice(0, 12),

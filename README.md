@@ -31,7 +31,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## M-Pesa Sandbox / Production Setup
 
-This app uses the Daraja STK Push flow for M-Pesa payments. To run the integration, add a local environment file with the required M-Pesa credentials.
+This app uses the Daraja STK Push flow for M-Pesa payments and Flutterwave Standard Checkout for hosted checkout payments. To run the integrations, add a local environment file with the required payment credentials.
 
 Create a `.env.local` file at the project root with values like:
 
@@ -39,18 +39,40 @@ Create a `.env.local` file at the project root with values like:
 MPESA_ENV=sandbox
 MPESA_CONSUMER_KEY=your_mpesa_consumer_key
 MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret
-MPESA_SHORTCODE=your_mpesa_shortcode
+MPESA_SHORTCODE=
+MPESA_TILL_NUMBER=your_till_number
 MPESA_PASSKEY=your_mpesa_passkey
 MPESA_CALLBACK_URL=https://your-public-domain/api/mpesa/callback
-MPESA_TRANSACTION_TYPE=CustomerPayBillOnline
+MPESA_PAYMENT_MODE=buygoods
+MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline
+MPESA_PARTY_B=your_till_number
+MPESA_ACCOUNT_NAME=Sam Creative Design School
 ```
 
 Important notes:
 
 - `MPESA_ENV` should be `sandbox` for testing, and `production` for live.
 - `MPESA_CALLBACK_URL` must be publicly accessible to receive Safaricom callback notifications.
+- For extra callback protection, set `MPESA_CALLBACK_SECRET` and include it in the callback URL, for example `https://your-public-domain/api/mpesa/callback?secret=your_secret`.
 - If you are developing locally, use a tunneling service like `ngrok` or `localtunnel`.
-- `MPESA_TRANSACTION_TYPE` defaults to `CustomerPayBillOnline` in code.
+- For a Buy Goods Till, use `MPESA_PAYMENT_MODE=buygoods`, `MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline`, and set `MPESA_PARTY_B` to the Till number.
+- If `MPESA_TILL_NUMBER` is set and `MPESA_SHORTCODE` is empty, the app automatically uses Buy Goods mode.
+
+## Flutterwave Setup
+
+Add these values locally and in Vercel when you want Flutterwave checkout enabled:
+
+```env
+FLUTTERWAVE_SECRET_KEY=your_flutterwave_secret_key
+FLUTTERWAVE_CURRENCY=KES
+FLUTTERWAVE_REDIRECT_URL=https://your-public-domain/api/flutterwave/callback
+FLUTTERWAVE_WEBHOOK_SECRET_HASH=your_flutterwave_webhook_secret_hash
+FLUTTERWAVE_PAYMENT_OPTIONS=card
+FLUTTERWAVE_TITLE=Sam Creative Design School
+FLUTTERWAVE_LOGO_URL=https://your-public-logo-url/logo.png
+```
+
+Flutterwave payments redirect students to a hosted checkout link. `FLUTTERWAVE_PAYMENT_OPTIONS=card` focuses checkout on card payments. After payment, `/api/flutterwave/callback` verifies the transaction before confirming the enrollment.
 
 ## Supabase Database Setup
 

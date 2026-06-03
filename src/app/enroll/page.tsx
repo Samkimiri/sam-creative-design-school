@@ -10,7 +10,9 @@ function EnrollForm() {
 
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     phone: "",
+    paymentMethod: "mpesa" as "mpesa" | "flutterwave",
     selectedCourses: initialCourse ? [initialCourse] : ([] as string[]),
   });
   const [status, setStatus] = useState<"idle" | "submitting" | "stk" | "success" | "failed">("idle");
@@ -28,6 +30,7 @@ function EnrollForm() {
           setFormData((prev) => ({
             ...prev,
             name: data.student.name || "",
+            email: data.student.email || "",
             phone: data.student.phone || "",
           }));
         }
@@ -41,6 +44,26 @@ function EnrollForm() {
 
   const selectedCourses = courses.filter((course) => formData.selectedCourses.includes(course.id));
   const totalAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
+  const returnedPayment = searchParams.get("payment") || "";
+  const returnedMessage = searchParams.get("message") || "";
+  const activePaymentLabel =
+    formData.paymentMethod === "flutterwave" || returnedPayment.startsWith("flutterwave")
+      ? "Flutterwave"
+      : "M-Pesa";
+
+  useEffect(() => {
+    if (!returnedPayment.startsWith("flutterwave")) return;
+
+    setRef(searchParams.get("reference") || "");
+    if (returnedPayment === "flutterwave-success") {
+      setStkMessage(returnedMessage || "Flutterwave payment verified.");
+      setStatus("success");
+      return;
+    }
+
+    setErrorMessage(returnedMessage || "Flutterwave payment was not completed.");
+    setStatus("failed");
+  }, [returnedMessage, returnedPayment, searchParams]);
 
   const checkPaymentStatus = useCallback(async () => {
     if (!checkoutRequestId) return;
@@ -106,7 +129,9 @@ function EnrollForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
+          email: formData.email,
           phone: formData.phone,
+          paymentMethod: formData.paymentMethod,
           courseId: formData.selectedCourses.join(","),
           courseName: courseNames,
           amount: totalAmount,
@@ -114,7 +139,10 @@ function EnrollForm() {
       });
 
       const data = await res.json();
-      if (data.success && data.pushSuccess) {
+      if (data.success && data.checkoutUrl) {
+        setRef(data.reference);
+        window.location.href = data.checkoutUrl;
+      } else if (data.success && data.pushSuccess) {
         setRef(data.reference);
         setCheckoutRequestId(data.checkoutRequestId || "");
         setStkMessage(data.message || "M-Pesa prompt sent to your phone.");
@@ -222,7 +250,11 @@ function EnrollForm() {
           </div>
           <h2 className="text-3xl font-bold mb-4">Payment Received for Review</h2>
           <p className="text-gray-600 mb-8 text-lg">
-            Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your payment details are ready to send to WhatsApp so the school can activate your LMS access quickly.
+            {formData.name ? (
+              <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your {activePaymentLabel} payment details are ready to send to WhatsApp so the school can activate your LMS access quickly.</>
+            ) : (
+              <>Your {activePaymentLabel} payment has been verified. Send the reference to WhatsApp so the school can activate your LMS access quickly.</>
+            )}
           </p>
 
           <div className="bg-light-gray p-8 rounded-2xl mb-8 text-left border-l-4 border-primary animate-fade-in">
@@ -230,7 +262,9 @@ function EnrollForm() {
             <p className="text-gray-700 mb-4">The button below opens a prepared message with your name, course, reference, amount, and next step.</p>
             <div className="space-y-2">
               <p className="flex justify-between"><span>Reference:</span> <span className="font-bold text-primary">{ref}</span></p>
-              <p className="flex justify-between"><span>Total Amount:</span> <span className="font-bold">Ksh {totalAmount.toLocaleString()}</span></p>
+              {totalAmount > 0 && (
+                <p className="flex justify-between"><span>Total Amount:</span> <span className="font-bold">Ksh {totalAmount.toLocaleString()}</span></p>
+              )}
             </div>
           </div>
 
@@ -246,7 +280,9 @@ function EnrollForm() {
               } catch {}
 
               const courseNames = selectedCourses.map((course) => course.title).join(", ");
-              const message = `Hi, my name is ${formData.name}. I just authorized an STK payment of Ksh ${totalAmount} for ${courseNames}. Reference: ${ref}. Please activate my LMS access and send the next steps.`;
+              const amountText = totalAmount > 0 ? ` of Ksh ${totalAmount}` : "";
+              const courseText = courseNames ? ` for ${courseNames}` : "";
+              const message = `Hi, my name is ${formData.name || "a student"}. I just completed a ${activePaymentLabel} payment${amountText}${courseText}. Reference: ${ref}. Please activate my LMS access and send the next steps.`;
               window.open(`https://wa.me/254743475247?text=${encodeURIComponent(message)}`, "_blank");
             }}
             className="inline-block w-full bg-[#25D366] text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:opacity-90 transition-all duration-300 text-center shadow-lg active:translate-y-0"
@@ -277,7 +313,7 @@ function EnrollForm() {
             />
           </div>
           <div>
-            <label htmlFor="enroll-phone" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">M-Pesa Phone</label>
+            <label htmlFor="enroll-phone" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Phone Number</label>
             <input
               id="enroll-phone"
               required
@@ -289,6 +325,53 @@ function EnrollForm() {
               value={formData.phone}
               onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
             />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="enroll-email" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Email Address</label>
+          <input
+            id="enroll-email"
+            required={formData.paymentMethod === "flutterwave"}
+            type="email"
+            autoComplete="email"
+            className="w-full bg-light-gray border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
+            placeholder="you@example.com"
+            value={formData.email}
+            onChange={(event) => setFormData({ ...formData, email: event.target.value })}
+          />
+        </div>
+
+        <div>
+          <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Payment Method</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              { id: "mpesa", label: "M-Pesa Express", note: "STK Push to your phone" },
+              { id: "flutterwave", label: "Flutterwave", note: "Card, mobile money, or bank options" },
+            ].map((option) => {
+              const selected = formData.paymentMethod === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      paymentMethod: option.id as "mpesa" | "flutterwave",
+                    })
+                  }
+                  className={`rounded-xl border-2 p-4 text-left transition-all duration-300 ${
+                    selected
+                      ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
+                      : "border-gray-100 hover:-translate-y-0.5 hover:border-gray-200 hover:shadow-sm"
+                  }`}
+                >
+                  <span className="block font-black text-dark text-sm">{option.label}</span>
+                  <span className="mt-1 block text-xs font-medium text-gray-500">{option.note}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -343,12 +426,12 @@ function EnrollForm() {
             {status === "submitting" ? (
               <>
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Initializing STK...
+                {formData.paymentMethod === "flutterwave" ? "Opening Checkout..." : "Initializing STK..."}
               </>
-            ) : "Enroll & Pay via M-Pesa"}
+            ) : formData.paymentMethod === "flutterwave" ? "Enroll & Pay via Flutterwave" : "Enroll & Pay via M-Pesa"}
           </button>
           <p className="text-[10px] text-center text-gray-400 mt-4 font-medium uppercase tracking-widest">
-            Security Verified | Instant STK Push
+            Security Verified | {formData.paymentMethod === "flutterwave" ? "Hosted Checkout" : "Instant STK Push"}
           </p>
         </div>
       </form>

@@ -30,11 +30,21 @@ export interface Enrollment {
   amount: number;
   phone: string;
   reference: string;
+  paymentProvider?: "mpesa" | "flutterwave" | string;
   checkoutRequestId?: string;
   merchantRequestId?: string;
+  flutterwaveTransactionId?: string;
+  flutterwaveTxRef?: string;
+  flutterwaveFlwRef?: string;
+  flutterwavePaymentType?: string;
+  flutterwaveCurrency?: string;
+  mpesaReceiptNumber?: string;
+  mpesaAmount?: number;
+  mpesaPhoneNumber?: string;
+  mpesaTransactionDate?: string;
   mpesaResultCode?: string;
   mpesaResultDesc?: string;
-  status: "pending" | "confirmed" | string;
+  status: "pending" | "confirmed" | "failed" | string;
   whatsappConfirmed?: boolean;
   createdAt: string;
 }

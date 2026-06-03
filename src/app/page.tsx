@@ -20,6 +20,35 @@ export default async function Home() {
     { label: "Class Duration", value: intake.classDuration },
     { label: "Available Seats", value: intake.availableSeats },
   ];
+  const learningBundle = [
+    { value: "4", label: "Skill tracks", detail: "Photoshop, Illustrator, CapCut, and SolidWorks" },
+    { value: "30+", label: "Guided lessons", detail: "Step-by-step videos, notes, quizzes, and assignments" },
+    { value: "12+", label: "Portfolio projects", detail: "Posters, brand assets, reels, CAD parts, and presentations" },
+    { value: "∞", label: "LMS access", detail: "Rewatch lessons and keep improving after class" },
+  ];
+  const toolStacks = [
+    {
+      title: "Design Software",
+      tools: ["Adobe Photoshop", "Adobe Illustrator", "Canva", "Mockup tools"],
+      note: "Build posters, social media kits, logos, print files, and brand presentations.",
+    },
+    {
+      title: "Video Workflow",
+      tools: ["CapCut", "Audio cleanup", "Reels formats", "Export presets"],
+      note: "Plan, cut, caption, and export short-form videos for TikTok, Reels, Shorts, and business pages.",
+    },
+    {
+      title: "Engineering Setup",
+      tools: ["SolidWorks", "Technical drawings", "Assemblies", "Rendering"],
+      note: "Model real parts, prepare drawings, and present mechanical ideas clearly.",
+    },
+  ];
+  const outcomeTiers = [
+    { tier: "Starter", range: "Practice work", note: "Build confidence with class assignments and instructor feedback." },
+    { tier: "Portfolio", range: "Client-ready samples", note: "Package your best designs, videos, or CAD models for sharing." },
+    { tier: "Freelance", range: "Small paid jobs", note: "Use posters, logos, reels, edits, and drawings to approach first clients." },
+    { tier: "Professional", range: "Job and business growth", note: "Keep improving your workflow, speed, communication, and delivery." },
+  ];
 
   return (
     <div>
@@ -93,6 +122,100 @@ export default async function Home() {
         </div>
       </section>
 
+      <section className="bg-white py-20">
+        <div className="container mx-auto px-6">
+          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div className="animate-fade-in">
+              <span className="mb-3 block text-sm font-bold uppercase tracking-widest text-primary">
+                What You Get
+              </span>
+              <h2 className="mb-5 text-3xl font-extrabold text-dark md:text-4xl">
+                Lessons, practice files, feedback, and a portfolio path in one place.
+              </h2>
+              <p className="max-w-2xl text-base leading-7 text-gray-600">
+                The training is built around doing the work: watch the lesson, complete a practical task, submit your assignment, and improve it with guidance. By the end, you have visible work to show, not just notes.
+              </p>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/enroll"
+                  className="inline-flex justify-center rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
+                >
+                  Enroll and Start Practicing
+                </Link>
+                <Link
+                  href="/lms"
+                  className="inline-flex justify-center rounded-xl border border-gray-200 px-7 py-3.5 text-sm font-bold text-dark transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+                >
+                  Preview LMS
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {learningBundle.map((item, index) => (
+                <div
+                  key={item.label}
+                  className="animate-fade-in rounded-2xl border border-gray-100 bg-light-gray p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:bg-white hover:shadow-md"
+                  style={{ animationDelay: `${index * 70}ms` }}
+                >
+                  <p className="text-4xl font-extrabold tracking-tight text-primary">
+                    {item.value}
+                  </p>
+                  <h3 className="mt-3 text-lg font-extrabold text-dark">
+                    {item.label}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">
+                    {item.detail}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-light-gray py-20">
+        <div className="container mx-auto px-6">
+          <div className="mb-12 max-w-3xl animate-fade-in">
+            <span className="mb-3 block text-sm font-bold uppercase tracking-widest text-primary">
+              Tool Stack
+            </span>
+            <h2 className="text-3xl font-extrabold text-dark md:text-4xl">
+              Learn the tools students actually use after class.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-gray-600">
+              Each program connects software skills to real creative or engineering work, so your practice time feels close to what clients, employers, and school projects expect.
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            {toolStacks.map((stack, index) => (
+              <div
+                key={stack.title}
+                className="animate-fade-in rounded-2xl border border-gray-100 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+                style={{ animationDelay: `${index * 90}ms` }}
+              >
+                <p className="mb-3 text-xs font-black uppercase tracking-widest text-primary">
+                  Category {String(index + 1).padStart(2, "0")}
+                </p>
+                <h3 className="text-xl font-extrabold text-dark">{stack.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-gray-600">{stack.note}</p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {stack.tools.map((tool) => (
+                    <span
+                      key={tool}
+                      className="rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-bold text-primary"
+                    >
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Upcoming Intake */}
       <section className="bg-light-gray py-16">
         <div className="container mx-auto px-6">
@@ -159,6 +282,46 @@ export default async function Home() {
       </section>
 
       <GamifiedRegistration />
+
+      <section className="bg-dark py-20 text-white">
+        <div className="container mx-auto px-6">
+          <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+            <div className="animate-fade-in">
+              <span className="mb-3 block text-sm font-bold uppercase tracking-widest text-primary">
+                Career Reality
+              </span>
+              <h2 className="mb-5 text-3xl font-extrabold md:text-4xl">
+                Skill pays when you practice, improve, and show your work.
+              </h2>
+              <p className="max-w-xl text-base leading-7 text-gray-300">
+                We do not promise instant riches. We help you build the practical work, workflow discipline, and confidence needed to start small and grow steadily.
+              </p>
+              <Link
+                href="/student-works"
+                className="mt-7 inline-flex rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
+              >
+                View Student Work
+              </Link>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {outcomeTiers.map((item, index) => (
+                <div
+                  key={item.tier}
+                  className="animate-fade-in rounded-2xl border border-white/10 bg-white/5 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-white/10"
+                  style={{ animationDelay: `${index * 80}ms` }}
+                >
+                  <p className="text-xs font-black uppercase tracking-widest text-primary">
+                    Step {String(index + 1).padStart(2, "0")} - {item.tier}
+                  </p>
+                  <h3 className="mt-3 text-2xl font-extrabold">{item.range}</h3>
+                  <p className="mt-3 text-sm leading-6 text-gray-300">{item.note}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Why Choose Us ────────────────────────────────── */}
       <section className="py-24 bg-white">

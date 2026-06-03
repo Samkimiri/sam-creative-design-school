@@ -2,15 +2,38 @@ import { NextResponse } from "next/server";
 import { getDB, upsertDBRecord } from "@/lib/db";
 import type { Enrollment, Student } from "@/types";
 
+function getCallbackValue(
+  metadata: { Item?: { Name?: string; Value?: string | number }[] } | undefined,
+  name: string
+) {
+  return metadata?.Item?.find((item) => item.Name === name)?.Value;
+}
+
 export async function POST(request: Request) {
   try {
+    const secret = process.env.MPESA_CALLBACK_SECRET;
+    if (secret) {
+      const url = new URL(request.url);
+      if (url.searchParams.get("secret") !== secret) {
+        return NextResponse.json(
+          { ResultCode: 1, ResultDesc: "Unauthorized callback" },
+          { status: 401 }
+        );
+      }
+    }
+
     const body = await request.json();
     const { Body } = body;
     if (!Body?.stkCallback) {
       return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
     }
 
-    const { ResultCode, ResultDesc, CheckoutRequestID } = Body.stkCallback;
+    const {
+      ResultCode,
+      ResultDesc,
+      CheckoutRequestID,
+      CallbackMetadata,
+    } = Body.stkCallback;
 
     const enrollments = await getDB<Enrollment>("enrollments.json");
     const idx = enrollments.findIndex(
@@ -31,6 +54,18 @@ export async function POST(request: Request) {
       enrollments[idx].status = "confirmed";
       enrollments[idx].mpesaResultCode = String(ResultCode);
       enrollments[idx].mpesaResultDesc = String(ResultDesc || "Success");
+      enrollments[idx].mpesaReceiptNumber = String(
+        getCallbackValue(CallbackMetadata, "MpesaReceiptNumber") || ""
+      );
+      enrollments[idx].mpesaAmount = Number(
+        getCallbackValue(CallbackMetadata, "Amount") || enrollments[idx].amount
+      );
+      enrollments[idx].mpesaPhoneNumber = String(
+        getCallbackValue(CallbackMetadata, "PhoneNumber") || enrollments[idx].phone
+      );
+      enrollments[idx].mpesaTransactionDate = String(
+        getCallbackValue(CallbackMetadata, "TransactionDate") || ""
+      );
       await upsertDBRecord("enrollments.json", enrollments[idx]);
 
       const enrollment = enrollments[idx];
