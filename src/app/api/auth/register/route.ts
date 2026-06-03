@@ -17,8 +17,18 @@ interface Student {
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^(?:0[17]\d{8}|\+254[17]\d{8}|254[17]\d{8})$/;
+const imageUrlRegex = /^https?:\/\/.+/i;
+const imageDataRegex = /^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i;
+const maxAvatarLength = 950 * 1024;
 const clean = (value: unknown, maxLength: number) =>
   String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
+const cleanImage = (value: unknown) => String(value || "").trim();
+
+function isAllowedAvatar(value: string) {
+  if (!value) return true;
+  if (value.length > maxAvatarLength) return false;
+  return imageUrlRegex.test(value) || imageDataRegex.test(value);
+}
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +37,7 @@ export async function POST(request: Request) {
     const email = clean(body.email, 120).toLowerCase();
     const phone = clean(body.phone, 20);
     const password = String(body.password || "");
-    const avatar = clean(body.avatar, 300);
+    const avatar = cleanImage(body.avatar);
     const interest = clean(body.interest, 80);
 
     if (!name || !email || !password) {
@@ -54,6 +64,13 @@ export async function POST(request: Request) {
     if (password.length < 6) {
       return NextResponse.json(
         { success: false, message: "Password must be at least 6 characters." },
+        { status: 400 }
+      );
+    }
+
+    if (!isAllowedAvatar(avatar)) {
+      return NextResponse.json(
+        { success: false, message: "Use a PNG, JPG, WebP, or GIF avatar under 700 KB." },
         { status: 400 }
       );
     }

@@ -4,8 +4,18 @@ import { getDBRecord, upsertDBRecord } from "@/lib/db";
 import type { Student } from "@/types";
 
 const phoneRegex = /^(?:0[17]\d{8}|\+254[17]\d{8}|254[17]\d{8})$/;
+const imageUrlRegex = /^https?:\/\/.+/i;
+const imageDataRegex = /^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i;
+const maxAvatarLength = 950 * 1024;
 const clean = (value: unknown, maxLength: number) =>
   String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
+const cleanImage = (value: unknown) => String(value || "").trim();
+
+function isAllowedAvatar(value: string) {
+  if (!value) return true;
+  if (value.length > maxAvatarLength) return false;
+  return imageUrlRegex.test(value) || imageDataRegex.test(value);
+}
 
 export async function POST(request: Request) {
   try {
@@ -17,12 +27,19 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const name = clean(body.name, 80);
     const phone = clean(body.phone, 20);
-    const profileImage = clean(body.profileImage, 500);
-    const avatar = clean(body.avatar, 500);
+    const profileImage = cleanImage(body.profileImage);
+    const avatar = cleanImage(body.avatar);
     const interest = clean(body.interest, 80);
 
     if (phone && !phoneRegex.test(phone)) {
       return NextResponse.json({ success: false, message: "Enter a valid Kenyan phone number." }, { status: 400 });
+    }
+
+    if (!isAllowedAvatar(profileImage) || !isAllowedAvatar(avatar)) {
+      return NextResponse.json(
+        { success: false, message: "Use a PNG, JPG, WebP, or GIF avatar under 700 KB." },
+        { status: 400 }
+      );
     }
 
     const student = await getDBRecord<Student>("students.json", session.user.id);

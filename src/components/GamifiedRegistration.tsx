@@ -5,6 +5,13 @@ import Link from "next/link";
 
 type Step = "start" | "login" | "identity" | "contact" | "security" | "ambition" | "success";
 
+const masteryPaths = [
+  { id: "ps", label: "Graphic Design", tag: "Design", code: "GD", tone: "from-sky-500 to-blue-600", ring: "border-sky-400 bg-sky-500/15 shadow-sky-500/20" },
+  { id: "ai", label: "Branding", tag: "Brand", code: "BR", tone: "from-amber-400 to-orange-500", ring: "border-amber-300 bg-amber-500/15 shadow-amber-500/20" },
+  { id: "cc", label: "Video Editing", tag: "Video", code: "VE", tone: "from-rose-500 to-pink-600", ring: "border-rose-300 bg-rose-500/15 shadow-rose-500/20" },
+  { id: "sw", label: "Engineering", tag: "Tech", code: "EN", tone: "from-emerald-400 to-teal-600", ring: "border-emerald-300 bg-emerald-500/15 shadow-emerald-500/20" },
+];
+
 export default function GamifiedRegistration() {
   const [step, setStep] = useState<Step>("start");
   const [formData, setFormData] = useState({
@@ -55,10 +62,24 @@ export default function GamifiedRegistration() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith("image/")) {
+      setFormError("Choose a PNG, JPG, WebP, or GIF profile image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 700 * 1024) {
+      setFormError("Choose a profile image smaller than 700 KB.");
+      event.target.value = "";
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setFormData((prev) => ({ ...prev, avatar: reader.result as string }));
+      setFormError("");
     };
+    reader.onerror = () => setFormError("Could not read that profile image. Try another file.");
     reader.readAsDataURL(file);
   };
 
@@ -154,13 +175,16 @@ export default function GamifiedRegistration() {
       case "start":
         return (
           <div className="text-center py-20 animate-fade-in">
-            <h2 className="text-4xl md:text-6xl font-black text-white mb-10 tracking-tighter">
+            <div className="mx-auto mb-8 grid h-20 w-20 place-items-center rounded-[2rem] bg-primary/15 text-xl font-black text-primary ring-1 ring-primary/25 shadow-2xl shadow-primary/20">
+              XP
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tighter">
               Ready to START the Journey?
             </h2>
             <button
               type="button"
               onClick={() => setStep("identity")}
-              className="group relative bg-primary text-white px-12 py-6 rounded-2xl font-black text-2xl hover:scale-105 transition-all shadow-[0_0_50px_rgba(26,143,227,0.4)] overflow-hidden"
+              className="group relative overflow-hidden rounded-[1.6rem] bg-gradient-to-r from-primary via-sky-400 to-emerald-400 px-12 py-6 text-2xl font-black text-white shadow-[0_0_50px_rgba(26,143,227,0.38)] transition-all hover:scale-105"
             >
               <span className="relative z-10">To START the Journey Click here</span>
               <span className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 ease-in-out" />
@@ -201,6 +225,7 @@ export default function GamifiedRegistration() {
       case "login":
         return (
           <div className="max-w-md mx-auto text-center animate-slide-up">
+            <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-sm font-black text-primary ring-1 ring-primary/20">LMS</div>
             <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Welcome Back</h3>
             <p className="text-gray-400 mb-8 font-medium">Sign in to resume your SCDS quest</p>
 
@@ -296,7 +321,7 @@ export default function GamifiedRegistration() {
             <div className="mb-8 relative inline-block">
               <button
                 type="button"
-                className="w-32 h-32 rounded-full border-4 border-primary overflow-hidden bg-dark flex items-center justify-center text-sm font-black text-primary cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex h-32 w-32 cursor-pointer items-center justify-center overflow-hidden rounded-[2rem] border-4 border-primary bg-gradient-to-br from-dark to-primary/20 text-sm font-black text-primary shadow-2xl shadow-primary/20 transition-all hover:-translate-y-1 hover:opacity-90"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Choose profile photo"
               >
@@ -404,25 +429,24 @@ export default function GamifiedRegistration() {
       case "ambition":
         return (
           <div className="max-w-md mx-auto text-center animate-slide-up">
-            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Choose Your Mastery Path</h3>
+            <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Choose Your Mastery Path</h3>
             <p className="text-gray-400 mb-8 font-medium">Which skill are you aiming to master first?</p>
             <div className="grid grid-cols-2 gap-3 mb-8">
-              {[
-                { id: "ps", label: "Graphic Design", tag: "Design" },
-                { id: "ai", label: "Branding", tag: "Brand" },
-                { id: "cc", label: "Video Editing", tag: "Video" },
-                { id: "sw", label: "Engineering", tag: "Tech" },
-              ].map((path) => (
+              {masteryPaths.map((path) => (
                 <button
                   key={path.id}
                   type="button"
                   onClick={() => setFormData({ ...formData, interest: path.label })}
-                  className={`p-4 rounded-xl border-2 font-bold transition-all ${
-                    formData.interest === path.label ? "border-primary bg-primary/10 text-white" : "border-white/10 text-gray-400 hover:border-white/20"
+                  className={`group relative overflow-hidden rounded-2xl border-2 p-4 text-left font-bold shadow-lg transition-all hover:-translate-y-1 ${
+                    formData.interest === path.label ? `${path.ring} text-white` : "border-white/10 bg-white/[0.03] text-gray-400 shadow-transparent hover:border-white/25 hover:bg-white/[0.06]"
                   }`}
                 >
+                  <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${path.tone}`} />
+                  <span className={`mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${path.tone} text-xs font-black text-white shadow-lg transition-transform group-hover:scale-105`}>
+                    {path.code}
+                  </span>
                   <span className="block text-xs uppercase tracking-widest mb-1">{path.tag}</span>
-                  <span className="block text-sm">{path.label}</span>
+                  <span className="block text-sm text-white">{path.label}</span>
                 </button>
               ))}
             </div>
@@ -430,7 +454,7 @@ export default function GamifiedRegistration() {
               type="button"
               disabled={loading}
               onClick={() => nextStep("ambition")}
-              className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg hover:bg-primary/90 transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-3 rounded-[1.4rem] bg-gradient-to-r from-primary via-sky-400 to-emerald-400 py-5 text-lg font-black text-white shadow-xl shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-primary/35 disabled:opacity-50"
             >
               {loading ? (
                 <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-label="Creating account" />
@@ -461,10 +485,11 @@ export default function GamifiedRegistration() {
   };
 
   return (
-    <section id="start" className="py-24 bg-dark relative overflow-hidden border-y border-white/5">
-      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(26,143,227,0.1),transparent)] pointer-events-none" />
+    <section id="start" className="relative overflow-hidden border-y border-white/5 bg-[#07111f] py-24">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(26,143,227,0.28),transparent_28%),radial-gradient(circle_at_82%_25%,rgba(16,185,129,0.18),transparent_26%),radial-gradient(circle_at_50%_100%,rgba(244,114,182,0.12),transparent_30%)] pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
       <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-4xl mx-auto bg-white/5 backdrop-blur-3xl rounded-[3rem] p-10 md:p-16 border border-white/10 shadow-3xl">
+        <div className="mx-auto max-w-4xl rounded-[3rem] border border-white/12 bg-white/[0.06] p-8 shadow-[0_30px_90px_rgba(0,0,0,0.28)] backdrop-blur-3xl md:p-14">
           {step !== "start" && step !== "login" && step !== "success" && (
             <div className="mb-12">
               <div className="flex justify-between items-center mb-4">
@@ -473,9 +498,9 @@ export default function GamifiedRegistration() {
                   {step === "identity" ? "25%" : step === "contact" ? "50%" : step === "security" ? "75%" : "90%"} Complete
                 </span>
               </div>
-              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/8 ring-1 ring-white/10">
                 <div
-                  className="h-full bg-primary transition-all duration-500"
+                  className="progress-sheen h-full rounded-full bg-gradient-to-r from-primary via-sky-400 to-emerald-400 transition-all duration-500"
                   style={{ width: step === "identity" ? "25%" : step === "contact" ? "50%" : step === "security" ? "75%" : "90%" }}
                 />
               </div>

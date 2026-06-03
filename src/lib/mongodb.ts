@@ -9,6 +9,10 @@ type GlobalMongo = typeof globalThis & {
 
 let productionPromise: Promise<MongoClient> | undefined;
 
+export function hasMongoConfig(): boolean {
+  return Boolean(uri);
+}
+
 function createClientPromise(): Promise<MongoClient> {
   if (!uri) {
     return Promise.reject(

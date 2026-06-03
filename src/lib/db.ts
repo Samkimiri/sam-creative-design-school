@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import getMongoClient from "./mongodb";
+import getMongoClient, { hasMongoConfig } from "./mongodb";
 import {
   findSupabaseRecordByJsonField,
   findSupabaseRecordByJsonFieldInsensitive,
@@ -73,6 +73,10 @@ export async function getDB<T>(filename: string): Promise<T[]> {
     }
   }
 
+  if (!hasMongoConfig()) {
+    return readJSON<T>(filename);
+  }
+
   try {
     const client = await getMongoClient();
     const db = client.db("scds_db");
@@ -114,6 +118,11 @@ export async function getDBRecord<T>(filename: string, recordId: string): Promis
       const data = readJSON<T>(filename);
       return data.find((item) => String((item as Record<string, unknown>).id || "") === recordId.trim()) ?? null;
     }
+  }
+
+  if (!hasMongoConfig()) {
+    const data = readJSON<T>(filename);
+    return data.find((item) => String((item as Record<string, unknown>).id || "") === recordId.trim()) ?? null;
   }
 
   try {
@@ -166,6 +175,13 @@ export async function findDBRecordByField<T>(
     } catch (error) {
       console.error("Supabase findDBRecordByField error:", error);
     }
+  }
+
+  if (!hasMongoConfig()) {
+    const data = readJSON<T>(filename);
+    return data.find((item) =>
+      String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
+    ) ?? null;
   }
 
   try {
@@ -226,6 +242,10 @@ export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
     }
   }
 
+  if (!hasMongoConfig()) {
+    return;
+  }
+
   try {
     const client = await getMongoClient();
     const db = client.db("scds_db");
@@ -269,7 +289,20 @@ export async function upsertDBRecord<T extends object>(
   }
 
   if (hasSupabaseConfig()) {
-    await upsertSupabaseRecord(getCollectionName(filename), recordId, record, options?.position);
+    try {
+      await upsertSupabaseRecord(getCollectionName(filename), recordId, record, options?.position);
+      return;
+    } catch (error) {
+      console.error("Supabase upsertDBRecord error:", error);
+    }
+  }
+
+  if (!hasMongoConfig()) {
+    const data = await getDB<T>(filename);
+    const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
+    if (index > -1) data[index] = record;
+    else data.push(record);
+    await saveDB(filename, data);
     return;
   }
 

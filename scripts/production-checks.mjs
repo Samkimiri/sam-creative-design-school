@@ -33,6 +33,14 @@ assert(quizRoute.includes("l.id === lessonId && l.courseId === courseId"), "quiz
 const profileRoute = read("src/app/api/auth/profile/route.ts");
 assert(profileRoute.includes("request.json().catch"), "profile updates must handle invalid JSON");
 assert(profileRoute.includes("phoneRegex"), "profile updates must validate phone numbers");
+assert(profileRoute.includes("isAllowedAvatar"), "profile updates must validate avatar images");
+
+const dbLib = read("src/lib/db.ts");
+assert(dbLib.includes("Supabase upsertDBRecord error"), "database upserts must fall back when Supabase upsert fails");
+assert(dbLib.includes("hasMongoConfig"), "database layer must skip MongoDB calls when Mongo is not configured");
+
+const mongoLib = read("src/lib/mongodb.ts");
+assert(mongoLib.includes("export function hasMongoConfig"), "MongoDB helper must expose configuration status");
 
 const middleware = read("src/middleware.ts");
 assert(middleware.includes('pathname.startsWith("/admin")'), "middleware must protect admin routes");
@@ -57,6 +65,11 @@ assert(studentProjects.includes("readAsDataURL"), "student project uploads must 
 
 const registerRoute = read("src/app/api/auth/register/route.ts");
 assert(!registerRoute.includes('enrolledCourses: ["photoshop-masterclass"]'), "registration must not auto-enroll unpaid students");
+assert(registerRoute.includes("isAllowedAvatar"), "registration must validate avatar images");
+
+const gamifiedRegistration = read("src/components/GamifiedRegistration.tsx");
+assert(gamifiedRegistration.includes("masteryPaths"), "gamified registration must render mastery path choices from structured data");
+assert(gamifiedRegistration.includes("file.size > 700 * 1024"), "gamified registration must limit avatar upload size");
 
 for (const file of ["src/app/robots.ts", "src/app/sitemap.ts", "supabase/schema.sql"]) {
   assert(exists(file), `${file} is required for production readiness`);
