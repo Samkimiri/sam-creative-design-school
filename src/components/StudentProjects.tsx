@@ -8,6 +8,7 @@ export default function StudentProjects() {
   const [projects, setProjects] = useState<ProjectSubmission[]>([]);
   const [status, setStatus] = useState("");
   const [form, setForm] = useState({ studentName: "", courseId: courses[0]?.id || "", title: "", description: "", imageUrl: "" });
+  const [imagePreview, setImagePreview] = useState("");
   const approvedProjects = useMemo(() => projects.filter((project) => project.status === "approved"), [projects]);
 
   useEffect(() => {
@@ -35,10 +36,38 @@ export default function StudentProjects() {
         return;
       }
       setForm({ studentName: "", courseId: courses[0]?.id || "", title: "", description: "", imageUrl: "" });
+      setImagePreview("");
       setStatus("Project submitted. It will appear publicly after admin approval.");
     } catch {
       setStatus("Could not submit project. Please try again.");
     }
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setStatus("Please choose a valid image file.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setStatus("Please choose an image smaller than 2 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const imageUrl = typeof reader.result === "string" ? reader.result : "";
+      setForm((current) => ({ ...current, imageUrl }));
+      setImagePreview(imageUrl);
+      setStatus("");
+    };
+    reader.onerror = () => setStatus("Could not read this image. Please try another file.");
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -92,8 +121,18 @@ export default function StudentProjects() {
               <input id="project-title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Project title" className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
             </div>
             <div>
-              <label htmlFor="project-image-url" className="mb-2 block text-sm font-bold text-dark">Image URL</label>
-              <input id="project-image-url" type="url" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="Image link or uploaded file URL" className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
+              <label htmlFor="project-image-file" className="mb-2 block text-sm font-bold text-dark">Upload image</label>
+              <input id="project-image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImageUpload} className="w-full rounded-xl border border-dashed border-gray-300 bg-light-gray/50 px-4 py-3 text-sm font-semibold text-gray-600 outline-none transition-colors duration-300 file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:font-bold file:text-white hover:border-primary focus:border-primary" />
+              <p className="mt-2 text-xs font-medium text-gray-500">PNG, JPG, WebP, or GIF. Max 2 MB.</p>
+              {imagePreview && (
+                <div className="mt-3 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+                  <img src={imagePreview} alt="Selected project preview" className="h-36 w-full object-cover" />
+                </div>
+              )}
+            </div>
+            <div>
+              <label htmlFor="project-image-url" className="mb-2 block text-sm font-bold text-dark">Or paste image URL</label>
+              <input id="project-image-url" type="url" value={form.imageUrl.startsWith("data:") ? "" : form.imageUrl} onChange={(e) => { setForm({ ...form, imageUrl: e.target.value }); setImagePreview(e.target.value); }} placeholder="https://example.com/project-image.jpg" className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
             </div>
             <div>
               <label htmlFor="project-description" className="mb-2 block text-sm font-bold text-dark">Description</label>

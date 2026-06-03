@@ -28,6 +28,10 @@ const seedProjects: ProjectSubmission[] = [
   },
 ];
 
+const maxUploadedImageLength = 2.8 * 1024 * 1024;
+const imageUrlRegex = /^https?:\/\/.+/i;
+const imageDataRegex = /^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i;
+
 export async function GET() {
   const projects = await getDB<ProjectSubmission>("projects.json");
   const approved = projects.filter((project) => project.status === "approved");
@@ -46,6 +50,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: "Name, title, and description are required." }, { status: 400 });
   }
 
+  if (imageUrl && !isAllowedProjectImage(imageUrl)) {
+    return NextResponse.json({ success: false, message: "Upload a PNG, JPG, WebP, or GIF under 2 MB, or paste a valid image URL." }, { status: 400 });
+  }
+
   const course = courses.find((item) => item.id === courseId);
   const projects = await getDB<ProjectSubmission>("projects.json");
   const project: ProjectSubmission = {
@@ -55,11 +63,16 @@ export async function POST(request: Request) {
     courseName: course?.shortTitle || String(body.courseName || "Student Project").slice(0, 80),
     title: title.slice(0, 120),
     description: description.slice(0, 360),
-    imageUrl: imageUrl.slice(0, 300),
+    imageUrl,
     status: "pending",
     createdAt: new Date().toISOString(),
   };
 
   await saveDB("projects.json", [project, ...projects].slice(0, 100));
   return NextResponse.json({ success: true, data: project });
+}
+
+function isAllowedProjectImage(value: string) {
+  if (value.length > maxUploadedImageLength) return false;
+  return imageUrlRegex.test(value) || imageDataRegex.test(value);
 }

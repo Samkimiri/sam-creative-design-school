@@ -46,6 +46,15 @@ assert(!adminPage.includes("Enter admin password"), "admin page must not expose 
 const footer = read("src/components/Footer.tsx");
 assert(!footer.includes('href: "/admin"'), "public footer must not expose the admin panel link");
 
+const projectsRoute = read("src/app/api/projects/route.ts");
+assert(projectsRoute.includes("imageDataRegex"), "project submissions must validate uploaded image data");
+assert(projectsRoute.includes("isAllowedProjectImage"), "project submissions must reject invalid image payloads");
+assert(!projectsRoute.includes("imageUrl.slice(0, 300)"), "project image uploads must not be truncated");
+
+const studentProjects = read("src/components/StudentProjects.tsx");
+assert(studentProjects.includes('type="file"'), "student projects form must allow image uploads");
+assert(studentProjects.includes("readAsDataURL"), "student project uploads must convert images for submission");
+
 const registerRoute = read("src/app/api/auth/register/route.ts");
 assert(!registerRoute.includes('enrolledCourses: ["photoshop-masterclass"]'), "registration must not auto-enroll unpaid students");
 
