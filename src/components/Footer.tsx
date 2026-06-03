@@ -20,6 +20,7 @@ export default function Footer() {
 
   const quickLinks = [
     { href: "/courses", label: "All Courses" },
+    { href: "/portfolio-builder", label: "Portfolio Builder" },
     { href: "/about", label: "About Us" },
     { href: "/gallery", label: "Student Gallery" },
     { href: "/blog", label: "Blog & Tips" },

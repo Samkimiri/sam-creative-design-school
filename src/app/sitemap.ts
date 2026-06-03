@@ -11,6 +11,7 @@ const routes = [
   "/enroll",
   "/faq",
   "/gallery",
+  "/portfolio-builder",
   "/resources",
   "/reviews",
   "/student-works",
