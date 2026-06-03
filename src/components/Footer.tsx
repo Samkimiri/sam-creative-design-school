@@ -32,7 +32,6 @@ export default function Footer() {
     { href: "/auth/login", label: "Student Login" },
     { href: "/auth/register", label: "Create Account" },
     { href: "/lms", label: "My Dashboard" },
-    { href: "/admin", label: "Admin Panel" },
   ];
 
   return (

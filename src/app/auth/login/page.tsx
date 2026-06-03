@@ -34,7 +34,9 @@ export default function LoginPage() {
       const data = await readLoginResponse(res);
 
       if (data.success) {
-        router.replace(getSafeNextPath() || data.redirectTo || "/lms");
+        const nextPath = getSafeNextPath();
+        const canOpenAdmin = data.redirectTo === "/admin";
+        router.replace(nextPath.startsWith("/admin") && !canOpenAdmin ? "/lms" : nextPath || data.redirectTo || "/lms");
       } else {
         setStatus("error");
         setErrorMsg(data.message || data.error || "Login failed. Please try again.");

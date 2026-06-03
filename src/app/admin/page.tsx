@@ -178,6 +178,7 @@ const adminFetchTimeoutMs = 15000;
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
+  const [accessChecked, setAccessChecked] = useState(false);
   const [tab, setTab] = useState<AdminTab>("analytics");
   const [students, setStudents] = useState<Student[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -214,7 +215,7 @@ export default function AdminDashboard() {
     setNotice("");
     try {
       const headers = { "Content-Type": "application/json" };
-      const body = JSON.stringify({ password: pw });
+      const body = JSON.stringify(pw ? { password: pw } : {});
 
       const { res, data } = await fetchAdminJson<AdminDashboardPayload>("/api/admin/dashboard", {
         method: "POST",
@@ -234,14 +235,18 @@ export default function AdminDashboard() {
         setAnalyticsSummary(dashboard.analytics?.summary ?? null);
         if (dashboard.settings?.intake) setIntakeSettings(dashboard.settings.intake);
         setAuthed(true);
+        setAccessChecked(true);
         if (pw) setPassword(pw);
         if (data.warnings && data.warnings > 0) {
           setNotice(`${data.warnings} dashboard section${data.warnings === 1 ? "" : "s"} used fallback data. Try refreshing if something looks stale.`);
         }
-      } else if (pw) {
-        setError(data.message || "Incorrect password.");
+      } else {
+        setAuthed(false);
+        setAccessChecked(true);
+        setError(data.message || "Admin access required.");
       }
     } catch (err) {
+      setAccessChecked(true);
       setError(err instanceof DOMException && err.name === "AbortError"
         ? "The admin backend took too long to respond. Try again."
         : "Could not load dashboard data. Try again.");
@@ -250,41 +255,52 @@ export default function AdminDashboard() {
     }
   }, [fetchAdminJson]);
 
-  const authenticateAdmin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (loading) return;
-
-    setLoading(true);
-    setError("");
-    setNotice("");
-
-    try {
-      const { res, data } = await fetchAdminJson<never>("/api/admin/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!res.ok || !data.success) {
-        setError(data.message || "Incorrect password.");
-        return;
-      }
-
-      setAuthed(true);
-      setNotice("Loading dashboard data...");
-      void fetchData(password);
-    } catch (err) {
-      setError(err instanceof DOMException && err.name === "AbortError"
-        ? "Admin verification took too long. Try again."
-        : "Could not verify admin access. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Check for session-based auth on mount
+  // Check account role before loading any admin data.
   useEffect(() => {
-    fetchData();
+    let cancelled = false;
+
+    const checkAdminSession = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await res.json().catch(() => null) as {
+          success?: boolean;
+          user?: { role?: string };
+        } | null;
+
+        if (cancelled) return;
+
+        if (!res.ok || !data?.success || !data.user) {
+          setAuthed(false);
+          setAccessChecked(true);
+          setError("Sign in with an admin account to open the dashboard.");
+          return;
+        }
+
+        if (data.user.role !== "admin") {
+          setAuthed(false);
+          setAccessChecked(true);
+          setError("This signed-in account does not have admin access.");
+          return;
+        }
+
+        await fetchData();
+      } catch {
+        if (!cancelled) {
+          setAuthed(false);
+          setAccessChecked(true);
+          setError("Could not verify admin access. Try signing in again.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void checkAdminSession();
+    return () => {
+      cancelled = true;
+    };
   }, [fetchData]);
 
   const confirmEnrollment = async (enrollmentId: string) => {
@@ -414,6 +430,20 @@ export default function AdminDashboard() {
     }
   };
 
+  if (!accessChecked) {
+    return (
+      <div className="min-h-screen bg-dark flex items-center justify-center px-6">
+        <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/5 p-10 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-sm font-black text-white">
+            ADMIN
+          </div>
+          <h1 className="text-2xl font-extrabold text-white">Checking Access</h1>
+          <p className="mt-2 text-sm leading-6 text-gray-400">Verifying that this login belongs to an admin account.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!authed) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center px-6">
@@ -424,27 +454,14 @@ export default function AdminDashboard() {
             <p className="text-gray-400 text-sm mt-1">Sam Creative Design School</p>
           </div>
           {error && <p className="text-red-400 text-sm text-center mb-4" role="alert">{error}</p>}
-          <form onSubmit={authenticateAdmin} className="space-y-4">
-            <div>
-              <label htmlFor="admin-password" className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Admin password</label>
-              <input
-                id="admin-password"
-                type="password"
-                placeholder="Enter admin password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary placeholder:text-gray-500"
-                required
-              />
-            </div>
-            <button type="submit" disabled={loading} className={`w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-primary/90 disabled:opacity-50 ${adminActionMotion}`}>
-              {loading ? "Verifying..." : "Enter Dashboard"}
-            </button>
-            <p className="text-center text-xs leading-5 text-gray-400">
-              Admin accounts can also sign in first, then return here.
-              <Link href="/auth/login?next=/admin" className="ml-1 font-bold text-primary hover:text-white">Open login</Link>
-            </p>
-          </form>
+          <div className="space-y-3">
+            <Link href="/auth/login?next=/admin" className={`block w-full rounded-xl bg-primary py-4 text-center font-bold text-white hover:bg-primary/90 ${adminActionMotion}`}>
+              Sign In as Admin
+            </Link>
+            <Link href="/" className={`block w-full rounded-xl border border-white/10 py-4 text-center font-bold text-gray-300 hover:border-primary hover:text-white ${adminActionMotion}`}>
+              Back to Website
+            </Link>
+          </div>
         </div>
       </div>
     );

@@ -9,25 +9,27 @@ const SECRET = new TextEncoder().encode(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect LMS routes. The admin page can render its password prompt for everyone;
-  // admin API routes perform the real authorization checks.
   if (pathname.startsWith("/lms") || pathname.startsWith("/admin")) {
     const token = request.cookies.get("session")?.value;
 
     if (!token) {
-      if (pathname.startsWith("/lms")) {
-        return NextResponse.redirect(new URL("/auth/login", request.url));
-      }
+      const loginUrl = new URL("/auth/login", request.url);
+      if (pathname.startsWith("/admin")) loginUrl.searchParams.set("next", "/admin");
+      return NextResponse.redirect(loginUrl);
     }
 
     try {
-      if (token) {
-        await jwtVerify(token, SECRET);
+      const { payload } = await jwtVerify(token, SECRET);
+      if (pathname.startsWith("/admin")) {
+        const sessionUser = payload.user as { role?: string } | undefined;
+        if (sessionUser?.role !== "admin") {
+          return NextResponse.redirect(new URL("/lms", request.url));
+        }
       }
     } catch {
-      if (pathname.startsWith("/lms")) {
-        return NextResponse.redirect(new URL("/auth/login", request.url));
-      }
+      const loginUrl = new URL("/auth/login", request.url);
+      if (pathname.startsWith("/admin")) loginUrl.searchParams.set("next", "/admin");
+      return NextResponse.redirect(loginUrl);
     }
   }
 

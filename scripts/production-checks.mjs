@@ -34,6 +34,18 @@ const profileRoute = read("src/app/api/auth/profile/route.ts");
 assert(profileRoute.includes("request.json().catch"), "profile updates must handle invalid JSON");
 assert(profileRoute.includes("phoneRegex"), "profile updates must validate phone numbers");
 
+const middleware = read("src/middleware.ts");
+assert(middleware.includes('pathname.startsWith("/admin")'), "middleware must protect admin routes");
+assert(middleware.includes('sessionUser?.role !== "admin"'), "admin routes must require an admin session role");
+assert(middleware.includes('loginUrl.searchParams.set("next", "/admin")'), "admin redirects must preserve the admin login target");
+
+const adminPage = read("src/app/admin/page.tsx");
+assert(adminPage.includes('fetch("/api/auth/me"'), "admin page must check the logged-in account role");
+assert(!adminPage.includes("Enter admin password"), "admin page must not expose a standalone password prompt");
+
+const footer = read("src/components/Footer.tsx");
+assert(!footer.includes('href: "/admin"'), "public footer must not expose the admin panel link");
+
 const registerRoute = read("src/app/api/auth/register/route.ts");
 assert(!registerRoute.includes('enrolledCourses: ["photoshop-masterclass"]'), "registration must not auto-enroll unpaid students");
 
