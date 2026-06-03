@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, saveDB } from "@/lib/db";
+import { appendDBRecord } from "@/lib/db";
 import { isMpesaConfigured, initiateStkPush } from "@/lib/mpesa";
 import { courses } from "@/data/courses";
 import type { Enrollment } from "@/types";
@@ -12,18 +12,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { phone, amount, courseId } = await request.json();
+    const { phone, courseId } = await request.json();
 
-    if (!phone || !amount || !courseId) {
+    if (!phone || !courseId) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
+
+    if (typeof courseId !== "string") {
+      return NextResponse.json({ error: "Invalid course" }, { status: 400 });
+    }
+
+    const course = courses.find((item) => item.id === courseId);
+    if (!course) {
+      return NextResponse.json({ error: "Invalid course" }, { status: 400 });
     }
 
     if (!isMpesaConfigured()) {
       return NextResponse.json({ error: "M-Pesa API is not configured on the server." }, { status: 500 });
     }
 
-    const reference = `SCDS_${session.user.id.substring(0, 5)}`;
-    const course = courses.find((item) => item.id === courseId);
+    const amount = course.price;
+    const reference = `SCDS_${Date.now()}_${session.user.id.substring(0, 5)}`;
     
     // Initiate actual STK Push via Daraja API
     const pushResult = await initiateStkPush(phone, amount, reference);
@@ -32,8 +41,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: pushResult.errorMessage || "M-Pesa STK Push failed." }, { status: 400 });
     }
 
-    // Save as "pending" enrollment, containing the checkoutRequestId
-    const enrollments = await getDB<Enrollment>("enrollments.json");
     const newEnrollment: Enrollment = {
       id: "ENR_" + Math.random().toString(36).substring(2, 9),
       studentId: session.user.id,
@@ -50,8 +57,7 @@ export async function POST(request: Request) {
       reference,
     };
 
-    enrollments.push(newEnrollment);
-    await saveDB("enrollments.json", enrollments);
+    await appendDBRecord("enrollments.json", newEnrollment);
 
     return NextResponse.json({ 
       success: true, 

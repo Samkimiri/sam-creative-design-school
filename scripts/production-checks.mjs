@@ -18,6 +18,22 @@ const enrollRoute = read("src/app/api/enroll/route.ts");
 assert(enrollRoute.includes("import { courses }"), "enroll route must validate course IDs against course data");
 assert(enrollRoute.includes("Use the admin enrollments endpoint"), "public enrollments list must not be exposed");
 
+const payRoute = read("src/app/api/pay/route.ts");
+assert(!payRoute.includes("const { phone, amount, courseId }"), "pay route must not trust client-supplied amounts");
+assert(payRoute.includes("const amount = course.price"), "pay route must charge the trusted course price");
+assert(payRoute.includes("appendDBRecord(\"enrollments.json\""), "pay route must append enrollment records safely");
+
+const progressRoute = read("src/app/api/progress/route.ts");
+assert(progressRoute.includes('from "@/data/courses"'), "progress route must validate course and lesson IDs");
+assert(progressRoute.includes("item.id === lessonId && item.courseId === courseId"), "progress route must verify lesson belongs to course");
+
+const quizRoute = read("src/app/api/quiz/submit/route.ts");
+assert(quizRoute.includes("l.id === lessonId && l.courseId === courseId"), "quiz submissions must verify lesson belongs to course");
+
+const profileRoute = read("src/app/api/auth/profile/route.ts");
+assert(profileRoute.includes("request.json().catch"), "profile updates must handle invalid JSON");
+assert(profileRoute.includes("phoneRegex"), "profile updates must validate phone numbers");
+
 const registerRoute = read("src/app/api/auth/register/route.ts");
 assert(!registerRoute.includes('enrolledCourses: ["photoshop-masterclass"]'), "registration must not auto-enroll unpaid students");
 

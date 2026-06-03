@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Course and lesson are required" }, { status: 400 });
     }
 
-    const lesson = lessons.find(l => l.id === lessonId);
+    const lesson = lessons.find(l => l.id === lessonId && l.courseId === courseId);
     if (!lesson || !lesson.quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getDB, saveDB } from "@/lib/db";
+import { courses, lessons } from "@/data/courses";
 
 interface ProgressRecord {
   studentId: string;
@@ -20,6 +21,10 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const courseId = searchParams.get("courseId");
+
+  if (courseId && !courses.some((course) => course.id === courseId)) {
+    return NextResponse.json({ error: "Invalid course" }, { status: 400 });
+  }
 
   const progress = await getDB<ProgressRecord>("progress.json");
   const userProgress = progress.filter((p) => isProgressRecord(p) && p.studentId === session.user.id);
@@ -44,7 +49,14 @@ export async function POST(request: Request) {
     if (!session || !session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { courseId, lessonId } = await request.json();
-    if (!courseId || !lessonId) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (typeof courseId !== "string" || typeof lessonId !== "string") {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
+
+    const lesson = lessons.find((item) => item.id === lessonId && item.courseId === courseId);
+    if (!lesson) {
+      return NextResponse.json({ error: "Invalid lesson" }, { status: 400 });
+    }
 
     const progress = (await getDB<ProgressRecord>("progress.json")).filter(isProgressRecord);
     const existingIndex = progress.findIndex(
