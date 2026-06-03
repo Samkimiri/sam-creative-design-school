@@ -212,14 +212,14 @@ export default function CoursePlayer() {
   if (!course) return <div className="pt-32 text-center text-2xl font-bold">Course not found</div>;
 
   return (
-    <div className="relative isolate pt-20 bg-[#F8F8F8] min-h-screen overflow-hidden">
+    <div className="relative isolate min-h-screen overflow-x-hidden bg-[#F5F7FB] pt-24">
       <div
         className="fixed inset-0 -z-10 bg-[url('/images/hero.png')] bg-cover bg-center opacity-10"
         aria-hidden="true"
       />
-      <div className="fixed inset-0 -z-10 bg-white/75" aria-hidden="true" />
+      <div className="fixed inset-0 -z-10 bg-white/80" aria-hidden="true" />
       {/* Top Course Bar */}
-      <div className="bg-dark text-white px-6 py-3 flex items-center justify-between sticky top-20 z-40 shadow-xl">
+      <div className="mx-auto mb-6 mt-4 flex max-w-7xl flex-col gap-4 rounded-[1.75rem] border border-white/70 bg-slate-950 px-5 py-5 text-white shadow-2xl shadow-slate-900/10 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-4">
           <Link href="/lms" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">
             ← Dashboard
@@ -248,12 +248,12 @@ export default function CoursePlayer() {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-120px)]">
+      <div className={`mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 pb-16 sm:px-6 lg:px-8 ${sidebarOpen ? "lg:grid-cols-[minmax(0,1fr)_340px]" : "lg:grid-cols-1"}`}>
         {/* Main Content */}
-        <div className={`flex-1 overflow-y-auto transition-all duration-300 ${sidebarOpen ? "md:mr-[340px]" : ""}`}>
-          <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
+        <div className="min-w-0 transition-all duration-300">
+          <div className="mx-auto max-w-4xl">
             {isPreview && (
-              <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/10 p-5 text-sm font-bold text-dark shadow-sm">
+              <div className="mb-6 rounded-2xl border border-primary/20 bg-white p-5 text-sm font-bold text-dark shadow-sm shadow-primary/5">
                 Preview mode unlocks Module 1 Lesson 1 only. Enroll to access every lesson, quiz, assignment, progress tracker, and certificate.
               </div>
             )}
@@ -276,16 +276,42 @@ export default function CoursePlayer() {
                 </div>
 
                 {activeTab === "video" && (
-                <div className="animate-fade-in bg-dark rounded-2xl overflow-hidden shadow-2xl aspect-video mb-6">
-                  <iframe
-                    key={activeLesson.id}
-                    className="w-full h-full"
-                    src={activeLesson.videoUrl}
-                    title={activeLesson.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
+                  isPreview ? (
+                    <div className="animate-fade-in mb-6 overflow-hidden rounded-[1.5rem] border border-white bg-slate-950 shadow-2xl shadow-slate-900/10">
+                      <div className="relative aspect-video">
+                        <img
+                          src={activeLesson.image || course.image}
+                          alt={activeLesson.imageAlt || activeLesson.title}
+                          className="h-full w-full object-cover opacity-80"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-950/60 to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+                          <p className="mb-3 text-xs font-black uppercase tracking-[0.25em] text-primary-light">Preview Lesson</p>
+                          <h2 className="max-w-2xl text-2xl font-black text-white sm:text-3xl">{activeLesson.title}</h2>
+                          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-200">
+                            Watch the guided video after enrollment. This preview keeps the page clean while showing the lesson context and learning path.
+                          </p>
+                          <Link
+                            href={`/enroll?course=${course.id}`}
+                            className="mt-5 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/90"
+                          >
+                            Enroll to watch
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="animate-fade-in mb-6 aspect-video overflow-hidden rounded-[1.5rem] bg-dark shadow-2xl shadow-slate-900/10">
+                      <iframe
+                        key={activeLesson.id}
+                        className="h-full w-full"
+                        src={activeLesson.videoUrl}
+                        title={activeLesson.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  )
                 )}
 
                 {/* Lesson Details */}
@@ -561,8 +587,8 @@ export default function CoursePlayer() {
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <div className="hidden md:flex flex-col w-[340px] bg-white border-l border-gray-200 fixed right-0 top-[120px] bottom-0 overflow-hidden">
-            <div className="p-5 bg-dark text-white shrink-0">
+          <aside className="hidden max-h-[calc(100vh-7rem)] flex-col overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white shadow-xl shadow-slate-900/5 md:flex lg:sticky lg:top-28">
+            <div className="shrink-0 bg-slate-950 p-5 text-white">
               <h3 className="font-bold text-base">{course.title}</h3>
               <div className="flex items-center gap-2 mt-2">
                 <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
@@ -610,7 +636,7 @@ export default function CoursePlayer() {
                 })}
               </div>
             </div>
-          </div>
+          </aside>
         )}
       </div>
     </div>
