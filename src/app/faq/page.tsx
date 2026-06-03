@@ -16,7 +16,7 @@ export default function FAQPage() {
         },
         {
           q: "How long are the courses?",
-          a: "Course duration varies: Photoshop Masterclass (30 days), Illustrator Training (30 days), CapCut Masterclass (15 days), and SolidWorks for Engineers (45 days). All courses are self-paced, so you can learn at your own speed."
+          a: "Course duration varies: Photoshop (30 days), Illustrator (30 days), Vibe Designing UI/UX (35 days), Vibe Coding Web Development (56 days), AI & Prompt Engineering (21 days), CapCut (15 days), and SolidWorks (45 days). All courses are self-paced, so you can learn at your own speed."
         },
         {
           q: "Can I enroll in multiple courses at once?",
@@ -37,7 +37,7 @@ export default function FAQPage() {
         },
         {
           q: "What are the course fees?",
-          a: "Photoshop: Ksh 1,000–1,500 | Illustrator: Ksh 1,000–1,500 | CapCut: Ksh 1,000 | SolidWorks: Ksh 2,000. These fees are all-inclusive — no hidden charges."
+          a: "Photoshop: Ksh 4,000 | Illustrator: Ksh 4,000 | Vibe Designing UI/UX: Ksh 5,500 | Vibe Coding Web Development: Ksh 8,500 | AI & Prompt Engineering: Ksh 3,500 | CapCut: Ksh 2,000 | SolidWorks: Ksh 9,000. These fees are all-inclusive - no hidden charges."
         },
         {
           q: "Can I get a refund?",
@@ -62,7 +62,7 @@ export default function FAQPage() {
         },
         {
           q: "What software do I need to download?",
-          a: "For Photoshop and Illustrator, you'll need Adobe Creative Cloud (subscription or trial). For CapCut, the free mobile or desktop app works perfectly. For SolidWorks, a trial or student version is available from the official SolidWorks website."
+          a: "For Photoshop and Illustrator, you'll need Adobe Creative Cloud (subscription or trial). For Vibe Designing, Figma works in the browser or desktop app. For Vibe Coding, you need VS Code, a browser, and Git. For AI & Prompt Engineering, you can use modern AI chat and image tools. For CapCut, the free mobile or desktop app works perfectly. For SolidWorks, a trial or student version is available from the official SolidWorks website."
         },
         {
           q: "I forgot my password. What do I do?",
@@ -75,7 +75,7 @@ export default function FAQPage() {
       items: [
         {
           q: "Can I earn money with skills from these courses?",
-          a: "Absolutely! Our students regularly land freelance clients on Fiverr, PeoplePerHour, and locally. Graphic designers in Kenya earn Ksh 15,000–80,000+/month freelancing, and SolidWorks skills are in high demand in manufacturing and engineering firms."
+          a: "Absolutely! Our students use these skills for design, content, UI/UX, websites, AI-assisted business workflows, and CAD projects. We focus on practical portfolio work so you can start with small real briefs, improve through feedback, and present work confidently to clients or employers."
         },
         {
           q: "Does Samuel provide mentorship?",

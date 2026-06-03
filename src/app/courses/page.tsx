@@ -3,9 +3,20 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Courses in Kenya | Photoshop, Illustrator, CapCut and SolidWorks",
+  title: "Courses in Kenya | Design, Coding, AI, Video and CAD",
   description:
-    "Enroll in practical Photoshop, Illustrator, CapCut, and SolidWorks training at Sam Creative Design School in Kenya, with LMS access, notes, quizzes, and certificates.",
+    "Enroll in practical Photoshop, Illustrator, UI/UX, web development, AI prompt engineering, CapCut, and SolidWorks training in Kenya, with LMS access, notes, quizzes, and certificates.",
+  openGraph: {
+    title: "Professional Creative and Tech Courses in Kenya",
+    description:
+      "Build portfolio-ready skills in design, coding, AI, video editing, and 3D CAD at Sam Creative Design School.",
+    images: [
+      {
+        url: "/images/course-vibe-coding-web-dev.png",
+        alt: "Sam Creative Design School courses",
+      },
+    ],
+  },
 };
 
 export default function Courses() {

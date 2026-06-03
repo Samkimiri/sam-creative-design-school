@@ -8,8 +8,9 @@ const SECRET = new TextEncoder().encode(
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isCoursePreview = pathname.startsWith("/lms/") && request.nextUrl.searchParams.get("preview") === "1";
 
-  if (pathname.startsWith("/lms") || pathname.startsWith("/admin")) {
+  if ((pathname.startsWith("/lms") && !isCoursePreview) || pathname.startsWith("/admin")) {
     const token = request.cookies.get("session")?.value;
 
     if (!token) {

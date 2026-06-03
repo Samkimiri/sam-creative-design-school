@@ -49,6 +49,54 @@ export const courses: Course[] = [
     certificate: true
   },
   {
+    id: "vibe-designing-uiux",
+    title: "Vibe Designing - UI/UX Masterclass",
+    shortTitle: "Vibe Designing",
+    description: "Design modern apps and websites with user research, wireframes, visual systems, interactive prototypes, and polished case studies.",
+    longDescription: "This 35-day UI/UX program helps students think like product designers. You will research real users, map journeys, plan information architecture, create wireframes, design clean interfaces in Figma, prototype user flows, and package your work into a portfolio-ready case study before graduation.",
+    duration: "5 Weeks (35 Days)",
+    price: 5500,
+    priceRange: "Ksh 1,100 / week",
+    skills: ["User Research", "Wireframing", "Figma UI Design", "Prototyping", "Design Systems", "UX Case Studies"],
+    image: "/images/course-vibe-designing-uiux.png",
+    icon: "UX",
+    color: "from-emerald-400 to-teal-600",
+    level: "Beginner to Intermediate",
+    certificate: true
+  },
+  {
+    id: "vibe-coding-web-dev",
+    title: "Vibe Coding - Web Development Bootcamp",
+    shortTitle: "Vibe Coding",
+    description: "Build responsive websites and full-stack web apps with HTML, CSS, JavaScript, React, Next.js, APIs, and deployment workflows.",
+    longDescription: "This 56-day web development bootcamp turns beginner students into practical builders. You will code responsive pages, interactive components, reusable layouts, API-powered features, authentication-ready flows, and deployable Next.js projects while building a portfolio that proves you can ship real websites.",
+    duration: "8 Weeks (56 Days)",
+    price: 8500,
+    priceRange: "Ksh 1,065 / week",
+    skills: ["HTML & CSS", "JavaScript", "React Components", "Next.js Routing", "API Integration", "Deployment"],
+    image: "/images/course-vibe-coding-web-dev.png",
+    icon: "</>",
+    color: "from-lime-400 to-green-600",
+    level: "Beginner to Job-Ready",
+    certificate: true
+  },
+  {
+    id: "ai-prompt-engineering",
+    title: "AI & Prompt Engineering",
+    shortTitle: "AI Prompts",
+    description: "Use AI tools responsibly for content, design, business workflows, automation, research, and practical prompt systems.",
+    longDescription: "This 21-day AI and prompt engineering course teaches students how to get useful, reliable outputs from modern AI tools. You will learn prompt structure, context design, image and content workflows, AI-assisted research, automation planning, evaluation, safety, and how to package AI workflows for real business use.",
+    duration: "3 Weeks (21 Days)",
+    price: 3500,
+    priceRange: "Ksh 1,165 / week",
+    skills: ["Prompt Design", "AI Content Workflows", "Image Prompting", "Automation Planning", "Research Synthesis", "Responsible AI"],
+    image: "/images/course-ai-prompt-engineering.png",
+    icon: "AI",
+    color: "from-fuchsia-500 to-red-500",
+    level: "Beginner",
+    certificate: true
+  },
+  {
     id: "capcut-masterclass",
     title: "CapCut Video Editing Masterclass",
     shortTitle: "CapCut",
@@ -242,6 +290,201 @@ const baseLessons: Lesson[] = [
     resources: [{ name: "Part Design Brief.pdf", url: "#", type: "pdf" }],
   }
 ];
+
+type ModulePlan = {
+  title: string;
+  theme: string;
+  lessons: string[];
+};
+
+const defaultVideoUrl = "https://www.youtube.com/embed/ZByhs9mcpdg";
+
+function createModuleLessons(
+  courseId: string,
+  prefix: string,
+  courseLabel: string,
+  image: string,
+  imageAlt: string,
+  modules: ModulePlan[],
+): Lesson[] {
+  return modules.flatMap((module, moduleIndex) =>
+    module.lessons.map((lessonTitle, lessonIndex) => {
+      const order = moduleIndex * 7 + lessonIndex + 1;
+      const id = `${prefix}-${moduleIndex + 1}-${lessonIndex + 1}`;
+      const isModuleCheckpoint = lessonIndex === module.lessons.length - 1;
+
+      return {
+        id,
+        courseId,
+        order,
+        title: `Module ${moduleIndex + 1}: ${lessonTitle}`,
+        duration: `${16 + ((moduleIndex + lessonIndex) % 7) * 2}:00`,
+        videoUrl: defaultVideoUrl,
+        image,
+        imageAlt,
+        content: `${courseLabel} - ${module.title}.
+
+${module.theme} In this lesson, you will learn ${lessonTitle.toLowerCase()} through a practical school-style project. Focus on the core concept, build a small deliverable, review your decisions, and save evidence of your work for your portfolio.
+
+Production practice: write down the goal, the target user or client, the tool settings you used, and what you would improve in the next version. By the end of this lesson you should have a concrete checkpoint that can be reviewed by a tutor or included in your graduation project.`,
+        resources: [{ name: `${courseLabel} ${module.title} Workbook.pdf`, url: "#", type: "pdf" }],
+        ...(isModuleCheckpoint
+          ? {
+              quiz: {
+                questions: [
+                  {
+                    id: `${id}-q1`,
+                    question: `What is the main purpose of ${module.title}?`,
+                    options: ["To skip planning", "To guide a practical project milestone", "To avoid feedback", "To remove documentation"],
+                    answer: 1,
+                    explanation: `${module.title} gives the student a clear milestone that can be reviewed and improved.`,
+                  },
+                  {
+                    id: `${id}-q2`,
+                    question: "What should every portfolio checkpoint include?",
+                    options: ["A goal, process notes, and final evidence", "Only a screenshot", "Only the software name", "Nothing until graduation"],
+                    answer: 0,
+                    explanation: "Portfolio work is stronger when it shows the brief, process, choices, and finished result.",
+                  },
+                  {
+                    id: `${id}-q3`,
+                    question: "Why is tutor feedback important before certification?",
+                    options: ["It makes the project slower only", "It helps improve weak choices before final delivery", "It replaces practice", "It removes the need for a portfolio"],
+                    answer: 1,
+                    explanation: "Feedback helps students correct gaps and present cleaner graduation work.",
+                  },
+                  {
+                    id: `${id}-q4`,
+                    question: "Which habit makes work easier to revise?",
+                    options: ["Naming files and layers clearly", "Deleting all drafts", "Avoiding notes", "Saving only screenshots"],
+                    answer: 0,
+                    explanation: "Clear naming and organized files make revision, feedback, and final presentation easier.",
+                  },
+                  {
+                    id: `${id}-q5`,
+                    question: "What is the best next step after finishing a module project?",
+                    options: ["Archive it without review", "Test, document, and improve it", "Start over without checking", "Hide the source files"],
+                    answer: 1,
+                    explanation: "Testing, documenting, and improving the project turns practice into portfolio-ready work.",
+                  },
+                ],
+              },
+            }
+          : {}),
+      };
+    }),
+  );
+}
+
+const vibeDesigningLessons = createModuleLessons(
+  "vibe-designing-uiux",
+  "vd",
+  "Vibe Designing",
+  "/images/course-vibe-designing-uiux.png",
+  "Modern UI UX workspace with app screens, journey maps, and Figma interface designs",
+  [
+    {
+      title: "UX Foundations",
+      theme: "Start by understanding what UI and UX mean, how users move through products, and how designers solve real problems before making screens.",
+      lessons: ["Product Design Mindset", "User Problems and Goals", "Personas and Empathy Maps", "User Journeys", "Information Architecture", "Mobile First Thinking", "UX Foundations Checkpoint"],
+    },
+    {
+      title: "Wireframes and Flows",
+      theme: "Plan structure before styling so every screen has a clear purpose and every user action has a logical next step.",
+      lessons: ["Sketching Fast Ideas", "Low Fidelity Wireframes", "Screen Flow Mapping", "Navigation Patterns", "Forms and Input States", "Feedback and Error States", "Wireframe Review Checkpoint"],
+    },
+    {
+      title: "Visual Interface Design",
+      theme: "Use spacing, typography, color, icons, and layout rhythm to make interfaces clean, attractive, and easy to scan.",
+      lessons: ["Typography for Interfaces", "Color Systems and Contrast", "Spacing and Layout Grids", "Buttons and Components", "Cards, Lists, and Tables", "Responsive UI Decisions", "Visual Design Checkpoint"],
+    },
+    {
+      title: "Figma Prototyping",
+      theme: "Turn static screens into clickable flows that can be tested with users, tutors, and clients before development begins.",
+      lessons: ["Figma File Setup", "Reusable Components", "Auto Layout Basics", "Interactive Prototypes", "Microcopy and Empty States", "Usability Testing", "Prototype Checkpoint"],
+    },
+    {
+      title: "Portfolio Case Study",
+      theme: "Package the full design process into a professional story that shows the brief, research, decisions, final screens, and lessons learned.",
+      lessons: ["Choosing a Capstone Brief", "Before and After Improvements", "Case Study Storytelling", "Exporting Screens and Assets", "Presentation Deck Design", "Portfolio Review", "Graduation Case Study Checkpoint"],
+    },
+  ],
+);
+
+const vibeCodingLessons = createModuleLessons(
+  "vibe-coding-web-dev",
+  "vc",
+  "Vibe Coding",
+  "/images/course-vibe-coding-web-dev.png",
+  "Web development workspace with code editor, responsive website layouts, and deployment dashboard",
+  [
+    {
+      title: "Web Foundations",
+      theme: "Build a solid understanding of how websites are structured, styled, loaded, and viewed across devices.",
+      lessons: ["How the Web Works", "HTML Document Structure", "Semantic Content", "CSS Selectors", "Box Model and Spacing", "Responsive Units", "Foundations Checkpoint"],
+    },
+    {
+      title: "Modern Layouts",
+      theme: "Create professional layouts that adapt across phones, tablets, and desktops without breaking content.",
+      lessons: ["Flexbox Patterns", "CSS Grid Systems", "Navigation Bars", "Hero and Section Layouts", "Cards and Lists", "Responsive Debugging", "Layout Checkpoint"],
+    },
+    {
+      title: "JavaScript Essentials",
+      theme: "Make pages interactive by reading state, responding to events, and changing the user interface safely.",
+      lessons: ["Variables and Types", "Functions and Scope", "DOM Selection", "Events and Forms", "Arrays and Objects", "Local Storage", "JavaScript Checkpoint"],
+    },
+    {
+      title: "React Components",
+      theme: "Break interfaces into reusable components with props, state, lists, and predictable interaction patterns.",
+      lessons: ["React Mental Model", "Components and Props", "State and Events", "Rendering Lists", "Forms in React", "Component Styling", "React Checkpoint"],
+    },
+    {
+      title: "Next.js App Building",
+      theme: "Use routing, layouts, metadata, assets, and server-ready patterns to build production-friendly web apps.",
+      lessons: ["App Router Basics", "Pages and Layouts", "Links and Navigation", "Images and Assets", "Loading and Error States", "Metadata and SEO", "Next.js Checkpoint"],
+    },
+    {
+      title: "APIs and Data",
+      theme: "Connect interfaces to data sources and understand how requests, responses, validation, and errors work.",
+      lessons: ["HTTP and JSON", "Fetching Data", "API Route Basics", "Form Submission", "Validation and Errors", "Saving User Progress", "API Checkpoint"],
+    },
+    {
+      title: "Project Polish",
+      theme: "Improve performance, accessibility, visual quality, and reliability before showing a project to a client.",
+      lessons: ["Accessibility Basics", "Keyboard and Focus States", "Performance Checks", "Empty and Error UI", "Mobile QA", "Code Cleanup", "Polish Checkpoint"],
+    },
+    {
+      title: "Deployment and Portfolio",
+      theme: "Ship a working web project, document it clearly, and present it as proof that you can build real products.",
+      lessons: ["Git Workflow", "Environment Variables", "Production Build", "Deployment Setup", "Domain and SEO Basics", "Project README", "Graduation Deployment Checkpoint"],
+    },
+  ],
+);
+
+const aiPromptLessons = createModuleLessons(
+  "ai-prompt-engineering",
+  "ape",
+  "AI Prompt Engineering",
+  "/images/course-ai-prompt-engineering.png",
+  "AI prompt engineering dashboard with structured prompts, automation cards, and creative outputs",
+  [
+    {
+      title: "Prompt Foundations",
+      theme: "Learn how context, task, constraints, examples, and evaluation turn vague prompts into useful AI instructions.",
+      lessons: ["How AI Assistants Respond", "Prompt Anatomy", "Context and Role Design", "Constraints and Output Formats", "Few Shot Examples", "Testing Prompt Quality", "Prompt Foundations Checkpoint"],
+    },
+    {
+      title: "Creative and Business Workflows",
+      theme: "Use AI to support design, writing, research, planning, and customer-facing workflows without losing human judgment.",
+      lessons: ["Content Planning Prompts", "Design Brief Prompts", "Image Prompting Basics", "Research Summaries", "Customer Response Drafts", "Workflow Templates", "Workflow Checkpoint"],
+    },
+    {
+      title: "Responsible AI Systems",
+      theme: "Create practical AI systems that are reviewed, documented, safe, and ready for real school or business use.",
+      lessons: ["Fact Checking Outputs", "Bias and Safety Review", "Prompt Libraries", "Automation Planning", "Human Approval Steps", "AI Portfolio Project", "Graduation AI System Checkpoint"],
+    },
+  ],
+);
 
 const enhancedContent: Record<string, string> = {
   "ps-1": `Photoshop is a raster image editor, which means it builds images using pixels. This is perfect for photo editing, posters, banners, mockups, social media graphics, and digital artwork. The most important idea in this lesson is workspace control: when you know where tools, panels, and document settings live, you stop guessing and start working like a designer.
@@ -496,7 +739,12 @@ const lessonVisuals: Record<string, Pick<Lesson, "image" | "imageAlt">> = {
   },
 };
 
-export const lessons: Lesson[] = baseLessons.map((lesson) => ({
+export const lessons: Lesson[] = [
+  ...baseLessons,
+  ...vibeDesigningLessons,
+  ...vibeCodingLessons,
+  ...aiPromptLessons,
+].map((lesson) => ({
   ...lesson,
   ...lessonVisuals[lesson.id],
   content: enhancedContent[lesson.id] ?? lesson.content,

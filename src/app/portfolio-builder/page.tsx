@@ -5,7 +5,7 @@ import { courses } from "@/data/courses";
 export const metadata: Metadata = {
   title: "Portfolio Builder | Student Project Briefs",
   description:
-    "Build a graduation-ready portfolio with guided project briefs for Photoshop, Illustrator, CapCut, and SolidWorks students at Sam Creative Design School.",
+    "Build a graduation-ready portfolio with guided project briefs for design, coding, AI, video, and CAD students at Sam Creative Design School.",
 };
 
 const projectBriefs = [
@@ -26,6 +26,33 @@ const projectBriefs = [
     skills: ["Vector paths", "Logo construction", "Typography pairing", "Print setup"],
     proof: "Include your logo grid, black-and-white version, and final brand preview.",
     accent: "bg-amber-500",
+  },
+  {
+    courseId: "vibe-designing-uiux",
+    theme: "Mobile App UI/UX Case Study",
+    audience: "A local service business that needs a smoother booking or ordering flow",
+    deliverables: ["User persona", "Wireframe flow", "High-fidelity Figma screens", "Clickable prototype"],
+    skills: ["User research", "Journey mapping", "Auto layout", "Prototype testing"],
+    proof: "Show the problem statement, before-and-after flow, final screens, and usability notes.",
+    accent: "bg-teal-500",
+  },
+  {
+    courseId: "vibe-coding-web-dev",
+    theme: "Responsive Business Website",
+    audience: "A real or imagined client who needs an online presence with a contact or booking flow",
+    deliverables: ["Responsive landing page", "Course or service cards", "Interactive form", "Deployment link"],
+    skills: ["Semantic HTML", "Responsive CSS", "React components", "API-ready forms"],
+    proof: "Include the live URL, GitHub repository, mobile screenshot, and short build notes.",
+    accent: "bg-lime-500",
+  },
+  {
+    courseId: "ai-prompt-engineering",
+    theme: "AI Workflow System",
+    audience: "A small team that wants repeatable content, research, or customer-support assistance",
+    deliverables: ["Prompt library", "Workflow map", "Output examples", "Quality checklist"],
+    skills: ["Prompt structure", "Context design", "Evaluation", "Responsible AI review"],
+    proof: "Show the prompt template, sample outputs, review checklist, and final use-case summary.",
+    accent: "bg-fuchsia-500",
   },
   {
     courseId: "capcut-masterclass",

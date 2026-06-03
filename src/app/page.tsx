@@ -10,7 +10,7 @@ export default async function Home() {
   const intake = await getUpcomingIntakeSettings();
   const stats = [
     { value: "500+", label: "Students Trained" },
-    { value: "4", label: "Professional Courses" },
+    { value: "7", label: "Professional Courses" },
     { value: "5+", label: "Years of Excellence" },
     { value: "95%", label: "Completion Rate" },
   ];
@@ -21,7 +21,7 @@ export default async function Home() {
     { label: "Available Seats", value: intake.availableSeats },
   ];
   const learningBundle = [
-    { value: "4", label: "Skill tracks", detail: "Photoshop, Illustrator, CapCut, and SolidWorks" },
+    { value: "7", label: "Skill tracks", detail: "Design, coding, AI, video, and CAD" },
     { value: "30+", label: "Guided lessons", detail: "Step-by-step videos, notes, quizzes, and assignments" },
     { value: "12+", label: "Portfolio projects", detail: "Posters, brand assets, reels, CAD parts, and presentations" },
     { value: "∞", label: "LMS access", detail: "Rewatch lessons and keep improving after class" },
@@ -81,7 +81,7 @@ export default async function Home() {
             That Pay
           </h1>
           <p className="text-xl text-gray-300 mb-10 max-w-2xl animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            Learn Photoshop, Illustrator, CapCut & SolidWorks with practical, industry-level training. Join 500+ students who&apos;ve already transformed their careers.
+            Learn design, coding, AI, video editing, and CAD with practical, industry-level training. Join 500+ students who&apos;ve already transformed their careers.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in" style={{ animationDelay: "0.4s" }}>
             <Link href="#start" className="bg-primary text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-primary/90 transition-all shadow-2xl shadow-primary/30 hover:scale-105">
@@ -381,14 +381,14 @@ export default async function Home() {
                 Learn Directly From a Practical Design Coach
               </h2>
               <p className="max-w-2xl text-base leading-7 text-gray-600">
-                Samuel Kimiri guides students through Photoshop, Illustrator, CapCut, and SolidWorks using real projects, clear weekly targets, and personal feedback. The focus is simple: help every learner build practical work they can show, improve, and confidently use.
+                Samuel Kimiri guides students through creative and technical courses using real projects, clear weekly targets, and personal feedback. The focus is simple: help every learner build practical work they can show, improve, and confidently use.
               </p>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
                 {[
                   { value: "5+", label: "Years mentoring creatives" },
                   { value: "500+", label: "Students trained" },
-                  { value: "4", label: "Professional programs" },
+                  { value: "7", label: "Professional programs" },
                 ].map((item) => (
                   <div key={item.label} className="rounded-2xl border border-gray-100 bg-light-gray p-5">
                     <p className="text-3xl font-extrabold text-primary">{item.value}</p>

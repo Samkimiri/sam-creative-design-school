@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { courses, lessons, Lesson } from "@/data/courses";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 type QuizResult = {
   error?: string;
@@ -28,7 +28,9 @@ const mergeLessonIds = (...lessonGroups: string[][]) => Array.from(new Set(lesso
 
 export default function CoursePlayer() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const courseId = params.courseId as string;
+  const isPreview = searchParams.get("preview") === "1";
   const course = courses.find((c) => c.id === courseId);
   const courseLessons = lessons.filter((l) => l.courseId === courseId).sort((a, b) => a.order - b.order);
 
@@ -156,7 +158,9 @@ export default function CoursePlayer() {
 
   const selectLesson = (lesson: Lesson) => {
     const lessonIndex = courseLessons.findIndex((item) => item.id === lesson.id);
-    const isUnlocked = lessonIndex === 0 || courseLessons.slice(0, lessonIndex).every((item) => completedLessons.includes(item.id));
+    const isUnlocked = isPreview
+      ? lessonIndex === 0
+      : lessonIndex === 0 || courseLessons.slice(0, lessonIndex).every((item) => completedLessons.includes(item.id));
     if (!isUnlocked) return;
 
     setActiveLesson(lesson);
@@ -169,16 +173,17 @@ export default function CoursePlayer() {
   };
 
   const nextLesson = () => {
+    if (isPreview) return;
     const idx = courseLessons.findIndex((l) => l.id === activeLesson.id);
     if (completedLessons.includes(activeLesson.id) && idx < courseLessons.length - 1) {
       selectLesson(courseLessons[idx + 1]);
     }
   };
 
-  const completedCourseLessons = courseLessons.filter((lesson) => completedLessons.includes(lesson.id));
+  const completedCourseLessons = isPreview ? [] : courseLessons.filter((lesson) => completedLessons.includes(lesson.id));
   const progress = courseLessons.length > 0 ? Math.round((completedCourseLessons.length / courseLessons.length) * 100) : 0;
   const activeLessonIndex = courseLessons.findIndex((lesson) => lesson.id === activeLesson.id);
-  const isActiveLessonComplete = completedLessons.includes(activeLesson.id);
+  const isActiveLessonComplete = !isPreview && completedLessons.includes(activeLesson.id);
   const isLastLesson = activeLessonIndex === courseLessons.length - 1;
 
   const openTab = (tab: LessonTab) => {
@@ -247,6 +252,11 @@ export default function CoursePlayer() {
         {/* Main Content */}
         <div className={`flex-1 overflow-y-auto transition-all duration-300 ${sidebarOpen ? "md:mr-[340px]" : ""}`}>
           <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
+            {isPreview && (
+              <div className="mb-6 rounded-2xl border border-primary/20 bg-primary/10 p-5 text-sm font-bold text-dark shadow-sm">
+                Preview mode unlocks Module 1 Lesson 1 only. Enroll to access every lesson, quiz, assignment, progress tracker, and certificate.
+              </div>
+            )}
             {/* Video Player */}
             {!showQuiz ? (
               <>
@@ -293,7 +303,7 @@ export default function CoursePlayer() {
                       <h1 className="text-2xl font-extrabold text-dark">{activeLesson.title}</h1>
                     </div>
                     <div className="flex gap-3 shrink-0">
-                      {!activeLesson.quiz && !completedLessons.includes(activeLesson.id) && (
+                      {!isPreview && !activeLesson.quiz && !completedLessons.includes(activeLesson.id) && (
                         <button
                           onClick={() => markComplete(activeLesson.id)}
                           className="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm hover:-translate-y-0.5 hover:bg-green-600 active:translate-y-0 transition-all duration-300"
@@ -430,10 +440,10 @@ export default function CoursePlayer() {
                   </button>
                   <button
                     onClick={nextLesson}
-                    disabled={isLastLesson || !isActiveLessonComplete}
+                    disabled={isPreview || isLastLesson || !isActiveLessonComplete}
                     className="bg-dark text-white px-6 py-3 rounded-xl font-bold hover:-translate-y-0.5 hover:bg-primary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0"
                   >
-                    {isActiveLessonComplete ? "Next →" : "Pass Quiz to Continue"}
+                    {isPreview ? "Enroll to Continue" : isActiveLessonComplete ? "Next →" : "Pass Quiz to Continue"}
                   </button>
                 </div>
               </>
@@ -567,8 +577,10 @@ export default function CoursePlayer() {
               <div className="space-y-1">
                 {courseLessons.map((lesson, index) => {
                   const isActive = lesson.id === activeLesson.id;
-                  const isDone = completedLessons.includes(lesson.id);
-                  const isLocked = index > 0 && !courseLessons.slice(0, index).every((item) => completedLessons.includes(item.id));
+                  const isDone = !isPreview && completedLessons.includes(lesson.id);
+                  const isLocked = isPreview
+                    ? index > 0
+                    : index > 0 && !courseLessons.slice(0, index).every((item) => completedLessons.includes(item.id));
                   return (
                     <button
                       key={lesson.id}

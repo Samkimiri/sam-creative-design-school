@@ -46,6 +46,7 @@ const middleware = read("src/middleware.ts");
 assert(middleware.includes('pathname.startsWith("/admin")'), "middleware must protect admin routes");
 assert(middleware.includes('sessionUser?.role !== "admin"'), "admin routes must require an admin session role");
 assert(middleware.includes('loginUrl.searchParams.set("next", "/admin")'), "admin redirects must preserve the admin login target");
+assert(middleware.includes('request.nextUrl.searchParams.get("preview") === "1"'), "middleware must allow public LMS lesson previews");
 
 const adminPage = read("src/app/admin/page.tsx");
 assert(adminPage.includes('fetch("/api/auth/me"'), "admin page must check the logged-in account role");
@@ -81,6 +82,17 @@ const courseIds = [...courseBlock.matchAll(/id:\s*"([^"]+)",\s*[\r\n]+\s*title:/
 assert(courseIds.length > 0, "course data must include courses");
 assert.equal(new Set(courseIds).size, courseIds.length, "course IDs must be unique");
 
+const expectedCourseOrder = [
+  "photoshop-masterclass",
+  "illustrator-training",
+  "vibe-designing-uiux",
+  "vibe-coding-web-dev",
+  "ai-prompt-engineering",
+  "capcut-masterclass",
+  "solidworks-engineers",
+];
+assert.deepEqual(courseIds, expectedCourseOrder, "course order must match the published learning path order");
+
 const imagePaths = [...courseBlock.matchAll(/image:\s*"([^"]+)"/g)].map((match) => match[1]);
 for (const imagePath of imagePaths) {
   if (imagePath.startsWith("/")) {
@@ -88,9 +100,44 @@ for (const imagePath of imagePaths) {
   }
 }
 
+const extractBlock = (start, end) => coursesText.slice(coursesText.indexOf(start), coursesText.indexOf(end));
+const countModuleLessons = (block) =>
+  [...block.matchAll(/lessons:\s*\[([^\]]+)\]/g)]
+    .map((match) => [...match[1].matchAll(/"([^"]+)"/g)].length)
+    .reduce((sum, count) => sum + count, 0);
+
+assert.equal(countModuleLessons(extractBlock("const vibeDesigningLessons", "const vibeCodingLessons")), 35, "Vibe Designing must include 35 generated LMS lessons");
+assert.equal(countModuleLessons(extractBlock("const vibeCodingLessons", "const aiPromptLessons")), 56, "Vibe Coding must include 56 generated LMS lessons");
+assert.equal(countModuleLessons(extractBlock("const aiPromptLessons", "const enhancedContent")), 21, "AI Prompt Engineering must include 21 generated LMS lessons");
+assert(coursesText.includes("isModuleCheckpoint"), "new module lessons must include checkpoint quizzes");
+
+const lmsCoursePage = read("src/app/lms/[courseId]/page.tsx");
+assert(lmsCoursePage.includes("useSearchParams"), "LMS course player must read preview search params");
+assert(lmsCoursePage.includes('searchParams.get("preview") === "1"'), "LMS preview mode must be enabled by ?preview=1");
+assert(lmsCoursePage.includes("? index > 0"), "LMS preview mode must keep all lessons after lesson one locked");
+
+const lmsCourseLayout = read("src/app/lms/[courseId]/layout.tsx");
+assert(lmsCourseLayout.includes("generateMetadata"), "LMS course pages must generate course-specific metadata");
+assert(lmsCourseLayout.includes("openGraph"), "LMS course metadata must include Open Graph data");
+
+const enrollPage = read("src/app/enroll/page.tsx");
+assert(enrollPage.includes("courses.map"), "enrollment flow must render course options from the shared course list");
+assert(enrollPage.includes("course.price"), "enrollment flow must show trusted course fees from course data");
+
 const sitemap = read("src/app/sitemap.ts");
 for (const route of ["/about", "/contact", "/courses", "/enroll", "/faq", "/gallery", "/reviews"]) {
   assert(sitemap.includes(route), `sitemap must include ${route}`);
+}
+assert(sitemap.includes("/lms/${course.id}"), "sitemap must include dynamic LMS course URLs");
+
+const faq = read("src/app/faq/page.tsx");
+for (const courseName of ["Vibe Designing", "Vibe Coding", "AI & Prompt Engineering"]) {
+  assert(faq.includes(courseName), `FAQ must mention ${courseName}`);
+}
+
+const portfolioBuilder = read("src/app/portfolio-builder/page.tsx");
+for (const courseId of ["vibe-designing-uiux", "vibe-coding-web-dev", "ai-prompt-engineering"]) {
+  assert(portfolioBuilder.includes(courseId), `portfolio builder must include a brief for ${courseId}`);
 }
 
 console.log("Production checks passed");
