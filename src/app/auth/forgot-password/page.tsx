@@ -39,7 +39,7 @@ export default function ForgotPassword() {
         <div className="animate-fade-in text-center mb-10">
           <Link href="/" className="inline-flex flex-col items-center gap-3 group">
             <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg group-hover:scale-105 transition-transform duration-300">
-              <img src="/images/scds-logo.svg" alt="Sam Creative" className="w-full h-full object-contain rounded-xl" />
+              <img src="/images/scds-monogram.svg" alt="Sam Creative" className="w-full h-full object-contain rounded-xl" />
             </div>
             <span className="text-white font-extrabold text-2xl tracking-tight">Sam Creative <span className="text-primary">Graphics</span></span>
           </Link>
