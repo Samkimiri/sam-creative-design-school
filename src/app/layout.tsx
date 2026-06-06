@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
+import PWAInstaller from "@/components/PWAInstaller";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://sam-creative-design-school.vercel.app";
 
@@ -17,6 +18,20 @@ export const metadata: Metadata = {
   keywords: ["Graphic design training Kenya", "Photoshop classes Kenya", "SolidWorks training", "Sam Creative Design School"],
   alternates: {
     canonical: "/",
+  },
+  manifest: "/manifest.webmanifest",
+  applicationName: "Sam Creative Design School",
+  appleWebApp: {
+    capable: true,
+    title: "SCDS",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: true,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "msapplication-TileColor": "#0056FF",
   },
   openGraph: {
     title: "Sam Creative Design School",
@@ -42,6 +57,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/images/scds-monogram.svg",
+    apple: "/images/logo.jpg",
   },
 };
 
@@ -59,6 +75,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <WhatsAppButton />
+        <PWAInstaller />
         <AnalyticsTracker />
       </body>
     </html>
