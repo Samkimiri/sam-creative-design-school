@@ -104,11 +104,11 @@ export default function Footer() {
             <h4 className="font-extrabold text-white mb-5 text-sm uppercase tracking-wider">Contact Us</h4>
             <div className="space-y-4">
               <a href="tel:0748201131" className="flex items-center gap-3 text-white/80 hover:text-primary-light transition-colors text-sm font-semibold group">
-                <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-primary shrink-0">📞</span>
+                <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-primary shrink-0 text-[10px] font-black">TEL</span>
                 0748201131
               </a>
               <a href="mailto:samcreativegraphics7@gmail.com" className="flex items-center gap-3 text-white/80 hover:text-primary-light transition-colors text-sm font-semibold group">
-                <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-primary shrink-0">✉️</span>
+                <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-primary shrink-0 text-[10px] font-black">MAIL</span>
                 <span className="truncate">samcreativegraphics7@gmail.com</span>
               </a>
               <a href="https://wa.me/254748201131" target="_blank" rel="noreferrer" className="flex items-center gap-3 text-white/80 hover:text-[#25D366] transition-colors text-sm font-semibold group">

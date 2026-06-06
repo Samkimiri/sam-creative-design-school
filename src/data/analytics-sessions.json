@@ -189,5 +189,42 @@
     "userId": "admin-1",
     "userName": "Samuel Kimiri",
     "userEmail": "samcreativegraphics7@gmail.com"
+  },
+  {
+    "id": "s-1780482748544-n9khdd0",
+    "visitorId": "v-1780482748544-6le2we0",
+    "sessionId": "s-1780482748544-n9khdd0",
+    "firstSeen": "2026-06-03T20:04:14.637Z",
+    "lastSeen": "2026-06-03T23:29:55.736Z",
+    "pageViews": 7,
+    "engagements": 18,
+    "landingPage": "/",
+    "lastPage": "/lms/vibe-designing-uiux",
+    "pages": [
+      "/",
+      "/courses",
+      "/enroll",
+      "/lms/vibe-designing-uiux"
+    ],
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome"
+  },
+  {
+    "id": "s-1780522968712-ldne06r",
+    "visitorId": "v-1780233251667-zybw5xd",
+    "sessionId": "s-1780522968712-ldne06r",
+    "firstSeen": "2026-06-03T21:42:53.272Z",
+    "lastSeen": "2026-06-03T23:26:41.941Z",
+    "pageViews": 1,
+    "engagements": 4,
+    "landingPage": "/auth/login",
+    "lastPage": "/auth/login",
+    "pages": [
+      "/auth/login"
+    ],
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome"
   }
 ]

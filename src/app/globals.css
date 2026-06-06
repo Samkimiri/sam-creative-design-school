@@ -18,11 +18,24 @@ body {
   font-family: var(--font-inter);
   background-color: var(--background);
   color: var(--foreground);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-poppins);
   font-weight: 700;
+}
+
+::selection {
+  background: rgba(26, 143, 227, 0.18);
+  color: var(--dark);
+}
+
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 .bg-blue-gradient {
