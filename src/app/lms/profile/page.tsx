@@ -10,7 +10,8 @@ interface Student {
   email: string;
   phone: string;
   profileImage?: string;
-  enrolledCourses: string[];
+  role?: string;
+  enrolledCourses?: string[];
   createdAt: string;
 }
 
@@ -101,7 +102,10 @@ export default function ProfilePage() {
 
   if (loading || !student) return <div className="pt-32 text-center font-bold text-gray-500">Loading profile...</div>;
 
-  const enrolledCourses = courses.filter((c) => student.enrolledCourses.includes(c.id));
+  const enrolledCourseIds = student.role === "admin"
+    ? courses.map((course) => course.id)
+    : student.enrolledCourses ?? [];
+  const enrolledCourses = courses.filter((c) => enrolledCourseIds.includes(c.id));
   const totalLessonsDone = progress.reduce((acc, p) => acc + (p.completedLessons?.length || 0), 0);
 
   return (

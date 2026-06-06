@@ -16,6 +16,7 @@ interface Student {
   id: string;
   name: string;
   email: string;
+  role?: string;
   enrolledCourses: string[];
   profileImage?: string;
 }
@@ -51,7 +52,10 @@ export default async function LMSDashboard() {
     student = await getDBRecord<Student>("students.json", session.user.id) ?? undefined;
     studentName = session.user.name;
 
-    const studentEnrolledIds = student?.enrolledCourses || ["photoshop-masterclass"];
+    const isAdmin = session.user.role === "admin" || student?.role === "admin";
+    const studentEnrolledIds = isAdmin
+      ? courses.map((course) => course.id)
+      : student?.enrolledCourses || ["photoshop-masterclass"];
     enrolledCourses = courses.filter((course) => studentEnrolledIds.includes(course.id));
     allProgress = (await getDB<ProgressRecord>("progress.json")).filter(
       (record) => isProgressRecord(record) && record.studentId === session.user.id
