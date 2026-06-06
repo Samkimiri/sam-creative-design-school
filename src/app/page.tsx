@@ -2,6 +2,7 @@ import Link from "next/link";
 import { courses } from "@/data/courses";
 import GamifiedRegistration from "@/components/GamifiedRegistration";
 import ReviewsSection from "@/components/ReviewsSection";
+import FeaturedCoursesCarousel from "@/components/FeaturedCoursesCarousel";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 
 export const dynamic = "force-dynamic";
@@ -426,6 +427,8 @@ export default async function Home() {
               View All Courses
             </Link>
           </div>
+
+          <FeaturedCoursesCarousel courses={courses} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {courses.map((course) => (
