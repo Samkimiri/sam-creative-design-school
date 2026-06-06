@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
+import type { ContentSettings, CourseContentOverride, FAQSection, LessonContentOverride, LessonResourceOverride } from "@/types";
 
 interface Student {
   id: string;
@@ -123,6 +124,7 @@ interface UpcomingIntakeSettings {
 
 interface AdminSettings {
   intake: UpcomingIntakeSettings;
+  content?: ContentSettings;
 }
 
 interface AdminDashboardPayload {
@@ -164,6 +166,27 @@ const defaultIntakeSettings: UpcomingIntakeSettings = {
   badge: "Limited batch",
   updatedAt: "",
 };
+const defaultContentSettings: ContentSettings = {
+  id: "content-manager",
+  homepage: {
+    eyebrow: "Sam Creative Design School",
+    title: "Master Creative & Tech Skills That Pay",
+    subtitle: "Learn design, coding, AI, video editing, and CAD with practical, industry-level training.",
+    primaryCta: "Start Learning Today",
+    secondaryCta: "Explore Courses",
+  },
+  courses: [],
+  lessons: [],
+  faqs: [
+    {
+      category: "Courses & Enrollment",
+      items: [
+        { q: "Do I need prior experience?", a: "No. Our courses are beginner-friendly and practical." },
+      ],
+    },
+  ],
+  updatedAt: "",
+};
 
 const statusClass = {
   approved: "bg-green-50 text-green-700 border-green-200",
@@ -181,6 +204,26 @@ const adminActionMotion = "motion-safe:transition-all motion-safe:duration-150 m
 const adminTabMotion = "motion-safe:transition-all motion-safe:duration-200 motion-safe:ease-out hover:-translate-y-px active:translate-y-0";
 const adminFetchTimeoutMs = 15000;
 
+function resourcesToText(resources?: LessonResourceOverride[]) {
+  return (resources || []).map((resource) => `${resource.type}|${resource.name}|${resource.url}`).join("\n");
+}
+
+function textToResources(value: string): LessonResourceOverride[] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [type, name, ...urlParts] = line.split("|");
+      const safeType = type === "zip" || type === "link" ? type : "pdf";
+      return {
+        type: safeType,
+        name: (name || "Resource").trim(),
+        url: urlParts.join("|").trim() || "#",
+      };
+    });
+}
+
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
@@ -195,7 +238,9 @@ export default function AdminDashboard() {
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
   const [intakeSettings, setIntakeSettings] = useState<UpcomingIntakeSettings>(defaultIntakeSettings);
+  const [contentSettings, setContentSettings] = useState<ContentSettings>(defaultContentSettings);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -240,6 +285,7 @@ export default function AdminDashboard() {
         setAnalyticsEvents(Array.isArray(dashboard.analytics?.events) ? dashboard.analytics.events : []);
         setAnalyticsSummary(dashboard.analytics?.summary ?? null);
         if (dashboard.settings?.intake) setIntakeSettings(dashboard.settings.intake);
+        if (dashboard.settings?.content) setContentSettings(dashboard.settings.content);
         setAuthed(true);
         setAccessChecked(true);
         if (pw) setPassword(pw);
@@ -402,6 +448,71 @@ export default function AdminDashboard() {
       setNotice(err instanceof DOMException && err.name === "AbortError"
         ? "The settings update took too long. Please try again."
         : "Could not update intake settings. Check your connection and try again.");
+    } finally {
+      setPendingAction("");
+    }
+  };
+
+  const updateCourseContent = (courseId: string, patch: Partial<CourseContentOverride>) => {
+    setContentSettings((current) => {
+      const existing = current.courses.find((course) => course.id === courseId) || { id: courseId };
+      const next = { ...existing, ...patch, id: courseId };
+      return {
+        ...current,
+        courses: [...current.courses.filter((course) => course.id !== courseId), next],
+      };
+    });
+  };
+
+  const updateLessonContent = (lessonId: string, patch: Partial<LessonContentOverride>) => {
+    setContentSettings((current) => {
+      const existing = current.lessons.find((lesson) => lesson.id === lessonId) || { id: lessonId };
+      const next = { ...existing, ...patch, id: lessonId };
+      return {
+        ...current,
+        lessons: [...current.lessons.filter((lesson) => lesson.id !== lessonId), next],
+      };
+    });
+  };
+
+  const updateFAQSection = (index: number, patch: Partial<FAQSection>) => {
+    setContentSettings((current) => ({
+      ...current,
+      faqs: current.faqs.map((section, sectionIndex) => sectionIndex === index ? { ...section, ...patch } : section),
+    }));
+  };
+
+  const updateFAQItem = (sectionIndex: number, itemIndex: number, patch: { q?: string; a?: string }) => {
+    setContentSettings((current) => ({
+      ...current,
+      faqs: current.faqs.map((section, currentSectionIndex) => currentSectionIndex === sectionIndex
+        ? {
+            ...section,
+            items: section.items.map((item, currentItemIndex) => currentItemIndex === itemIndex ? { ...item, ...patch } : item),
+          }
+        : section),
+    }));
+  };
+
+  const saveContentSettings = async () => {
+    setPendingAction("content-save");
+    setNotice("");
+    try {
+      const { res, data } = await fetchAdminJson<{ content: ContentSettings }>("/api/admin/content", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, content: contentSettings }),
+      });
+      if (!res.ok || !data.success || !data.data?.content) {
+        setNotice(data.message || "Could not save content updates.");
+        return;
+      }
+      setContentSettings(data.data.content);
+      setNotice("Content updates saved. Public pages will use the latest published copy.");
+    } catch (err) {
+      setNotice(err instanceof DOMException && err.name === "AbortError"
+        ? "The content update took too long. Please try again."
+        : "Could not save content updates. Check your connection and try again.");
     } finally {
       setPendingAction("");
     }
@@ -1010,63 +1121,140 @@ export default function AdminDashboard() {
 
         {/* Content View */}
         {tab === "content" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 space-y-3">
-              {courses.map((course) => (
-                <button
-                  key={course.id}
-                  onClick={() => setSelectedCourseId(course.id)}
-                  className={`w-full text-left p-4 rounded-2xl border flex items-center gap-4 ${adminPanelMotion} ${
-                    selectedCourseId === course.id ? "bg-primary text-white border-primary shadow-lg" : "bg-white border-gray-100 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="text-2xl">{course.icon}</span>
-                  <div>
-                    <div className="font-bold">{course.title}</div>
-                    <div className={`text-xs ${selectedCourseId === course.id ? "text-white/80" : "text-gray-500"}`}>{course.level}</div>
-                  </div>
-                </button>
-              ))}
+          <div className="space-y-8">
+            <div className="flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-2xl font-extrabold text-dark">Content Manager</h3>
+                <p className="mt-1 text-sm text-gray-500">Edit homepage copy, course descriptions, pricing, lesson videos, notes, resources, and FAQs without touching code.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void saveContentSettings()}
+                disabled={pendingAction === "content-save"}
+                className={`rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white disabled:opacity-50 ${adminActionMotion}`}
+              >
+                {pendingAction === "content-save" ? "Saving..." : "Save All Content"}
+              </button>
             </div>
 
-            <div className="lg:col-span-2">
-              {selectedCourseId ? (
-                <div className={`bg-white rounded-3xl border border-gray-100 p-8 shadow-sm ${adminPanelMotion}`}>
-                  <div className="flex items-center gap-4 mb-8">
-                    <span className="text-4xl">{courses.find(c => c.id === selectedCourseId)?.icon}</span>
-                    <h2 className="text-2xl font-bold text-dark">{courses.find(c => c.id === selectedCourseId)?.title}</h2>
-                  </div>
-                  <div className="space-y-6">
-                    {lessons.filter(l => l.courseId === selectedCourseId).sort((a, b) => a.order - b.order).map((lesson) => (
-                      <div key={lesson.id} className={`border border-gray-100 rounded-2xl p-5 ${adminCardMotion}`}>
-                        <h4 className="font-bold text-dark mb-2 flex items-center gap-2">
-                          <span className="text-primary">{lesson.order}.</span> {lesson.title}
-                        </h4>
-                        <p className="text-gray-600 text-sm mb-4 leading-relaxed bg-gray-50 p-4 rounded-xl italic">&quot;{lesson.content}&quot;</p>
-                        {lesson.quiz && (
-                          <div className={`bg-blue-50/50 rounded-xl p-4 border border-blue-100 ${adminCardMotion}`}>
-                            <p className="text-xs font-bold text-primary uppercase mb-2">Quiz Preview ({lesson.quiz.questions.length} Qs)</p>
-                            <div className="space-y-2">
-                              {lesson.quiz.questions.map((q, i) => (
-                                <div key={i} className={`text-xs text-gray-700 rounded-lg px-2 py-1 ${adminRowMotion}`}>
-                                  <span className="font-bold">{i+1}.</span> {q.question}
-                                </div>
-                              ))}
-                            </div>
+            <section className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+              <h4 className="mb-5 text-lg font-extrabold text-dark">Homepage Hero</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <input value={contentSettings.homepage.eyebrow} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, eyebrow: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Hero eyebrow" />
+                <input value={contentSettings.homepage.title} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, title: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Hero title" />
+                <input value={contentSettings.homepage.primaryCta} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, primaryCta: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Primary CTA" />
+                <input value={contentSettings.homepage.secondaryCta} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, secondaryCta: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Secondary CTA" />
+                <textarea value={contentSettings.homepage.subtitle} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, subtitle: e.target.value } }))} rows={3} className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2" placeholder="Hero subtitle" />
+              </div>
+            </section>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+              <div className="space-y-3">
+                {courses.map((course) => {
+                  const draft = contentSettings.courses.find((item) => item.id === course.id);
+                  return (
+                    <button
+                      key={course.id}
+                      onClick={() => {
+                        setSelectedCourseId(course.id);
+                        setSelectedLessonId(null);
+                      }}
+                      className={`w-full rounded-2xl border p-4 text-left ${adminPanelMotion} ${selectedCourseId === course.id ? "border-primary bg-primary text-white shadow-lg" : "border-gray-100 bg-white hover:border-gray-300"}`}
+                    >
+                      <div className="font-bold">{draft?.title || course.title}</div>
+                      <div className={`text-xs ${selectedCourseId === course.id ? "text-white/80" : "text-gray-500"}`}>{draft?.level || course.level}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="lg:col-span-2">
+                {selectedCourseId ? (() => {
+                  const course = courses.find((item) => item.id === selectedCourseId);
+                  if (!course) return null;
+                  const draft = contentSettings.courses.find((item) => item.id === selectedCourseId) || { id: selectedCourseId };
+                  const courseLessons = lessons.filter((lesson) => lesson.courseId === selectedCourseId).sort((a, b) => a.order - b.order);
+                  const selectedLesson = courseLessons.find((lesson) => lesson.id === selectedLessonId) || courseLessons[0];
+                  const lessonDraft = selectedLesson ? contentSettings.lessons.find((item) => item.id === selectedLesson.id) || { id: selectedLesson.id } : null;
+
+                  return (
+                    <div className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+                      <h4 className="mb-5 text-xl font-extrabold text-dark">Course Details & Pricing</h4>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <input value={draft.title ?? course.title} onChange={(e) => updateCourseContent(course.id, { title: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Course title" />
+                        <input value={draft.shortTitle ?? course.shortTitle} onChange={(e) => updateCourseContent(course.id, { shortTitle: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Short title" />
+                        <input value={draft.duration ?? course.duration} onChange={(e) => updateCourseContent(course.id, { duration: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Duration" />
+                        <input value={draft.level ?? course.level} onChange={(e) => updateCourseContent(course.id, { level: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Level" />
+                        <input type="number" value={draft.price ?? course.price} onChange={(e) => updateCourseContent(course.id, { price: Number(e.target.value) })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Price" />
+                        <input value={draft.priceRange ?? course.priceRange} onChange={(e) => updateCourseContent(course.id, { priceRange: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Price range" />
+                        <input value={draft.image ?? course.image} onChange={(e) => updateCourseContent(course.id, { image: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary md:col-span-2" placeholder="Image URL" />
+                        <textarea value={draft.description ?? course.description} onChange={(e) => updateCourseContent(course.id, { description: e.target.value })} rows={3} className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2" placeholder="Short description" />
+                        <textarea value={draft.longDescription ?? course.longDescription} onChange={(e) => updateCourseContent(course.id, { longDescription: e.target.value })} rows={4} className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2" placeholder="Long description" />
+                        <textarea value={(draft.skills ?? course.skills).join(", ")} onChange={(e) => updateCourseContent(course.id, { skills: e.target.value.split(",").map((skill) => skill.trim()).filter(Boolean) })} rows={2} className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2" placeholder="Skills separated by commas" />
+                      </div>
+
+                      <div className="mt-8 border-t border-gray-100 pt-6">
+                        <h4 className="mb-4 text-xl font-extrabold text-dark">Lessons, Videos & Notes</h4>
+                        <div className="mb-5 flex gap-2 overflow-x-auto pb-2">
+                          {courseLessons.map((lesson) => (
+                            <button key={lesson.id} type="button" onClick={() => setSelectedLessonId(lesson.id)} className={`shrink-0 rounded-xl border px-4 py-2 text-xs font-bold ${selectedLesson?.id === lesson.id ? "border-primary bg-primary text-white" : "border-gray-200 text-gray-600"}`}>
+                              {lesson.order}. {lesson.title}
+                            </button>
+                          ))}
+                        </div>
+
+                        {selectedLesson && lessonDraft && (
+                          <div className="grid gap-4">
+                            <input value={lessonDraft.title ?? selectedLesson.title} onChange={(e) => updateLessonContent(selectedLesson.id, { title: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Lesson title" />
+                            <input value={lessonDraft.duration ?? selectedLesson.duration} onChange={(e) => updateLessonContent(selectedLesson.id, { duration: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Lesson duration" />
+                            <input value={lessonDraft.videoUrl ?? selectedLesson.videoUrl} onChange={(e) => updateLessonContent(selectedLesson.id, { videoUrl: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="YouTube embed URL" />
+                            <textarea value={lessonDraft.content ?? selectedLesson.content} onChange={(e) => updateLessonContent(selectedLesson.id, { content: e.target.value })} rows={6} className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary" placeholder="Lesson notes/content" />
+                            <textarea value={resourcesToText(lessonDraft.resources ?? selectedLesson.resources)} onChange={(e) => updateLessonContent(selectedLesson.id, { resources: textToResources(e.target.value) })} rows={4} className="rounded-xl border border-gray-200 px-4 py-3 font-mono text-xs outline-none focus:border-primary" placeholder="pdf|Notes PDF|https://..." />
+                            <p className="text-xs font-semibold text-gray-500">Resources format: type|name|url. Types: pdf, zip, link. Add one resource per line.</p>
                           </div>
                         )}
                       </div>
-                    ))}
+                    </div>
+                  );
+                })() : (
+                  <div className={`rounded-3xl border border-dashed border-gray-300 bg-white p-12 text-center ${adminPanelMotion}`}>
+                    <div className="mb-4 text-sm font-black uppercase tracking-widest text-primary">Content</div>
+                    <h3 className="font-bold text-xl text-dark">Select a course to edit content</h3>
+                    <p className="text-gray-500">You can update pricing, descriptions, videos, notes, and resources.</p>
                   </div>
-                </div>
-              ) : (
-                <div className={`bg-white rounded-3xl border border-dashed border-gray-300 p-12 text-center ${adminPanelMotion}`}>
-                  <div className="mb-4 text-sm font-black uppercase tracking-widest text-primary">Content</div>
-                  <h3 className="font-bold text-xl text-dark">Course Material Review</h3>
-                  <p className="text-gray-500">Select a course to view all lessons, notes, and quiz questions.</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
+
+            <section className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+              <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h4 className="text-xl font-extrabold text-dark">FAQs</h4>
+                  <p className="text-sm text-gray-500">Edit public FAQ categories, questions, and answers.</p>
+                </div>
+                <button type="button" onClick={() => setContentSettings((prev) => ({ ...prev, faqs: [...prev.faqs, { category: "New Category", items: [{ q: "New question?", a: "Answer goes here." }] }] }))} className={`rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-dark ${adminActionMotion}`}>
+                  Add FAQ Section
+                </button>
+              </div>
+              <div className="space-y-5">
+                {contentSettings.faqs.map((section, sectionIndex) => (
+                  <div key={`${section.category}-${sectionIndex}`} className="rounded-2xl border border-gray-100 p-4">
+                    <input value={section.category} onChange={(e) => updateFAQSection(sectionIndex, { category: e.target.value })} className="mb-4 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="FAQ category" />
+                    <div className="space-y-3">
+                      {section.items.map((item, itemIndex) => (
+                        <div key={itemIndex} className="grid gap-3 md:grid-cols-2">
+                          <input value={item.q} onChange={(e) => updateFAQItem(sectionIndex, itemIndex, { q: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Question" />
+                          <textarea value={item.a} onChange={(e) => updateFAQItem(sectionIndex, itemIndex, { a: e.target.value })} rows={2} className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary" placeholder="Answer" />
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" onClick={() => updateFAQSection(sectionIndex, { items: [...section.items, { q: "New question?", a: "Answer goes here." }] })} className={`mt-3 rounded-xl bg-light-gray px-4 py-2 text-xs font-bold text-primary ${adminActionMotion}`}>
+                      Add Question
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         )}
       </div>

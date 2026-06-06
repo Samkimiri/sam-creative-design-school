@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { courses, lessons } from "@/data/courses";
+import { getManagedCourses, getManagedLessons } from "@/lib/contentSettings";
 
 export const runtime = "nodejs";
 
@@ -113,6 +113,7 @@ export async function GET(
   { params }: { params: Promise<{ lessonId: string }> }
 ) {
   const { lessonId } = await params;
+  const [courses, lessons] = await Promise.all([getManagedCourses(), getManagedLessons()]);
   const lesson = lessons.find((item) => item.id === lessonId);
 
   if (!lesson) {

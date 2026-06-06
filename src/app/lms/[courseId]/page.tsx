@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { courses, lessons, Lesson } from "@/data/courses";
+import { courses as fallbackCourses, lessons as fallbackLessons, type Course, type Lesson } from "@/data/courses";
 import { useParams, useSearchParams } from "next/navigation";
 
 type QuizResult = {
@@ -31,8 +31,10 @@ export default function CoursePlayer() {
   const searchParams = useSearchParams();
   const courseId = params.courseId as string;
   const isPreview = searchParams.get("preview") === "1";
-  const course = courses.find((c) => c.id === courseId);
-  const courseLessons = lessons.filter((l) => l.courseId === courseId).sort((a, b) => a.order - b.order);
+  const [managedCourses, setManagedCourses] = useState<Course[]>(fallbackCourses);
+  const [managedLessons, setManagedLessons] = useState<Lesson[]>(fallbackLessons);
+  const course = managedCourses.find((c) => c.id === courseId);
+  const courseLessons = managedLessons.filter((l) => l.courseId === courseId).sort((a, b) => a.order - b.order);
 
   const [activeLesson, setActiveLesson] = useState<Lesson>(courseLessons[0]);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
@@ -45,6 +47,21 @@ export default function CoursePlayer() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const progressStorageKey = `scds-progress-${courseId}`;
+
+  useEffect(() => {
+    fetch("/api/content")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) return;
+        if (Array.isArray(data.data?.courses)) setManagedCourses(data.data.courses);
+        if (Array.isArray(data.data?.lessons)) {
+          setManagedLessons(data.data.lessons);
+          const refreshedLesson = data.data.lessons.find((lesson: Lesson) => lesson.id === activeLesson?.id);
+          if (refreshedLesson) setActiveLesson(refreshedLesson);
+        }
+      })
+      .catch(() => undefined);
+  }, [activeLesson?.id]);
 
   const readLocalProgress = useCallback(() => {
     if (typeof window === "undefined") return [];

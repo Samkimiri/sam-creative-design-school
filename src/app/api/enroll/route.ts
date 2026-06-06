@@ -7,7 +7,7 @@ import {
   isFlutterwaveConfigured,
 } from "@/lib/flutterwave";
 import { getMpesaConfig, initiateStkPush, isMpesaConfigured } from "@/lib/mpesa";
-import { courses } from "@/data/courses";
+import { getManagedCourses } from "@/lib/contentSettings";
 import { calculateReferralDiscount, findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
 import type { Enrollment, Student } from "@/types";
 
@@ -59,7 +59,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const selectedCourses = courses.filter((course) => courseIds.includes(course.id));
+    const managedCourses = await getManagedCourses();
+    const selectedCourses = managedCourses.filter((course) => courseIds.includes(course.id));
     const missingCourse = selectedCourses.length !== new Set(courseIds).size;
 
     if (missingCourse || selectedCourses.length === 0) {

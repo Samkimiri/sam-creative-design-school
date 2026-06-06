@@ -155,3 +155,61 @@ export interface UpcomingIntakeSettings {
   badge: string;
   updatedAt: string;
 }
+
+export interface FAQItem {
+  q: string;
+  a: string;
+}
+
+export interface FAQSection {
+  category: string;
+  items: FAQItem[];
+}
+
+export interface HomepageContentSettings {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  primaryCta: string;
+  secondaryCta: string;
+}
+
+export interface CourseContentOverride {
+  id: string;
+  title?: string;
+  shortTitle?: string;
+  description?: string;
+  longDescription?: string;
+  duration?: string;
+  price?: number;
+  priceRange?: string;
+  skills?: string[];
+  image?: string;
+  icon?: string;
+  color?: string;
+  level?: string;
+}
+
+export interface LessonResourceOverride {
+  name: string;
+  url: string;
+  type: "pdf" | "zip" | "link";
+}
+
+export interface LessonContentOverride {
+  id: string;
+  title?: string;
+  duration?: string;
+  videoUrl?: string;
+  content?: string;
+  resources?: LessonResourceOverride[];
+}
+
+export interface ContentSettings {
+  id: "content-manager";
+  homepage: HomepageContentSettings;
+  courses: CourseContentOverride[];
+  lessons: LessonContentOverride[];
+  faqs: FAQSection[];
+  updatedAt: string;
+}

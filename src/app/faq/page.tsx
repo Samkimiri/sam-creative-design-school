@@ -1,94 +1,17 @@
-export default function FAQPage() {
+import { getManagedFAQs } from "@/lib/contentSettings";
+
+export default async function FAQPage() {
   const enrollmentSteps = [
     { step: 1, title: "Choose Course", desc: "Select the training program that fits your goals." },
-    { step: 2, title: "Fill Details", desc: "Provide your name and phone number for enrollment." },
-    { step: 3, title: "Pay via M-Pesa", desc: "Enter your PIN when the Safaricom prompt appears on your phone." },
-    { step: 4, title: "Get Access", desc: "Receive login details for the LMS and start learning." }
+    { step: 2, title: "Fill Details", desc: "Provide your name, phone number, and preferred payment method." },
+    { step: 3, title: "Complete Payment", desc: "Pay through M-Pesa Express or Flutterwave checkout." },
+    { step: 4, title: "Get Access", desc: "Receive LMS access and start learning." },
   ];
-
-  const faqs = [
-    {
-      category: "Courses & Enrollment",
-      items: [
-        {
-          q: "Do I need any prior experience to join?",
-          a: "No! All our courses are designed for beginners. You only need a computer, internet access, and the desire to learn. We start from absolute zero and build up your skills step by step."
-        },
-        {
-          q: "How long are the courses?",
-          a: "Course duration varies: Photoshop (30 days), Illustrator (30 days), Vibe Designing UI/UX (35 days), Vibe Coding Web Development (56 days), AI & Prompt Engineering (21 days), CapCut (15 days), and SolidWorks (45 days). All courses are self-paced, so you can learn at your own speed."
-        },
-        {
-          q: "Can I enroll in multiple courses at once?",
-          a: "Absolutely! Many students combine Photoshop and Illustrator for a complete graphic design skillset. You can enroll in as many courses as you like, and each gets its own dashboard in the LMS."
-        },
-        {
-          q: "Will I get a certificate after completing a course?",
-          a: "Yes! Every course includes a certificate of completion that you can add to your CV, LinkedIn profile, or portfolio. Certificates are awarded after you complete all lessons and pass the quizzes."
-        }
-      ]
-    },
-    {
-      category: "Payment & Fees",
-      items: [
-        {
-          q: "How do I pay for a course?",
-          a: "Payment is via M-PESA only. Go to M-PESA → Send Money → Enter 0743475247 (Samuel Kimiri) → Enter the course fee → Use the reference number shown on your enrollment receipt."
-        },
-        {
-          q: "What are the course fees?",
-          a: "Photoshop: Ksh 4,000 | Illustrator: Ksh 4,000 | Vibe Designing UI/UX: Ksh 5,500 | Vibe Coding Web Development: Ksh 8,500 | AI & Prompt Engineering: Ksh 3,500 | CapCut: Ksh 2,000 | SolidWorks: Ksh 9,000. These fees are all-inclusive - no hidden charges."
-        },
-        {
-          q: "Can I get a refund?",
-          a: "We offer a 48-hour refund window from the time of enrollment if you haven't accessed more than 2 lessons. Contact us on WhatsApp at 0748201131 with your reference number."
-        },
-        {
-          q: "Do you offer group or corporate discounts?",
-          a: "Yes! Groups of 3+ students enrolling together receive a 15% discount. Schools and companies can contact Samuel directly via email at samcreativegraphics7@gmail.com for corporate training packages."
-        }
-      ]
-    },
-    {
-      category: "LMS & Technical",
-      items: [
-        {
-          q: "How do I access the LMS after payment?",
-          a: "After enrolling and sending M-PESA payment, send a screenshot of your payment to 0748201131 on WhatsApp with your reference number. Access is granted within 2 hours during business hours (8am–8pm EAT)."
-        },
-        {
-          q: "Can I access the LMS on mobile?",
-          a: "Yes! The LMS is fully mobile-responsive. You can watch lessons, take quizzes, and track your progress on any smartphone, tablet, or computer with a browser."
-        },
-        {
-          q: "What software do I need to download?",
-          a: "For Photoshop and Illustrator, you'll need Adobe Creative Cloud (subscription or trial). For Vibe Designing, Figma works in the browser or desktop app. For Vibe Coding, you need VS Code, a browser, and Git. For AI & Prompt Engineering, you can use modern AI chat and image tools. For CapCut, the free mobile or desktop app works perfectly. For SolidWorks, a trial or student version is available from the official SolidWorks website."
-        },
-        {
-          q: "I forgot my password. What do I do?",
-          a: "Contact us on WhatsApp at 0748201131 or email samcreativegraphics7@gmail.com with your registered email address and we'll reset it for you promptly."
-        }
-      ]
-    },
-    {
-      category: "Career & Outcomes",
-      items: [
-        {
-          q: "Can I earn money with skills from these courses?",
-          a: "Absolutely! Our students use these skills for design, content, UI/UX, websites, AI-assisted business workflows, and CAD projects. We focus on practical portfolio work so you can start with small real briefs, improve through feedback, and present work confidently to clients or employers."
-        },
-        {
-          q: "Does Samuel provide mentorship?",
-          a: "Yes. Every student gets access to a dedicated WhatsApp group for each course where Samuel provides feedback on your projects, answers questions, and shares industry tips throughout your training."
-        }
-      ]
-    }
-  ];
+  const faqs = await getManagedFAQs();
 
   return (
     <div className="pt-32 pb-24">
       <div className="container mx-auto px-6 max-w-4xl">
-        {/* Header */}
         <div className="text-center mb-16">
           <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">FAQ</span>
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
@@ -116,7 +39,6 @@ export default function FAQPage() {
           </div>
         </section>
 
-        {/* FAQ Sections */}
         <div className="space-y-12">
           {faqs.map((section) => (
             <div key={section.category}>
@@ -126,7 +48,7 @@ export default function FAQPage() {
               </h2>
               <div className="space-y-4">
                 {section.items.map((item, i) => (
-                  <details key={i} className="group bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                  <details key={`${section.category}-${i}`} className="group bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
                     <summary className="flex items-center justify-between p-6 cursor-pointer font-bold text-dark hover:text-primary transition-colors list-none">
                       <span>{item.q}</span>
                       <span className="text-primary ml-4 shrink-0 text-xl group-open:rotate-45 transition-transform duration-200">+</span>
@@ -141,23 +63,15 @@ export default function FAQPage() {
           ))}
         </div>
 
-        {/* Still have questions */}
         <div className="mt-16 bg-dark rounded-3xl p-10 text-center text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full -mr-24 -mt-24" />
           <h2 className="text-2xl font-extrabold mb-3 relative z-10">Still Have Questions?</h2>
           <p className="text-gray-400 mb-6 relative z-10">We&apos;re happy to help. Reach out directly.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-            <a
-              href="https://wa.me/254748201131"
-              className="bg-[#25D366] text-white font-bold px-8 py-3.5 rounded-xl hover:opacity-90 transition-all"
-              target="_blank" rel="noreferrer"
-            >
+            <a href="https://wa.me/254748201131" className="bg-[#25D366] text-white font-bold px-8 py-3.5 rounded-xl hover:opacity-90 transition-all" target="_blank" rel="noreferrer">
               WhatsApp Us
             </a>
-            <a
-              href="mailto:samcreativegraphics7@gmail.com"
-              className="bg-white/10 border border-white/20 text-white font-bold px-8 py-3.5 rounded-xl hover:bg-white/20 transition-all"
-            >
+            <a href="mailto:samcreativegraphics7@gmail.com" className="bg-white/10 border border-white/20 text-white font-bold px-8 py-3.5 rounded-xl hover:bg-white/20 transition-all">
               Send Email
             </a>
           </div>

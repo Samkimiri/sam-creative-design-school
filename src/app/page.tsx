@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { courses } from "@/data/courses";
 import GamifiedRegistration from "@/components/GamifiedRegistration";
 import ReviewsSection from "@/components/ReviewsSection";
 import FeaturedCoursesCarousel from "@/components/FeaturedCoursesCarousel";
 import IntakeCountdown from "@/components/IntakeCountdown";
+import { getContentSettings, getManagedCourses } from "@/lib/contentSettings";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 import {
   ArrowRight,
@@ -22,7 +22,11 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const intake = await getUpcomingIntakeSettings();
+  const [intake, content, courses] = await Promise.all([
+    getUpcomingIntakeSettings(),
+    getContentSettings(),
+    getManagedCourses(),
+  ]);
   const stats = [
     { value: "500+", label: "Students Trained" },
     { value: "7", label: "Professional Courses" },
@@ -86,25 +90,23 @@ export default async function Home() {
         <div className="container relative z-20 mx-auto flex flex-col items-center px-6 py-20 text-center md:items-start md:text-left lg:py-28">
           <div className="animate-fade-in mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-2xl shadow-black/20 backdrop-blur-md">
             <span className="h-2 w-2 rounded-full bg-primary" />
-            Practical creative training in Kenya
+            {content.homepage.eyebrow}
           </div>
 
           <h1 className="animate-fade-in mb-6 max-w-5xl text-5xl font-extrabold leading-[0.95] text-white md:text-7xl">
-            Master Creative &<br />
-            <span className="text-primary">Engineering Skills</span><br />
-            That Pay
+            {content.homepage.title}
           </h1>
           <p className="animate-fade-in mb-10 max-w-2xl text-lg leading-8 text-white/80 md:text-xl" style={{ animationDelay: "0.2s" }}>
-            Learn design, coding, AI, video editing, and CAD with practical, industry-level training. Join 500+ students who&apos;ve already transformed their careers.
+            {content.homepage.subtitle}
           </p>
           <div className="animate-fade-in flex w-full flex-col gap-4 sm:w-auto sm:flex-row" style={{ animationDelay: "0.4s" }}>
             <Link href="#start" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-base font-extrabold text-white shadow-2xl shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-primary-dark sm:px-10">
-              Start Your Journey
+              {content.homepage.primaryCta}
               <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </Link>
             <Link href="/courses" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-8 py-4 text-base font-extrabold text-white backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 sm:px-10">
               <BookOpen className="h-5 w-5" aria-hidden="true" />
-              View Courses
+              {content.homepage.secondaryCta}
             </Link>
           </div>
 

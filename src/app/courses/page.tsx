@@ -1,7 +1,7 @@
-import { courses } from "@/data/courses";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { CheckCircle2, Eye, UserPlus } from "lucide-react";
+import { getManagedCourses } from "@/lib/contentSettings";
 
 export const metadata: Metadata = {
   title: "Courses in Kenya | Design, Coding, AI, Video and CAD",
@@ -20,7 +20,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Courses() {
+export default async function Courses() {
+  const courses = await getManagedCourses();
+
   return (
     <div className="pt-32 pb-24 bg-white">
       <div className="container mx-auto px-6">

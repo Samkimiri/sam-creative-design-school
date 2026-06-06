@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { appendDBRecord } from "@/lib/db";
 import { isMpesaConfigured, initiateStkPush } from "@/lib/mpesa";
-import { courses } from "@/data/courses";
+import { getManagedCourses } from "@/lib/contentSettings";
 import type { Enrollment } from "@/types";
 
 export async function POST(request: Request) {
@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid course" }, { status: 400 });
     }
 
+    const courses = await getManagedCourses();
     const course = courses.find((item) => item.id === courseId);
     if (!course) {
       return NextResponse.json({ error: "Invalid course" }, { status: 400 });

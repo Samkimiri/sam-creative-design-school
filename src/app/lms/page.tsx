@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { courses, lessons } from "@/data/courses";
+import { lessons } from "@/data/courses";
 import { getSession } from "@/lib/auth";
 import { getDB, getDBRecord } from "@/lib/db";
+import { getManagedCourses } from "@/lib/contentSettings";
 import { createReferralCode } from "@/lib/referrals";
 
 interface ProgressRecord {
@@ -43,6 +44,7 @@ function getBadges(progress: number) {
 
 export default async function LMSDashboard() {
   const session = await getSession();
+  const courses = await getManagedCourses();
 
   let enrolledCourses = courses;
   let studentName = "Student";

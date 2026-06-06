@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
-import { courses } from "@/data/courses";
+import { courses as fallbackCourses, type Course } from "@/data/courses";
 
 function EnrollForm() {
   const searchParams = useSearchParams();
@@ -25,6 +25,7 @@ function EnrollForm() {
   const [errorMessage, setErrorMessage] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [referralMessage, setReferralMessage] = useState("");
+  const [courses, setCourses] = useState<Course[]>(fallbackCourses);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -45,6 +46,13 @@ function EnrollForm() {
     };
 
     fetchProfile();
+
+    fetch("/api/content")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data?.courses)) setCourses(data.data.courses);
+      })
+      .catch(() => undefined);
   }, []);
 
   const selectedCourses = courses.filter((course) => formData.selectedCourses.includes(course.id));
