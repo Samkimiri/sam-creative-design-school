@@ -158,7 +158,7 @@ const baseLessons: Lesson[] = [
     id: "ps-1", courseId: "photoshop-masterclass", order: 1,
     title: "Introduction to the Photoshop Workspace",
     duration: "18:30",
-    videoUrl: "https://www.youtube.com/embed/ZByhs9mcpdg",
+    videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
     content: "Welcome to SCDS! Photoshop is a Raster-based image editor. Lesson Key Points: 1. Workspace: The Toolbar (V for Move, B for Brush), Options Bar (contextual settings), and Panels (Layers, History). 2. Pixels vs Vectors: Photoshop deals with pixels—tiny squares of color. 3. DPI Standards: Use 72 DPI for web/social media. Use 300 DPI for high-quality printing (Flyers, Posters, Banners). 4. New Document: Press Ctrl+N to start. Always name your files properly from the start.",
     resources: [{ name: "Workspace Cheatsheet.pdf", url: "#", type: "pdf" }],
     quiz: {
@@ -172,7 +172,7 @@ const baseLessons: Lesson[] = [
     id: "ps-2", courseId: "photoshop-masterclass", order: 2,
     title: "Mastering Layers & Blending Modes",
     duration: "22:15",
-    videoUrl: "https://www.youtube.com/embed/S_8qveG6iC0",
+    videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
     content: "Layers are the foundation of non-destructive editing. 1. Layer Order: Elements on top in the panel appear in front on the canvas. 2. Blending Modes: 'Multiply' removes whites (great for textures), 'Screen' removes blacks (great for light effects), and 'Overlay' adds contrast. 3. Opacity vs Fill: Opacity affects the whole layer; Fill doesn't affect layer styles like drop shadows. 4. Organization: Always Group (Ctrl+G) your layers to stay organized.",
     resources: [{ name: "Layer Exercise Assets.zip", url: "#", type: "zip" }],
     quiz: {
@@ -186,7 +186,7 @@ const baseLessons: Lesson[] = [
     id: "ps-3", courseId: "photoshop-masterclass", order: 3,
     title: "Selections & Advanced Masking",
     duration: "25:00",
-    videoUrl: "https://www.youtube.com/embed/8v_C9fP06-g",
+    videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
     content: "Cutting out subjects is a core skill. 1. Quick Selection Tool (W): Fast for simple backgrounds. 2. Pen Tool (P): The most precise for smooth edges. 3. Select & Mask Workspace: Use 'Refine Edge' for complex things like hair or fur. 4. Layer Masks: Never use the Eraser tool! Use a mask—White reveals, Black hides. This allows you to bring back parts you've hidden later if you make a mistake.",
     resources: [{ name: "Cutout Practice Photos.zip", url: "#", type: "zip" }],
     quiz: {
@@ -199,7 +199,7 @@ const baseLessons: Lesson[] = [
     id: "ps-4", courseId: "photoshop-masterclass", order: 4,
     title: "Professional Skin Retouching",
     duration: "28:45",
-    videoUrl: "https://www.youtube.com/embed/58E62v_6_10",
+    videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
     content: "Learn the secrets of high-end beauty retouching. 1. Spot Healing Brush: Best for quick blemish removal. 2. Clone Stamp (S): Copying pixels from one area to another. 3. Frequency Separation: Splitting the image into Texture (High) and Color (Low) layers. This lets you smooth skin tones without losing the natural texture. 4. Dodge & Burn: Adding highlights and shadows to give the face more depth and structure.",
     resources: [{ name: "Retouching Workflow.pdf", url: "#", type: "pdf" }],
   },
@@ -207,7 +207,7 @@ const baseLessons: Lesson[] = [
     id: "ps-5", courseId: "photoshop-masterclass", order: 5,
     title: "Dynamic Typography & Poster Design",
     duration: "31:20",
-    videoUrl: "https://www.youtube.com/embed/IyR_uYsbekU",
+    videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
     content: "Design 101: Hierarchy and Balance. 1. Tracking and Kerning: Adjusting space between letters for better readability. 2. Layer Styles: Using Drop Shadows, Glows, and Inner Shadows to make text pop. 3. Clipping Masks: Putting an image inside your text (Ctrl+Alt+G). 4. Layout: Using the Rule of Thirds to place your elements in a way that catches the eye immediately.",
     resources: [{ name: "Poster Templates.zip", url: "#", type: "zip" }],
   },
@@ -230,7 +230,7 @@ const baseLessons: Lesson[] = [
     id: "ai-2", courseId: "illustrator-training", order: 2,
     title: "The Holy Grail: Pen Tool Mastery",
     duration: "29:15",
-    videoUrl: "https://www.youtube.com/embed/2u7ijgxFOHc",
+    videoUrl: "https://www.youtube.com/embed/Ib8UBwu3yGA",
     content: "If you master the Pen Tool, you can design anything. 1. Anchor Points: Click for sharp corners, Click and Drag for curves. 2. Handle Management: Hold Alt to break a handle for a sharp change in direction. 3. Curvature Tool: A faster way to make smooth curves for beginners. 4. Practice: Tracing logos is the best way to train your hand and eye for precision.",
     resources: [{ name: "Pen Tool Tracing Pack.pdf", url: "#", type: "pdf" }],
   },
@@ -238,7 +238,7 @@ const baseLessons: Lesson[] = [
     id: "ai-3", courseId: "illustrator-training", order: 3,
     title: "Shape Builder & Logo Construction",
     duration: "25:30",
-    videoUrl: "https://www.youtube.com/embed/k9YQ_C8wR9E",
+    videoUrl: "https://www.youtube.com/embed/Ib8UBwu3yGA",
     content: "Most great logos are just simple shapes combined. 1. Shape Builder (Shift+M): Drag over parts of shapes to join them, or Alt+Click to delete them. 2. Pathfinder: A panel version of the shape builder—Unite, Minus Front, Intersect. 3. Grids: Using circles and lines to create a balanced 'Golden Ratio' logo. 4. Expanding: Turning strokes into shapes so they scale correctly.",
     resources: [{ name: "Logo Grid Template.zip", url: "#", type: "zip" }],
   },
@@ -248,7 +248,7 @@ const baseLessons: Lesson[] = [
     id: "cc-1", courseId: "capcut-masterclass", order: 1,
     title: "Viral Video Foundations",
     duration: "14:20",
-    videoUrl: "https://www.youtube.com/embed/YIByq6-uQ4g",
+    videoUrl: "https://www.youtube.com/embed/nEwHL9GRuFk",
     content: "TikTok and Reels are taking over. 1. Aspect Ratios: 9:16 is for mobile (Shorts/Reels). 16:9 is for YouTube/TV. 2. The Timeline: Scrubbing, cutting, and trimming. 3. Audio Extraction: Taking music from one video and using it on yours. 4. Smooth Cuts: Removing gaps between words to keep the energy high and the audience watching.",
     resources: [{ name: "Practice Clips.zip", url: "#", type: "zip" }],
     quiz: {
@@ -261,7 +261,7 @@ const baseLessons: Lesson[] = [
     id: "cc-2", courseId: "capcut-masterclass", order: 2,
     title: "Transitions & Keyframe Animation",
     duration: "22:10",
-    videoUrl: "https://www.youtube.com/embed/oQ3-Mlyr3pU",
+    videoUrl: "https://www.youtube.com/embed/nEwHL9GRuFk",
     content: "Motion is emotion. 1. Keyframes: Setting a 'Start' and 'End' point for an effect. Use them for custom zooms and sliding text. 2. Overlays: Putting one video on top of another. 3. Blending: Making overlays look like they are part of the original scene. 4. Velocity Editing: Speeding up and slowing down clips for dramatic impact.",
     resources: [],
   },
@@ -271,7 +271,7 @@ const baseLessons: Lesson[] = [
     id: "sw-1", courseId: "solidworks-engineers", order: 1,
     title: "Precision Sketching & Smart Dimensions",
     duration: "26:00",
-    videoUrl: "https://www.youtube.com/embed/qsy7T-3TshA",
+    videoUrl: "https://www.youtube.com/embed/1du6w97Rsm4",
     content: "Engineering requires 100% accuracy. 1. Relations: Horizontal, Vertical, Tangent, and Coincident. These tell lines how to behave. 2. Smart Dimensions: Driving the size of your sketch with numbers. 3. Fully Defined Sketches: When your lines turn Black, it means they can't move accidentally. Blue lines are dangerous in engineering! 4. Mirror Entities: Designing one half and mirroring it to save time and ensure symmetry.",
     resources: [{ name: "Sketch Exercises.pdf", url: "#", type: "pdf" }],
     quiz: {
@@ -285,7 +285,7 @@ const baseLessons: Lesson[] = [
     id: "sw-2", courseId: "solidworks-engineers", order: 2,
     title: "3D Extrusions & Revolves",
     duration: "31:15",
-    videoUrl: "https://www.youtube.com/embed/v9S_P7w_q_Y",
+    videoUrl: "https://www.youtube.com/embed/cIKOwZhzh6Q",
     content: "Turning 2D into 3D. 1. Extrude Boss/Base: Giving thickness to a sketch. 2. Revolve: Spinning a profile around an axis (great for bottles, wheels, and gears). 3. Extrude Cut: Removing material. 4. Fillet & Chamfer: Rounding or flattening edges for safety and aesthetics in manufacturing.",
     resources: [{ name: "Part Design Brief.pdf", url: "#", type: "pdf" }],
   }
@@ -297,7 +297,52 @@ type ModulePlan = {
   lessons: string[];
 };
 
-const defaultVideoUrl = "https://www.youtube.com/embed/ZByhs9mcpdg";
+const youtubeEmbed = (videoId: string) => `https://www.youtube.com/embed/${videoId}`;
+
+const verifiedLessonVideos = {
+  photoshopWorkspace: youtubeEmbed("IyR_uYsRdPs"),
+  figmaUiDesign: youtubeEmbed("jwCmIBJ8Jtc"),
+  frontendBootcamp: youtubeEmbed("zJSY8tbf_ys"),
+  javascriptBasics: youtubeEmbed("W6NZfCO5SIk"),
+  reactCourse: youtubeEmbed("CgkZ7MvWUAA"),
+  nextAppRouter: youtubeEmbed("k7o9R6eaSes"),
+  nodeApis: youtubeEmbed("Oe421EPjeBE"),
+  promptEngineering: youtubeEmbed("8ib4Qnh2HFE"),
+} as const;
+
+const defaultVideoUrl = verifiedLessonVideos.photoshopWorkspace;
+
+function getGeneratedLessonVideo(courseId: string, moduleIndex: number, lessonTitle: string) {
+  const normalizedTitle = lessonTitle.toLowerCase();
+
+  if (courseId === "vibe-designing-uiux") {
+    return verifiedLessonVideos.figmaUiDesign;
+  }
+
+  if (courseId === "ai-prompt-engineering") {
+    return verifiedLessonVideos.promptEngineering;
+  }
+
+  if (courseId === "vibe-coding-web-dev") {
+    if (moduleIndex <= 1) return verifiedLessonVideos.frontendBootcamp;
+    if (moduleIndex === 2 || normalizedTitle.includes("javascript") || normalizedTitle.includes("local storage")) {
+      return verifiedLessonVideos.javascriptBasics;
+    }
+    if (moduleIndex === 3 || normalizedTitle.includes("react") || normalizedTitle.includes("component")) {
+      return verifiedLessonVideos.reactCourse;
+    }
+    if (moduleIndex === 4 || normalizedTitle.includes("next") || normalizedTitle.includes("app router") || normalizedTitle.includes("metadata")) {
+      return verifiedLessonVideos.nextAppRouter;
+    }
+    if (moduleIndex === 5 || normalizedTitle.includes("api") || normalizedTitle.includes("http") || normalizedTitle.includes("json") || normalizedTitle.includes("fetch")) {
+      return verifiedLessonVideos.nodeApis;
+    }
+    if (moduleIndex >= 6) return verifiedLessonVideos.nextAppRouter;
+    return verifiedLessonVideos.frontendBootcamp;
+  }
+
+  return defaultVideoUrl;
+}
 
 function createModuleLessons(
   courseId: string,
@@ -319,7 +364,7 @@ function createModuleLessons(
         order,
         title: `Module ${moduleIndex + 1}: ${lessonTitle}`,
         duration: `${16 + ((moduleIndex + lessonIndex) % 7) * 2}:00`,
-        videoUrl: defaultVideoUrl,
+        videoUrl: getGeneratedLessonVideo(courseId, moduleIndex, lessonTitle),
         image,
         imageAlt,
         content: `${courseLabel} - ${module.title}.
