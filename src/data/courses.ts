@@ -421,6 +421,140 @@ Production practice: write down the goal, the target user or client, the tool se
   );
 }
 
+const capcutProfessionalPlans = [
+  {
+    module: "Story Planning",
+    title: "Story Planning and Shot Selection",
+    theme: "Plan the message before editing. Define the viewer, platform, opening hook, proof points, and call-to-action, then choose clips that move the story forward.",
+    practice: "Write a 30-second school advert plan with a hook, three key shots, B-roll ideas, and a final call-to-action.",
+  },
+  {
+    module: "Story Planning",
+    title: "Rough Cut and Story Flow",
+    theme: "Build the first complete edit without heavy effects. Arrange the hook, context, value, proof, and call-to-action, then trim repeated moments and dead space.",
+    practice: "Create a rough cut from 8 to 12 clips and export a draft for review before adding transitions or text animation.",
+  },
+  {
+    module: "Story Planning",
+    title: "Audio Cleanup and Music Timing",
+    theme: "Clean audio makes a video feel professional. Balance voice, music, and sound effects, then time important cuts to music beats without overpowering the message.",
+    practice: "Edit a short clip with voice, background music, three beat cuts, and controlled sound effects.",
+  },
+  {
+    module: "Visual Communication",
+    title: "Captions, Lower Thirds, and Text Hierarchy",
+    theme: "Use text to make the video easier to understand. Captions must be readable on phones, lower thirds should identify people clearly, and text hierarchy should guide attention.",
+    practice: "Add captions and a lower third to a 30-second talking clip, then preview it at mobile size.",
+  },
+  {
+    module: "Visual Communication",
+    title: "B-Roll, Overlays, and Visual Proof",
+    theme: "Use supporting footage to prove what the main clip says. B-roll, screenshots, logos, and before-after overlays should clarify the message instead of decorating randomly.",
+    practice: "Add five relevant B-roll moments to a talking-head video and explain what each one proves.",
+  },
+  {
+    module: "Visual Communication",
+    title: "Color Correction and Visual Consistency",
+    theme: "Correct exposure, contrast, white balance, and saturation before adding creative style. Match clips so the sequence feels consistent across lighting conditions.",
+    practice: "Correct three clips shot in different lighting and export before-after screenshots with notes.",
+  },
+  {
+    module: "Motion and Effects",
+    title: "Keyframes, Motion, and Smooth Movement",
+    theme: "Keyframes create controlled movement. Animate position, scale, rotation, and opacity with intention so motion guides attention without distracting from the story.",
+    practice: "Animate a product photo, a text title, and a logo using simple consistent keyframe motion.",
+  },
+  {
+    module: "Motion and Effects",
+    title: "Speed Ramps and Transition Control",
+    theme: "Speed ramps and transitions should support rhythm and meaning. Use fast motion to skip weak time, slow motion to emphasize important moments, and cuts when clean timing is enough.",
+    practice: "Create a 15-second montage with three speed ramps and two controlled transitions.",
+  },
+  {
+    module: "Motion and Effects",
+    title: "Brand Templates for Reels and Shorts",
+    theme: "Templates help creators publish consistently. Set reusable caption styles, colors, title movement, logo placement, intro structure, and outro call-to-action.",
+    practice: "Build a reusable 9:16 school reel template with intro text, captions, lower third, logo outro, and export settings.",
+  },
+  {
+    module: "Delivery and Portfolio",
+    title: "Social Media Export and Platform Delivery",
+    theme: "Export for the platform. Use 9:16 for TikTok, Reels, Shorts, and Status, 16:9 for YouTube landscape and presentations, and clear versioned filenames for client review.",
+    practice: "Export one video in 9:16 and 16:9, then compare what gets cropped and what must change for each platform.",
+  },
+  {
+    module: "Delivery and Portfolio",
+    title: "Client Review and Revision Workflow",
+    theme: "Professional editors manage feedback clearly. Send labelled drafts, ask for time-coded comments, separate mistakes from creative preferences, and keep revision deadlines visible.",
+    practice: "Write a mock client review message with feedback instructions, version label, and revision deadline.",
+  },
+  {
+    module: "Delivery and Portfolio",
+    title: "Portfolio Packaging and Case Study Notes",
+    theme: "A video portfolio should show process, not only final exports. Document the brief, audience, platform, timeline decisions, improvements, final file, and selected screenshots.",
+    practice: "Create a mini case study for one CapCut edit with timeline screenshots, final export link, and three improvements made.",
+  },
+  {
+    module: "Delivery and Portfolio",
+    title: "Graduation Edit and Final Quality Check",
+    theme: "The final project combines planning, story, audio, captions, motion, color, export, and presentation into one portfolio-ready video.",
+    practice: "Submit a 30 to 60-second edited video with planning notes, revision evidence, final export, and reflection.",
+  },
+];
+
+const capcutProfessionalLessons: Lesson[] = capcutProfessionalPlans.map((plan, index) => {
+  const order = index + 3;
+  const id = `cc-${order}`;
+
+  return {
+    id,
+    courseId: "capcut-masterclass",
+    order,
+    title: `Module ${Math.floor(index / 3) + 2}: ${plan.title}`,
+    duration: `${18 + (index % 6)}:00`,
+    videoUrl: "https://www.youtube.com/embed/nEwHL9GRuFk",
+    image: "/images/course-capcut.png",
+    imageAlt: "CapCut professional video editing lesson workspace",
+    content: `CapCut Video Editing Masterclass - ${plan.module}.
+
+${plan.theme}
+
+Professional notes: start with a clear objective, organize raw clips before editing, make one decision at a time, and review the video on a phone before export. Strong editing is not about using every effect. It is about making the message easy to understand, pleasant to watch, and suitable for the platform.
+
+Production workflow: create folders for raw footage, audio, graphics, captions, drafts, and final exports. Keep filenames clear, save project evidence, and write down the choices you made so a tutor or client can review your process.
+
+Practice task: ${plan.practice}
+
+Portfolio checkpoint: save the final export, one timeline screenshot, one before-after comparison where relevant, and three notes explaining what improved in this lesson.`,
+    resources: [{ name: `${plan.title} Workbook.pdf`, url: "#", type: "pdf" }],
+    quiz: {
+      questions: [
+        {
+          id: `${id}-q1`,
+          question: `What is the main focus of ${plan.title}?`,
+          options: ["Improving a practical editing decision", "Skipping planning", "Hiding the message", "Deleting all project files"],
+          answer: 0,
+          explanation: `${plan.title} builds a specific professional video editing skill that improves the final project.`,
+        },
+        {
+          id: `${id}-q2`,
+          question: "What should every CapCut portfolio checkpoint include?",
+          options: ["Final export, evidence, and process notes", "Only an unnamed draft", "Only the app icon", "Nothing until graduation"],
+          answer: 0,
+          explanation: "Portfolio evidence shows the brief, process, improvements, and final result.",
+        },
+        {
+          id: `${id}-q3`,
+          question: "Why should exports be reviewed on a phone?",
+          options: ["Most short-form viewers watch on mobile", "It deletes bad clips automatically", "It changes the course price", "It removes all captions"],
+          answer: 0,
+          explanation: "Mobile review helps catch caption, cropping, sound, and readability issues before publishing.",
+        },
+      ],
+    },
+  };
+});
+
 const vibeDesigningLessons = createModuleLessons(
   "vibe-designing-uiux",
   "vd",
@@ -786,6 +920,7 @@ const lessonVisuals: Record<string, Pick<Lesson, "image" | "imageAlt">> = {
 
 export const lessons: Lesson[] = [
   ...baseLessons,
+  ...capcutProfessionalLessons,
   ...vibeDesigningLessons,
   ...vibeCodingLessons,
   ...aiPromptLessons,
