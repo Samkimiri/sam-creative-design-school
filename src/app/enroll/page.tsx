@@ -8,11 +8,13 @@ import { courses } from "@/data/courses";
 function EnrollForm() {
   const searchParams = useSearchParams();
   const initialCourse = searchParams.get("course") || "";
+  const initialReferralCode = searchParams.get("ref") || "";
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
+    referralCode: initialReferralCode,
     paymentMethod: "mpesa" as "mpesa" | "flutterwave",
     selectedCourses: initialCourse ? [initialCourse] : ([] as string[]),
   });
@@ -21,6 +23,8 @@ function EnrollForm() {
   const [checkoutRequestId, setCheckoutRequestId] = useState("");
   const [stkMessage, setStkMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [referralMessage, setReferralMessage] = useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -45,6 +49,7 @@ function EnrollForm() {
 
   const selectedCourses = courses.filter((course) => formData.selectedCourses.includes(course.id));
   const totalAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
+  const amountForStatus = paymentAmount || totalAmount;
   const returnedPayment = searchParams.get("payment") || "";
   const returnedMessage = searchParams.get("message") || "";
   const activePaymentLabel =
@@ -122,6 +127,7 @@ function EnrollForm() {
 
     setStatus("submitting");
     setErrorMessage("");
+    setReferralMessage("");
 
     try {
       const courseNames = selectedCourses.map((course) => course.title).join(", ");
@@ -136,20 +142,27 @@ function EnrollForm() {
           courseId: formData.selectedCourses.join(","),
           courseName: courseNames,
           amount: totalAmount,
+          referralCode: formData.referralCode,
         }),
       });
 
       const data = await res.json();
       if (data.success && data.checkoutUrl) {
         setRef(data.reference);
+        setPaymentAmount(Number(data.amount) || totalAmount);
+        if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
         window.location.href = data.checkoutUrl;
       } else if (data.success && data.pushSuccess) {
         setRef(data.reference);
+        setPaymentAmount(Number(data.amount) || totalAmount);
+        if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
         setCheckoutRequestId(data.checkoutRequestId || "");
         setStkMessage(data.message || "M-Pesa prompt sent to your phone.");
         setStatus("stk");
       } else if (data.success) {
         setRef(data.reference);
+        setPaymentAmount(Number(data.amount) || totalAmount);
+        if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
         setErrorMessage(data.message || "Enrollment saved but M-Pesa prompt was not sent.");
         setStatus("failed");
       } else {
@@ -206,9 +219,14 @@ function EnrollForm() {
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
             Enter your <span className="font-bold text-dark">M-Pesa PIN</span> to pay:
             <span className="font-bold text-primary block text-3xl mt-2 tracking-tighter">
-              Ksh {totalAmount.toLocaleString()}
+              Ksh {amountForStatus.toLocaleString()}
             </span>
           </p>
+          {referralMessage && (
+            <p className="mx-auto mb-5 max-w-md rounded-xl bg-green-50 px-4 py-2 text-sm font-bold text-green-700">
+              {referralMessage}
+            </p>
+          )}
 
           <div className="bg-primary/5 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-primary/10">
             <div className="flex items-center justify-center gap-3 text-primary font-bold mb-2">
@@ -263,9 +281,10 @@ function EnrollForm() {
             <p className="text-gray-700 mb-4">The button below opens a prepared message with your name, course, reference, amount, and next step.</p>
             <div className="space-y-2">
               <p className="flex justify-between"><span>Reference:</span> <span className="font-bold text-primary">{ref}</span></p>
-              {totalAmount > 0 && (
-                <p className="flex justify-between"><span>Total Amount:</span> <span className="font-bold">Ksh {totalAmount.toLocaleString()}</span></p>
+              {amountForStatus > 0 && (
+                <p className="flex justify-between"><span>Total Amount:</span> <span className="font-bold">Ksh {amountForStatus.toLocaleString()}</span></p>
               )}
+              {referralMessage && <p className="text-sm font-bold text-green-700">{referralMessage}</p>}
             </div>
           </div>
 
@@ -281,7 +300,7 @@ function EnrollForm() {
               } catch {}
 
               const courseNames = selectedCourses.map((course) => course.title).join(", ");
-              const amountText = totalAmount > 0 ? ` of Ksh ${totalAmount}` : "";
+              const amountText = amountForStatus > 0 ? ` of Ksh ${amountForStatus}` : "";
               const courseText = courseNames ? ` for ${courseNames}` : "";
               const message = `Hi, my name is ${formData.name || "a student"}. I just completed a ${activePaymentLabel} payment${amountText}${courseText}. Reference: ${ref}. Please activate my LMS access and send the next steps.`;
               window.open(`https://wa.me/254743475247?text=${encodeURIComponent(message)}`, "_blank");
@@ -341,6 +360,21 @@ function EnrollForm() {
             value={formData.email}
             onChange={(event) => setFormData({ ...formData, email: event.target.value })}
           />
+        </div>
+
+        <div>
+          <label htmlFor="enroll-referral" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Referral Code</label>
+          <input
+            id="enroll-referral"
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            className="w-full bg-light-gray border-none rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold uppercase transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
+            placeholder="Optional student code"
+            value={formData.referralCode}
+            onChange={(event) => setFormData({ ...formData, referralCode: event.target.value.toUpperCase() })}
+          />
+          <p className="mt-2 text-xs font-semibold text-gray-500">Valid student referral codes apply a 10% enrollment discount and are tracked for admin review.</p>
         </div>
 
         <div>
@@ -414,6 +448,9 @@ function EnrollForm() {
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total to Pay</p>
               <p className="text-2xl sm:text-3xl font-black text-dark tracking-tighter">Ksh {totalAmount.toLocaleString()}</p>
+              {formData.referralCode.trim() && (
+                <p className="mt-1 text-xs font-bold text-green-700">Referral code will be validated before payment.</p>
+              )}
             </div>
             <p className="text-[10px] font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
               {formData.selectedCourses.length} Course(s) Selected

@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { courses, lessons } from "@/data/courses";
 import { getSession } from "@/lib/auth";
 import { getDB, getDBRecord } from "@/lib/db";
+import { createReferralCode } from "@/lib/referrals";
 
 interface ProgressRecord {
   studentId: string;
@@ -88,6 +89,15 @@ export default async function LMSDashboard() {
   const lockedCourses = session
     ? courses.filter((course) => !enrolledCourses.some((enrolled) => enrolled.id === course.id))
     : courses.slice(1);
+  const referralCode = session
+    ? createReferralCode({
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      })
+    : "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const referralLink = referralCode ? `${siteUrl}/enroll?ref=${encodeURIComponent(referralCode)}` : "";
 
   return (
     <div className="relative isolate min-h-screen overflow-hidden bg-[#F6FAFF] pb-16 pt-24 md:pb-24 md:pt-28">
@@ -232,6 +242,27 @@ export default async function LMSDashboard() {
                     />
                   ))}
                 </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {session && (
+          <section className="mb-8 rounded-2xl border border-primary/15 bg-white p-5 shadow-sm md:mb-10 md:p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-primary">Referral Program</p>
+                <h2 className="mt-2 text-2xl font-extrabold text-dark">Invite a learner, help them save 10%</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
+                  Share your code or link. Admin can track successful referrals from enrollment records.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-light-gray p-4 md:min-w-80">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Your Code</p>
+                <p className="mt-1 font-mono text-2xl font-black text-primary">{referralCode}</p>
+                <Link href={referralLink || `/enroll?ref=${referralCode}`} className="mt-3 inline-flex w-full justify-center rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-primary/90">
+                  Open Referral Link
+                </Link>
               </div>
             </div>
           </section>

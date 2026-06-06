@@ -3,6 +3,7 @@ import { courses } from "@/data/courses";
 import GamifiedRegistration from "@/components/GamifiedRegistration";
 import ReviewsSection from "@/components/ReviewsSection";
 import FeaturedCoursesCarousel from "@/components/FeaturedCoursesCarousel";
+import IntakeCountdown from "@/components/IntakeCountdown";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 import {
   ArrowRight,
@@ -262,6 +263,9 @@ export default async function Home() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <IntakeCountdown targetDate={intake.nextIntake} />
+              </div>
               {intakeDetails.map((item, index) => (
                 <div
                   key={item.label}

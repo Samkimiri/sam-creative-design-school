@@ -8,7 +8,8 @@ import {
 } from "@/lib/flutterwave";
 import { getMpesaConfig, initiateStkPush, isMpesaConfigured } from "@/lib/mpesa";
 import { courses } from "@/data/courses";
-import type { Enrollment } from "@/types";
+import { calculateReferralDiscount, findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
+import type { Enrollment, Student } from "@/types";
 
 const clean = (value: unknown, maxLength: number) =>
   String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     const phone = clean(body.phone, 20);
     const email = clean(body.email, 120);
     const paymentMethod = clean(body.paymentMethod || "mpesa", 20);
+    const referralCode = normalizeReferralCode(body.referralCode).slice(0, 24);
     const courseIds = String(body.courseId || "")
       .split(",")
       .map((id) => id.trim())
@@ -71,6 +73,11 @@ export async function POST(request: Request) {
     const parsedAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
     const session = await getSession();
+    const students = referralCode ? await getDB<Student>("students.json") : [];
+    const referrer = findReferrerByCode(students, referralCode);
+    const isSelfReferral = Boolean(referrer && session?.user.id && referrer.id === session.user.id);
+    const referralDiscount = referrer && !isSelfReferral ? calculateReferralDiscount(parsedAmount) : 0;
+    const payableAmount = Math.max(0, parsedAmount - referralDiscount);
 
     let pushSuccess = false;
     let checkoutUrl = "";
@@ -95,7 +102,7 @@ export async function POST(request: Request) {
         process.env.FLUTTERWAVE_REDIRECT_URL ||
         new URL("/api/flutterwave/callback", request.url).toString();
       const checkout = await createFlutterwaveCheckout({
-        amount: parsedAmount,
+        amount: payableAmount,
         txRef: reference,
         redirectUrl,
         customer: {
@@ -120,7 +127,7 @@ export async function POST(request: Request) {
 
       checkoutUrl = checkout.link;
     } else if (mpesaConfigured) {
-      const stk = await initiateStkPush(phone, parsedAmount, reference);
+      const stk = await initiateStkPush(phone, payableAmount, reference);
       pushSuccess = stk.success;
       checkoutRequestId = stk.checkoutRequestId;
       merchantRequestId = stk.merchantRequestId;
@@ -155,7 +162,13 @@ export async function POST(request: Request) {
       studentEmail: session?.user.email || email,
       courseId: selectedCourses.map((course) => course.id).join(","),
       courseName: courseName || "Course",
-      amount: parsedAmount,
+      originalAmount: parsedAmount,
+      amount: payableAmount,
+      referralCode: referralCode || undefined,
+      referralDiscount: referralDiscount || undefined,
+      referredByStudentId: referrer && !isSelfReferral ? referrer.id : undefined,
+      referredByName: referrer && !isSelfReferral ? referrer.name : undefined,
+      referredByEmail: referrer && !isSelfReferral ? referrer.email : undefined,
       phone,
       reference,
       paymentProvider: paymentMethod,
@@ -178,6 +191,11 @@ export async function POST(request: Request) {
         ? mpesaMessage || "M-Pesa prompt sent! Check your phone and enter your PIN."
         : mpesaMessage,
       reference,
+      amount: payableAmount,
+      originalAmount: parsedAmount,
+      referralDiscount,
+      referralApplied: Boolean(referrer && !isSelfReferral),
+      referredByName: referrer && !isSelfReferral ? referrer.name : "",
       pushSuccess,
       checkoutUrl,
       paymentProvider: paymentMethod,

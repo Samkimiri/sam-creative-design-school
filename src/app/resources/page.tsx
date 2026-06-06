@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 const resources = [
   { title: "Verify Certificate", text: "Employers can confirm a student's certificate ID.", href: "/verify-certificate" },
   { title: "Portfolio Builder", text: "Follow guided briefs and package graduation-ready projects.", href: "/portfolio-builder" },
+  { title: "Student Portfolios", text: "View approved public profiles with projects, skills, and certificates.", href: "/student-portfolios" },
   { title: "Submit Project", text: "Students can send finished work for gallery review.", href: "/gallery#submit-project" },
   { title: "Open LMS", text: "Continue lessons, notes, quizzes, and assignments.", href: "/lms" },
   { title: "Study Break Games", text: "Refresh with quick games that can work inside the app.", href: "/games" },

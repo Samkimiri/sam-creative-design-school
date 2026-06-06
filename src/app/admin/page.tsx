@@ -19,7 +19,13 @@ interface Enrollment {
   studentEmail: string;
   courseId: string;
   courseName: string;
+  originalAmount?: number;
   amount: number;
+  referralCode?: string;
+  referralDiscount?: number;
+  referredByStudentId?: string;
+  referredByName?: string;
+  referredByEmail?: string;
   phone: string;
   reference: string;
   status: "pending" | "confirmed" | "failed";
@@ -670,6 +676,7 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4 text-left">Student</th>
                     <th className="px-6 py-4 text-left">Course</th>
                     <th className="px-6 py-4 text-left">Amount</th>
+                    <th className="px-6 py-4 text-left">Referral</th>
                     <th className="px-6 py-4 text-left">Ref</th>
                     <th className="px-6 py-4 text-left">Date</th>
                     <th className="px-6 py-4 text-left">Status</th>
@@ -678,7 +685,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {enrollments.length === 0 ? (
-                    <tr><td colSpan={7} className="text-center py-12 text-gray-400">No enrollments yet</td></tr>
+                    <tr><td colSpan={8} className="text-center py-12 text-gray-400">No enrollments yet</td></tr>
                   ) : enrollments.map((e) => (
                     <tr key={e.id} className={adminRowMotion}>
                       <td className="px-6 py-4">
@@ -686,7 +693,26 @@ export default function AdminDashboard() {
                         <div className="text-gray-500 text-xs">{e.studentEmail || e.phone}</div>
                       </td>
                       <td className="px-6 py-4 font-medium text-dark">{e.courseName}</td>
-                      <td className="px-6 py-4 font-bold text-primary">Ksh {e.amount}</td>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-primary">Ksh {e.amount}</div>
+                        {e.referralDiscount ? (
+                          <div className="text-xs font-semibold text-green-700">
+                            Saved Ksh {e.referralDiscount}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-6 py-4 text-xs">
+                        {e.referredByName ? (
+                          <div>
+                            <div className="font-bold text-dark">{e.referredByName}</div>
+                            <div className="font-mono text-gray-500">{e.referralCode}</div>
+                          </div>
+                        ) : e.referralCode ? (
+                          <span className="rounded-full bg-yellow-50 px-3 py-1 font-bold text-yellow-700">Code not matched</span>
+                        ) : (
+                          <span className="text-gray-400">None</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 font-mono text-xs text-gray-600">{e.reference}</td>
                       <td className="px-6 py-4 text-gray-500">{new Date(e.createdAt).toLocaleDateString()}</td>
                       <td className="px-6 py-4">

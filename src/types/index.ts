@@ -27,7 +27,13 @@ export interface Enrollment {
   studentEmail?: string;
   courseId: string;
   courseName: string;
+  originalAmount?: number;
   amount: number;
+  referralCode?: string;
+  referralDiscount?: number;
+  referredByStudentId?: string;
+  referredByName?: string;
+  referredByEmail?: string;
   phone: string;
   reference: string;
   paymentProvider?: "mpesa" | "flutterwave" | string;

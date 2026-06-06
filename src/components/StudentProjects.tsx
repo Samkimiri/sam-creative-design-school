@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { courses } from "@/data/courses";
+import { slugifyName } from "@/lib/slugs";
 import type { ProjectSubmission } from "@/types";
 
 export default function StudentProjects() {
@@ -96,7 +98,9 @@ export default function StudentProjects() {
               <div className="p-5">
                 <p className="mb-2 text-xs font-black uppercase tracking-widest text-primary">{project.courseName}</p>
                 <h3 className="font-extrabold text-dark">{project.title}</h3>
-                <p className="mt-1 text-xs font-bold text-primary">by {project.studentName}</p>
+                <Link href={`/student-portfolios/${slugifyName(project.studentName)}`} className="mt-1 inline-flex text-xs font-bold text-primary hover:underline">
+                  by {project.studentName}
+                </Link>
                 <p className="mt-3 text-sm leading-6 text-gray-500">{project.description}</p>
               </div>
             </article>
