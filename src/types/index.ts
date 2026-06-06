@@ -38,6 +38,12 @@ export interface Enrollment {
   flutterwaveFlwRef?: string;
   flutterwavePaymentType?: string;
   flutterwaveCurrency?: string;
+  flutterwaveCheckoutCreatedAt?: string;
+  flutterwaveAmount?: number;
+  flutterwaveChargedAmount?: number;
+  flutterwaveStatus?: string;
+  flutterwaveFailureReason?: string;
+  paymentConfirmedAt?: string;
   mpesaReceiptNumber?: string;
   mpesaAmount?: number;
   mpesaPhoneNumber?: string;

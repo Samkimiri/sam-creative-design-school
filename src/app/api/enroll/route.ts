@@ -152,7 +152,7 @@ export async function POST(request: Request) {
       id: "ENR-" + Date.now(),
       studentId: session?.user.id || "guest",
       studentName: name,
-      studentEmail: session?.user.email || "",
+      studentEmail: session?.user.email || email,
       courseId: selectedCourses.map((course) => course.id).join(","),
       courseName: courseName || "Course",
       amount: parsedAmount,
@@ -164,6 +164,8 @@ export async function POST(request: Request) {
       flutterwaveTxRef: paymentMethod === "flutterwave" ? reference : undefined,
       flutterwaveCurrency:
         paymentMethod === "flutterwave" ? getFlutterwaveCurrency() : undefined,
+      flutterwaveCheckoutCreatedAt:
+        paymentMethod === "flutterwave" ? new Date().toISOString() : undefined,
       status: "pending",
       createdAt: new Date().toISOString(),
     };

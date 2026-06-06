@@ -1,3 +1,5 @@
+import { createHash } from "crypto";
+
 const FLUTTERWAVE_BASE_URL = "https://api.flutterwave.com/v3";
 
 export interface FlutterwaveConfig {
@@ -31,6 +33,7 @@ export interface FlutterwaveVerification {
   transactionId?: string;
   flwRef?: string;
   amount?: number;
+  chargedAmount?: number;
   currency?: string;
   paymentType?: string;
   customerEmail?: string;
@@ -72,38 +75,99 @@ export function getFlutterwaveCurrency() {
   return process.env.FLUTTERWAVE_CURRENCY || "KES";
 }
 
+function sha256(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function shouldIncludePayloadHash() {
+  return process.env.FLUTTERWAVE_DISABLE_PAYLOAD_HASH !== "true";
+}
+
+function createPayloadHash(input: FlutterwaveCheckoutInput, currency: string) {
+  const amount = String(Math.round(input.amount));
+  const hashedSecret = sha256(readConfig().secretKey);
+  return sha256(`${amount}${currency}${input.customer.email}${input.txRef}${hashedSecret}`);
+}
+
+function readNestedString(value: unknown, key: string) {
+  if (!value || typeof value !== "object") return "";
+  const nested = value as Record<string, unknown>;
+  return String(nested[key] || "");
+}
+
+function normalizeVerification(
+  data: Record<string, unknown>,
+  fallbackTransactionId = ""
+): FlutterwaveVerification {
+  const tx = data.data as Record<string, unknown> | undefined;
+
+  if (!tx) {
+    return {
+      success: false,
+      message: "Flutterwave transaction was not found.",
+      raw: data,
+    };
+  }
+
+  const status = String(tx.status || "");
+  const amount = Number(tx.amount || 0);
+  const chargedAmount = Number(tx.charged_amount || tx.amount || 0);
+
+  return {
+    success: data.status === "success" && status === "successful",
+    status,
+    txRef: String(tx.tx_ref || ""),
+    transactionId: String(tx.id || fallbackTransactionId),
+    flwRef: String(tx.flw_ref || ""),
+    amount,
+    chargedAmount,
+    currency: String(tx.currency || ""),
+    paymentType: String(tx.payment_type || ""),
+    customerEmail: readNestedString(tx.customer, "email"),
+    message: String(data.message || ""),
+    raw: data,
+  };
+}
+
 export async function createFlutterwaveCheckout(
   input: FlutterwaveCheckoutInput
 ): Promise<FlutterwaveCheckoutResult> {
   try {
     const config = readConfig();
+    const amount = Math.round(input.amount);
+    const payload: Record<string, unknown> = {
+      tx_ref: input.txRef,
+      amount,
+      currency: config.currency,
+      redirect_url: input.redirectUrl,
+      customer: {
+        email: input.customer.email,
+        phonenumber: input.customer.phone,
+        name: input.customer.name,
+      },
+      customizations: {
+        title: process.env.FLUTTERWAVE_TITLE || "Sam Creative Design School",
+        description: input.courseName,
+        logo: process.env.FLUTTERWAVE_LOGO_URL || undefined,
+      },
+      payment_options: process.env.FLUTTERWAVE_PAYMENT_OPTIONS || "card,mobilemoney,banktransfer",
+      meta: {
+        reference: input.txRef,
+        courseName: input.courseName,
+      },
+    };
+
+    if (shouldIncludePayloadHash()) {
+      payload.payload_hash = createPayloadHash(input, config.currency);
+    }
+
     const response = await fetch(`${FLUTTERWAVE_BASE_URL}/payments`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${config.secretKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        tx_ref: input.txRef,
-        amount: Math.round(input.amount),
-        currency: config.currency,
-        redirect_url: input.redirectUrl,
-        customer: {
-          email: input.customer.email,
-          phonenumber: input.customer.phone,
-          name: input.customer.name,
-        },
-        customizations: {
-          title: process.env.FLUTTERWAVE_TITLE || "Sam Creative Design School",
-          description: input.courseName,
-          logo: process.env.FLUTTERWAVE_LOGO_URL || undefined,
-        },
-        payment_options: process.env.FLUTTERWAVE_PAYMENT_OPTIONS || "card",
-        meta: {
-          reference: input.txRef,
-          courseName: input.courseName,
-        },
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await readFlutterwaveResponse(response);
@@ -152,25 +216,35 @@ export async function verifyFlutterwaveTransaction(
     );
 
     const data = await readFlutterwaveResponse(response);
-    const tx = data.data as Record<string, unknown> | undefined;
-
-    if (!tx) {
-      return { success: false, message: "Flutterwave transaction was not found.", raw: data };
-    }
-
+    return normalizeVerification(data, transactionId);
+  } catch (error) {
     return {
-      success: data.status === "success" && tx.status === "successful",
-      status: String(tx.status || ""),
-      txRef: String(tx.tx_ref || ""),
-      transactionId: String(tx.id || transactionId),
-      flwRef: String(tx.flw_ref || ""),
-      amount: Number(tx.amount || 0),
-      currency: String(tx.currency || ""),
-      paymentType: String(tx.payment_type || ""),
-      customerEmail: String((tx.customer as { email?: string } | undefined)?.email || ""),
-      message: String(data.message || ""),
-      raw: data,
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Flutterwave verification failed.",
     };
+  }
+}
+
+export async function verifyFlutterwaveTransactionByReference(
+  txRef: string
+): Promise<FlutterwaveVerification> {
+  try {
+    const config = readConfig();
+    const url = new URL(`${FLUTTERWAVE_BASE_URL}/transactions/verify_by_reference`);
+    url.searchParams.set("tx_ref", txRef);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${config.secretKey}`,
+        "Content-Type": "application/json",
+        accept: "application/json",
+      },
+      cache: "no-store",
+    });
+
+    const data = await readFlutterwaveResponse(response);
+    return normalizeVerification(data);
   } catch (error) {
     return {
       success: false,
