@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import {
   getUpcomingIntakeSettings,
   saveUpcomingIntakeSettings,
@@ -27,6 +28,7 @@ export async function PATCH(request: Request) {
     weeklySchedule: auth.body.weeklySchedule,
     badge: auth.body.badge,
   });
+  revalidatePath("/");
 
   return NextResponse.json({ success: true, data: { intake } });
 }

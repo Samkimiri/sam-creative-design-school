@@ -34,14 +34,14 @@ function shouldUseMemoryCache(filename: string) {
 }
 
 export function readJSON<T>(filename: string): T[] {
-  if (memoryDB[filename]) return memoryDB[filename] as T[];
+  if (shouldUseMemoryCache(filename) && memoryDB[filename]) return memoryDB[filename] as T[];
 
   const filePath = path.join(DATA_DIR, filename);
   try {
     if (!fs.existsSync(filePath)) return [];
     const raw = fs.readFileSync(filePath, "utf-8");
     const data = JSON.parse(raw) as T[];
-    memoryDB[filename] = data as unknown[];
+    if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
     return data;
   } catch {
     return [];
