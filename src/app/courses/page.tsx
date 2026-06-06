@@ -1,6 +1,7 @@
 import { courses } from "@/data/courses";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { CheckCircle2, Eye, UserPlus } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Courses in Kenya | Design, Coding, AI, Video and CAD",
@@ -55,7 +56,7 @@ export default function Courses() {
                   <div className="grid grid-cols-2 gap-4">
                     {course.skills.map((skill, i) => (
                       <div key={i} className="flex items-center gap-2 text-gray-700 font-medium transition-colors duration-300 hover:text-dark">
-                        <svg className="text-primary transition-transform duration-300 motion-safe:hover:scale-110" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-primary transition-transform duration-300 motion-safe:hover:scale-110" aria-hidden="true" />
                         {skill}
                       </div>
                     ))}
@@ -70,14 +71,16 @@ export default function Courses() {
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <Link
                       href={`/lms/${course.id}?preview=1`}
-                      className="border border-primary text-primary px-6 py-4 rounded-xl font-bold text-center hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5"
+                      className="inline-flex items-center justify-center gap-2 border border-primary text-primary px-6 py-4 rounded-xl font-bold text-center hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5"
                     >
+                      <Eye className="h-4 w-4" aria-hidden="true" />
                       Preview Lesson
                     </Link>
                     <Link
                       href={`/enroll?course=${course.id}`}
-                      className="bg-primary text-white px-8 py-4 rounded-xl font-bold text-center hover:scale-105 transition-all duration-300 shadow-lg"
+                      className="inline-flex items-center justify-center gap-2 bg-primary text-white px-8 py-4 rounded-xl font-bold text-center hover:scale-105 transition-all duration-300 shadow-lg"
                     >
+                      <UserPlus className="h-4 w-4" aria-hidden="true" />
                       Enroll Now
                     </Link>
                   </div>

@@ -4,6 +4,19 @@ import GamifiedRegistration from "@/components/GamifiedRegistration";
 import ReviewsSection from "@/components/ReviewsSection";
 import FeaturedCoursesCarousel from "@/components/FeaturedCoursesCarousel";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
+import {
+  ArrowRight,
+  BadgeCheck,
+  BookOpen,
+  CalendarDays,
+  CreditCard,
+  GraduationCap,
+  HelpCircle,
+  Image as ImageIcon,
+  MessageCircle,
+  PlayCircle,
+  UserRound,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +27,12 @@ export default async function Home() {
     { value: "7", label: "Professional Courses" },
     { value: "5+", label: "Years of Excellence" },
     { value: "95%", label: "Completion Rate" },
+  ];
+  const trustBadges = [
+    { label: "Certificate Included", Icon: BadgeCheck },
+    { label: "WhatsApp Mentorship", Icon: MessageCircle },
+    { label: "Beginner Friendly", Icon: GraduationCap },
+    { label: "Pay via MPESA", Icon: CreditCard },
   ];
   const intakeDetails = [
     { label: "Next Intake", value: intake.nextIntake },
@@ -78,19 +97,22 @@ export default async function Home() {
             Learn design, coding, AI, video editing, and CAD with practical, industry-level training. Join 500+ students who&apos;ve already transformed their careers.
           </p>
           <div className="animate-fade-in flex w-full flex-col gap-4 sm:w-auto sm:flex-row" style={{ animationDelay: "0.4s" }}>
-            <Link href="#start" className="inline-flex justify-center rounded-2xl bg-primary px-8 py-4 text-base font-extrabold text-white shadow-2xl shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-primary-dark sm:px-10">
+            <Link href="#start" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-base font-extrabold text-white shadow-2xl shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-primary-dark sm:px-10">
               Start Your Journey
+              <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </Link>
-            <Link href="/courses" className="inline-flex justify-center rounded-2xl border border-white/20 bg-white/10 px-8 py-4 text-base font-extrabold text-white backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 sm:px-10">
+            <Link href="/courses" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-8 py-4 text-base font-extrabold text-white backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 sm:px-10">
+              <BookOpen className="h-5 w-5" aria-hidden="true" />
               View Courses
             </Link>
           </div>
 
           {/* Trust badges */}
           <div className="animate-fade-in mt-12 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4" style={{ animationDelay: "0.6s" }}>
-            {["Certificate Included", "WhatsApp Mentorship", "Beginner Friendly", "Pay via MPESA"].map((badge) => (
-              <span key={badge} className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center text-xs font-bold text-white/80 backdrop-blur-md">
-                {badge}
+            {trustBadges.map(({ label, Icon }) => (
+              <span key={label} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center text-xs font-bold text-white/80 backdrop-blur-md">
+                <Icon className="h-4 w-4 text-primary-light" aria-hidden="true" />
+                {label}
               </span>
             ))}
           </div>
@@ -127,14 +149,16 @@ export default async function Home() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/enroll"
-                  className="inline-flex justify-center rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
                 >
                   Enroll and Start Practicing
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
                 <Link
                   href="/lms"
-                  className="inline-flex justify-center rounded-xl border border-gray-200 px-7 py-3.5 text-sm font-bold text-dark transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-7 py-3.5 text-sm font-bold text-dark transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
                 >
+                  <PlayCircle className="h-4 w-4" aria-hidden="true" />
                   Preview LMS
                 </Link>
               </div>
@@ -222,14 +246,16 @@ export default async function Home() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/enroll"
-                  className="inline-flex justify-center rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
                 >
+                  <CalendarDays className="h-4 w-4" aria-hidden="true" />
                   Reserve Your Seat
                 </Link>
                 <Link
                   href="/courses"
-                  className="inline-flex justify-center rounded-xl border border-gray-200 bg-white px-7 py-3.5 text-sm font-bold text-dark transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-7 py-3.5 text-sm font-bold text-dark transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
                 >
+                  <BookOpen className="h-4 w-4" aria-hidden="true" />
                   Compare Courses
                 </Link>
               </div>
@@ -287,8 +313,9 @@ export default async function Home() {
               </p>
               <Link
                 href="/student-works"
-                className="mt-7 inline-flex rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
+                className="mt-7 inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
               >
+                <ImageIcon className="h-4 w-4" aria-hidden="true" />
                 View Student Work
               </Link>
             </div>
@@ -398,14 +425,16 @@ export default async function Home() {
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/about"
-                  className="inline-flex justify-center rounded-xl bg-dark px-7 py-3.5 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-dark px-7 py-3.5 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary"
                 >
+                  <UserRound className="h-4 w-4" aria-hidden="true" />
                   View Instructor Profile
                 </Link>
                 <Link
                   href="/contact"
-                  className="inline-flex justify-center rounded-xl border border-gray-200 px-7 py-3.5 text-sm font-bold text-dark transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-7 py-3.5 text-sm font-bold text-dark transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary"
                 >
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
                   Ask a Question
                 </Link>
               </div>
@@ -423,8 +452,9 @@ export default async function Home() {
               <h2 className="text-3xl md:text-4xl font-extrabold">Popular Courses</h2>
               <p className="text-gray-400 mt-2">Join 500+ students already mastering these skills.</p>
             </div>
-            <Link href="/courses" className="text-primary font-bold hover:underline whitespace-nowrap">
+            <Link href="/courses" className="inline-flex items-center gap-2 text-primary font-bold hover:underline whitespace-nowrap">
               View All Courses
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
 
@@ -450,8 +480,9 @@ export default async function Home() {
                   <p className="text-gray-400 text-sm mb-5 line-clamp-2">{course.description}</p>
                   <div className="flex justify-between items-center pt-4 border-t border-gray-800">
                     <span className="font-extrabold text-primary">{course.priceRange}</span>
-                    <Link href={`/enroll?course=${course.id}`} className="text-xs font-bold bg-white text-dark px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5">
+                    <Link href={`/enroll?course=${course.id}`} className="inline-flex items-center gap-1.5 text-xs font-bold bg-white text-dark px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5">
                       Enroll
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </Link>
                   </div>
                 </div>
@@ -485,7 +516,8 @@ export default async function Home() {
             ))}
           </div>
           <div className="text-center">
-            <Link href="/gallery" className="inline-block bg-dark text-white px-10 py-4 rounded-full font-bold hover:bg-primary transition-all duration-300 shadow-lg motion-safe:hover:-translate-y-1">
+            <Link href="/gallery" className="inline-flex items-center gap-2 bg-dark text-white px-10 py-4 rounded-full font-bold hover:bg-primary transition-all duration-300 shadow-lg motion-safe:hover:-translate-y-1">
+              <ImageIcon className="h-4 w-4" aria-hidden="true" />
               View Full Gallery
             </Link>
           </div>
@@ -506,10 +538,12 @@ export default async function Home() {
                 Don&apos;t wait to build the skills that will shape your future. Join hundreds of students mastering design and engineering with Samuel Kimiri.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/enroll" className="inline-block bg-dark text-white px-12 py-5 rounded-full font-bold text-xl hover:scale-105 transition-all duration-300 shadow-xl">
+                <Link href="/enroll" className="inline-flex items-center justify-center gap-2 bg-dark text-white px-12 py-5 rounded-full font-bold text-xl hover:scale-105 transition-all duration-300 shadow-xl">
                   Enroll Now
+                  <ArrowRight className="h-5 w-5" aria-hidden="true" />
                 </Link>
-                <Link href="/faq" className="inline-block bg-white/20 border border-white/30 text-white px-12 py-5 rounded-full font-bold text-xl hover:bg-white/30 transition-all duration-300 motion-safe:hover:-translate-y-1">
+                <Link href="/faq" className="inline-flex items-center justify-center gap-2 bg-white/20 border border-white/30 text-white px-12 py-5 rounded-full font-bold text-xl hover:bg-white/30 transition-all duration-300 motion-safe:hover:-translate-y-1">
+                  <HelpCircle className="h-5 w-5" aria-hidden="true" />
                   Read FAQ
                 </Link>
               </div>

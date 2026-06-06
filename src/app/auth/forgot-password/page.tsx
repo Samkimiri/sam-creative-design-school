@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { LoaderCircle } from "lucide-react";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -87,7 +88,7 @@ export default function ForgotPassword() {
               >
                 {status === "loading" ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
                     Sending link...
                   </span>
                 ) : "Send Reset Link"}

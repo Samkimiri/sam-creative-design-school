@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { LoaderCircle } from "lucide-react";
 
 type Step = "start" | "login" | "identity" | "contact" | "security" | "ambition" | "success";
 
@@ -301,7 +302,7 @@ export default function GamifiedRegistration() {
               className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg hover:bg-primary/95 transition-all shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loginStatus === "loading" ? (
-                <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-label="Signing in" />
+                <LoaderCircle className="h-6 w-6 animate-spin" aria-label="Signing in" />
               ) : "Sign In & Resume Quest"}
             </button>
 
@@ -457,7 +458,7 @@ export default function GamifiedRegistration() {
               className="flex w-full items-center justify-center gap-3 rounded-[1.4rem] bg-gradient-to-r from-primary via-sky-400 to-emerald-400 py-5 text-lg font-black text-white shadow-xl shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-primary/35 disabled:opacity-50"
             >
               {loading ? (
-                <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-label="Creating account" />
+                <LoaderCircle className="h-6 w-6 animate-spin" aria-label="Creating account" />
               ) : "Initialize Quest!"}
             </button>
           </div>

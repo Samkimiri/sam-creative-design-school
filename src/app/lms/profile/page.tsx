@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 import { courses, lessons } from "@/data/courses";
 import type { ProgressRecord } from "@/types";
 
@@ -132,8 +133,9 @@ export default function ProfilePage() {
                 <button 
                   onClick={() => fileInputRef.current?.click()}
                   aria-label="Upload profile picture"
-                  className="absolute -bottom-2 -right-2 bg-dark text-white px-3 py-2 rounded-xl text-xs font-black shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary active:translate-y-0"
+                  className="absolute -bottom-2 -right-2 inline-flex items-center gap-1.5 bg-dark text-white px-3 py-2 rounded-xl text-xs font-black shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary active:translate-y-0"
                 >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                   Edit
                 </button>
                 <input 

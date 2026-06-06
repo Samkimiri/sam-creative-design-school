@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MessageCircle } from "lucide-react";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -112,7 +113,9 @@ export default function Footer() {
                 <span className="truncate">samcreativegraphics7@gmail.com</span>
               </a>
               <a href="https://wa.me/254748201131" target="_blank" rel="noreferrer" className="flex items-center gap-3 text-white/80 hover:text-[#25D366] transition-colors text-sm font-semibold group">
-                <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-[#25D366] shrink-0">💬</span>
+                <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-[#25D366] shrink-0">
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                </span>
                 WhatsApp Support
               </a>
               <div className="pt-2">

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { LoaderCircle, MessageCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -112,7 +113,7 @@ export default function LoginPage() {
             >
               {status === "loading" ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                  <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
                   Opening portal...
                 </span>
               ) : "Sign In"}
@@ -141,7 +142,8 @@ export default function LoginPage() {
 
         <p className="text-center text-gray-500 text-sm mt-6">
           Need help?{" "}
-          <a href="https://wa.me/254748201131" className="text-primary hover:underline" target="_blank" rel="noreferrer">
+          <a href="https://wa.me/254748201131" className="inline-flex items-center gap-1.5 text-primary hover:underline" target="_blank" rel="noreferrer">
+            <MessageCircle className="h-4 w-4" aria-hidden="true" />
             Contact us on WhatsApp
           </a>
         </p>

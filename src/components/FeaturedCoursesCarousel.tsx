@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import Link from "next/link";
+import { ChevronLeft, ChevronRight, Eye, Tag, UserPlus } from "lucide-react";
 import type { Course } from "@/data/courses";
 
 type FeaturedCoursesCarouselProps = {
@@ -42,7 +43,7 @@ export default function FeaturedCoursesCarousel({ courses }: FeaturedCoursesCaro
             onClick={() => scrollByCard("previous")}
             className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-xl font-black text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:bg-primary"
           >
-            &lt;
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -50,7 +51,7 @@ export default function FeaturedCoursesCarousel({ courses }: FeaturedCoursesCaro
             onClick={() => scrollByCard("next")}
             className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-xl font-black text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:bg-primary"
           >
-            &gt;
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -79,7 +80,8 @@ export default function FeaturedCoursesCarousel({ courses }: FeaturedCoursesCaro
                 <span className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-widest text-white backdrop-blur-md">
                   Track {String(index + 1).padStart(2, "0")}
                 </span>
-                <span className="rounded-xl bg-primary px-3 py-2 text-xs font-black text-white shadow-lg shadow-primary/20">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-black text-white shadow-lg shadow-primary/20">
+                  <Tag className="h-3.5 w-3.5" aria-hidden="true" />
                   {course.priceRange}
                 </span>
               </div>
@@ -107,14 +109,16 @@ export default function FeaturedCoursesCarousel({ courses }: FeaturedCoursesCaro
                 <div className="mt-6 flex gap-3">
                   <Link
                     href={`/lms/${course.id}?preview=1`}
-                    className="flex-1 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-center text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20"
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-center text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20"
                   >
+                    <Eye className="h-4 w-4" aria-hidden="true" />
                     Preview
                   </Link>
                   <Link
                     href={`/enroll?course=${course.id}`}
-                    className="flex-1 rounded-xl bg-primary px-4 py-3 text-center text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-center text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
                   >
+                    <UserPlus className="h-4 w-4" aria-hidden="true" />
                     Enroll
                   </Link>
                 </div>

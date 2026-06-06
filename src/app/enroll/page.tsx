@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { LoaderCircle } from "lucide-react";
 import { courses } from "@/data/courses";
 
 function EnrollForm() {
@@ -425,7 +426,7 @@ function EnrollForm() {
           >
             {status === "submitting" ? (
               <>
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
                 {formData.paymentMethod === "flutterwave" ? "Opening Checkout..." : "Initializing STK..."}
               </>
             ) : formData.paymentMethod === "flutterwave" ? "Enroll & Pay via Flutterwave" : "Enroll & Pay via M-Pesa"}

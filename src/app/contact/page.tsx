@@ -1,5 +1,13 @@
 "use client";
 import { useState } from "react";
+import { CreditCard, LoaderCircle, Mail, MessageCircle, Phone } from "lucide-react";
+
+function ContactIcon({ label }: { label: string }) {
+  if (label === "Phone") return <Phone className="h-6 w-6" aria-hidden="true" />;
+  if (label === "Email") return <Mail className="h-6 w-6" aria-hidden="true" />;
+  if (label === "WhatsApp") return <MessageCircle className="h-6 w-6" aria-hidden="true" />;
+  return <CreditCard className="h-6 w-6" aria-hidden="true" />;
+}
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
@@ -65,8 +73,8 @@ export default function Contact() {
             <div className="space-y-5 mb-10">
               {contacts.map((c, i) => (
                 <a key={i} href={c.href} className="flex items-center gap-5 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-primary hover:shadow-md transition-all group">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-2xl shrink-0">
-                    {c.icon}
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
+                    <ContactIcon label={c.label} />
                   </div>
                   <div>
                     <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-0.5">{c.label}</div>
@@ -157,7 +165,12 @@ export default function Contact() {
                   disabled={status === "loading"}
                   className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all disabled:opacity-50"
                 >
-                  {status === "loading" ? "Sending..." : "Send Message"}
+                  {status === "loading" ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
+                      Sending...
+                    </span>
+                  ) : "Send Message"}
                 </button>
               </form>
 
@@ -168,7 +181,8 @@ export default function Contact() {
                   className="inline-flex items-center gap-2 mt-2 bg-[#25D366] text-white font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-all text-sm"
                   target="_blank" rel="noreferrer"
                 >
-                  💬 Chat on WhatsApp
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                  Chat on WhatsApp
                 </a>
               </div>
             </div>

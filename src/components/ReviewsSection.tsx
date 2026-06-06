@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { Pencil } from "lucide-react";
 import type { Review } from "@/types";
 
 type FormState = {
@@ -95,8 +96,9 @@ function ReviewCard({
           <button
             type="button"
             onClick={() => onEdit(review)}
-            className="text-xs font-bold text-primary border border-primary/30 px-3 py-1.5 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary border border-primary/30 px-3 py-1.5 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5"
           >
+            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
             Edit
           </button>
         )}
