@@ -15,13 +15,13 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["education", "productivity", "business"],
     icons: [
       {
-        src: "/images/scds-monogram.svg",
+        src: "/images/app-icon.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any",
       },
       {
-        src: "/images/scds-monogram.svg",
+        src: "/images/app-icon.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "maskable",
@@ -39,21 +39,28 @@ export default function manifest(): MetadataRoute.Manifest {
         short_name: "LMS",
         description: "Continue your lessons and assignments.",
         url: "/lms",
-        icons: [{ src: "/images/scds-monogram.svg", sizes: "any", type: "image/svg+xml" }],
+        icons: [{ src: "/images/app-icon.svg", sizes: "any", type: "image/svg+xml" }],
       },
       {
         name: "Enroll",
         short_name: "Enroll",
         description: "Join a course at Sam Creative Design School.",
         url: "/enroll",
-        icons: [{ src: "/images/scds-monogram.svg", sizes: "any", type: "image/svg+xml" }],
+        icons: [{ src: "/images/app-icon.svg", sizes: "any", type: "image/svg+xml" }],
       },
       {
         name: "Courses",
         short_name: "Courses",
         description: "Browse SCDS learning programs.",
         url: "/courses",
-        icons: [{ src: "/images/scds-monogram.svg", sizes: "any", type: "image/svg+xml" }],
+        icons: [{ src: "/images/app-icon.svg", sizes: "any", type: "image/svg+xml" }],
+      },
+      {
+        name: "Study Break Games",
+        short_name: "Games",
+        description: "Refresh with quick offline-friendly games.",
+        url: "/games",
+        icons: [{ src: "/images/app-icon.svg", sizes: "any", type: "image/svg+xml" }],
       },
     ],
   };

@@ -13,6 +13,7 @@ const resources = [
   { title: "Portfolio Builder", text: "Follow guided briefs and package graduation-ready projects.", href: "/portfolio-builder" },
   { title: "Submit Project", text: "Students can send finished work for gallery review.", href: "/gallery#submit-project" },
   { title: "Open LMS", text: "Continue lessons, notes, quizzes, and assignments.", href: "/lms" },
+  { title: "Study Break Games", text: "Refresh with quick games that can work inside the app.", href: "/games" },
   { title: "Preview Courses", text: "Try lesson one before enrolling in a full course.", href: "/courses" },
 ];
 
@@ -29,7 +30,7 @@ export default function ResourcesPage() {
       </div>
 
       <main className="container mx-auto px-6 py-14">
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {resources.map((item) => (
             <Link key={item.title} href={item.href} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
               <h2 className="mb-2 text-xl font-extrabold text-dark">{item.title}</h2>

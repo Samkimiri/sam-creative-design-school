@@ -1,8 +1,10 @@
-const CACHE_NAME = "scds-app-v1";
+const CACHE_NAME = "scds-app-v2";
 const APP_SHELL = [
   "/",
+  "/games",
   "/offline.html",
   "/images/scds-monogram.svg",
+  "/images/app-icon.svg",
   "/images/logo.jpg",
 ];
 

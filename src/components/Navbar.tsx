@@ -43,6 +43,7 @@ export default function Navbar() {
     { href: "/reviews", label: "Reviews" },
     { href: "/blog", label: "Blog" },
     { href: "/resources", label: "Resources" },
+    { href: "/games", label: "Games" },
     { href: "/faq", label: "FAQ" },
     { href: "/contact", label: "Contact" },
   ];

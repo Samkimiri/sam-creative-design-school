@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import PWAInstaller from "@/components/PWAInstaller";
+import StudyBreakPrompt from "@/components/StudyBreakPrompt";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://sam-creative-design-school.vercel.app";
 
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
     siteName: "Sam Creative Design School",
     images: [
       {
-        url: "/images/scds-monogram.svg",
+        url: "/images/app-icon.svg",
         width: 800,
         height: 800,
         alt: "Sam Creative Design School logo",
@@ -53,10 +54,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Sam Creative Design School",
     description: "Practical creative and engineering software training in Kenya.",
-    images: ["/images/scds-monogram.svg"],
+    images: ["/images/app-icon.svg"],
   },
   icons: {
-    icon: "/images/scds-monogram.svg",
+    icon: "/images/app-icon.svg",
     apple: "/images/logo.jpg",
   },
 };
@@ -76,6 +77,7 @@ export default function RootLayout({
         <Footer />
         <WhatsAppButton />
         <PWAInstaller />
+        <StudyBreakPrompt />
         <AnalyticsTracker />
       </body>
     </html>
