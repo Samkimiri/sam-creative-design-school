@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     siteName: "Sam Creative Design School",
     images: [
       {
-        url: "/images/logo.jpg",
+        url: "/images/scds-logo.svg",
         width: 800,
         height: 800,
         alt: "Sam Creative Design School logo",
@@ -38,10 +38,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Sam Creative Design School",
     description: "Practical creative and engineering software training in Kenya.",
-    images: ["/images/logo.jpg"],
+    images: ["/images/scds-logo.svg"],
   },
   icons: {
-    icon: "/images/logo.jpg",
+    icon: "/images/scds-logo.svg",
   },
 };
 

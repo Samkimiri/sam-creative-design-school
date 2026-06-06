@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" role="img" aria-labelledby="title desc">
+  <title id="title">SCDS Sam Creative Design School logo</title>
+  <desc id="desc">Shield, graduation cap, SCDS lettering, pen nib, and school name in blue and gold.</desc>
+  <defs>
+    <linearGradient id="blue" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0c2f8f"/>
+      <stop offset="0.52" stop-color="#1263ff"/>
+      <stop offset="1" stop-color="#051a55"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffd03d"/>
+      <stop offset="0.5" stop-color="#f5aa00"/>
+      <stop offset="1" stop-color="#c88300"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#08286f"/>
+      <stop offset="1" stop-color="#03123f"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#03123f" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="1200" fill="#ffffff"/>
+
+  <g filter="url(#softShadow)">
+    <path d="M600 80 835 165 870 410c19 157-34 310-132 410-48 49-94 80-138 104-44-24-90-55-138-104-98-100-151-253-132-410l35-245Z" fill="#ffffff" stroke="url(#navy)" stroke-width="28"/>
+    <path d="M600 136 785 204 810 416c15 126-27 248-107 329-37 38-72 64-103 82-31-18-66-44-103-82-80-81-122-203-107-329l25-212Z" fill="#ffffff" stroke="url(#blue)" stroke-width="20"/>
+
+    <path d="M338 172 600 70l262 102-262 82Z" fill="url(#navy)"/>
+    <path d="M470 216c80-22 180-22 260 0v66c-82-19-178-19-260 0Z" fill="url(#navy)"/>
+    <path d="M800 164h14v140h-14Z" fill="url(#gold)"/>
+    <circle cx="807" cy="320" r="18" fill="url(#gold)"/>
+    <path d="M790 338h34l18 82h-70Z" fill="url(#gold)"/>
+
+    <path d="M390 330h102v315H390c-52 0-90-38-90-89V419c0-51 38-89 90-89Zm10 86c-12 0-21 9-21 22v100c0 13 9 22 21 22h21V416Z" fill="url(#blue)"/>
+    <path d="M530 330h86v262l62 42v-304h92v326c0 35-17 63-48 82l-124 76-124-76c-31-19-48-47-48-82V330h104v330l70 43V416h-70Z" fill="url(#gold)"/>
+    <path d="M678 330h102c52 0 90 38 90 89v137c0 51-38 89-90 89H678Zm92 86v144h20c13 0 22-9 22-22V438c0-13-9-22-22-22Z" fill="url(#navy)"/>
+
+    <path d="M600 595 674 816 600 900 526 816Z" fill="url(#gold)" stroke="#ffffff" stroke-width="14"/>
+    <circle cx="600" cy="747" r="25" fill="#ffffff"/>
+    <path d="M600 772v111" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+
+    <g fill="url(#blue)" opacity="0.96">
+      <rect x="230" y="380" width="30" height="30"/>
+      <rect x="282" y="350" width="43" height="43"/>
+      <rect x="302" y="420" width="58" height="58"/>
+      <rect x="246" y="488" width="38" height="38"/>
+      <rect x="332" y="512" width="25" height="25"/>
+      <rect x="258" y="568" width="32" height="32"/>
+    </g>
+  </g>
+
+  <g text-anchor="middle">
+    <text x="600" y="1010" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="168" font-weight="900" letter-spacing="20">
+      <tspan fill="#061d5f">S</tspan><tspan fill="#1263ff">C</tspan><tspan fill="#f5aa00">D</tspan><tspan fill="#061d5f">S</tspan>
+    </text>
+    <path d="M220 1044h280M700 1044h280" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+    <rect x="582" y="1026" width="36" height="36" transform="rotate(45 600 1044)" fill="#1263ff"/>
+    <text x="600" y="1108" font-family="Arial, Helvetica, sans-serif" font-size="43" font-weight="900" letter-spacing="13" fill="#061233">SAM CREATIVE DESIGN SCHOOL</text>
+    <text x="600" y="1160" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" font-style="italic" letter-spacing="1" fill="#1263ff">Exceptional, Strategic &amp; Realistic</text>
+  </g>
+</svg>

@@ -62,9 +62,9 @@ export default function Navbar() {
           <div className="relative">
             <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-0 group-hover:scale-100 transition-transform duration-500" />
             <img
-              src="/images/logo.jpg"
+              src="/images/scds-logo.svg"
               alt="SCDS Logo"
-              className="relative w-12 h-12 rounded-2xl object-cover shadow-2xl shadow-primary/30 border border-white/20 group-hover:scale-105 transition-all duration-500"
+              className="relative w-12 h-12 rounded-2xl bg-white object-contain p-1 shadow-2xl shadow-primary/30 border border-white/20 group-hover:scale-105 transition-all duration-500"
             />
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-primary rounded-lg border-2 border-white shadow-lg" />
           </div>

@@ -42,9 +42,9 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-3 mb-6 hover:opacity-90 transition-all group">
               <img
-                src="/images/logo.jpg"
+                src="/images/scds-logo.svg"
                 alt="SCDS Logo"
-                className="w-12 h-12 rounded-2xl object-cover shadow-2xl shadow-primary/20"
+                className="w-12 h-12 rounded-2xl bg-white object-contain p-1 shadow-2xl shadow-primary/20"
               />
               <div className="flex flex-col">
                 <span className="font-black text-2xl tracking-tighter leading-none text-white">SCDS<span className="text-primary">.</span></span>
