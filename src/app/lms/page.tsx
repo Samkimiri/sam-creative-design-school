@@ -86,26 +86,26 @@ export default async function LMSDashboard() {
     : courses.slice(1);
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-[#F6FAFF] pb-24 pt-28">
+    <div className="relative isolate min-h-screen overflow-hidden bg-[#F6FAFF] pb-16 pt-24 md:pb-24 md:pt-28">
       <div className="absolute inset-0 -z-10 bg-[url('/images/hero.png')] bg-cover bg-center opacity-10" aria-hidden="true" />
       <div className="absolute inset-0 -z-10 bg-white/80" aria-hidden="true" />
 
-      <main className="container mx-auto px-6">
-        <section className="lms-hero mb-10 overflow-hidden rounded-[28px] border border-white/70 bg-dark p-6 text-white shadow-2xl md:p-8">
-          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+      <main className="container mx-auto px-4 sm:px-6">
+        <section className="lms-hero mb-6 overflow-hidden rounded-2xl border border-white/70 bg-dark p-5 text-white shadow-2xl md:mb-10 md:rounded-[28px] md:p-8">
+          <div className="grid gap-6 md:gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
             <div className="animate-lms-rise">
               <p className="mb-3 text-sm font-black uppercase tracking-widest text-primary-light">Learning Portal</p>
-              <h1 className="max-w-3xl text-4xl font-extrabold leading-tight md:text-6xl">
+              <h1 className="max-w-3xl text-3xl font-extrabold leading-tight sm:text-4xl md:text-6xl">
                 Welcome back, <span className="text-primary-light">{studentName.split(" ")[0]}</span>
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-white/75">
                 Your classes, progress, badges, assignments, and certificates are organized here so you can keep moving.
               </p>
-              <div className="mt-7 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-col gap-3 sm:mt-7 sm:flex-row sm:flex-wrap">
                 {continueCourse && (
                   <Link
                     href={`/lms/${continueCourse.course.id}`}
-                  className="rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/25 transition duration-300 hover:-translate-y-0.5 hover:bg-primary-light hover:shadow-primary/35 active:translate-y-0"
+                  className="rounded-xl bg-primary px-5 py-3 text-center font-bold text-white shadow-lg shadow-primary/25 transition duration-300 hover:-translate-y-0.5 hover:bg-primary-light hover:shadow-primary/35 active:translate-y-0 sm:px-6"
                   >
                     Continue Learning
                   </Link>
@@ -113,7 +113,7 @@ export default async function LMSDashboard() {
                 {!session && (
                   <Link
                     href="/auth/login"
-                    className="rounded-xl border border-white/20 px-6 py-3 font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light"
+                    className="rounded-xl border border-white/20 px-5 py-3 text-center font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light sm:px-6"
                   >
                     Sign In to Save Progress
                   </Link>
@@ -121,7 +121,7 @@ export default async function LMSDashboard() {
                 {session && (
                   <Link
                     href="/lms/profile"
-                    className="rounded-xl border border-white/20 px-6 py-3 font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light"
+                    className="rounded-xl border border-white/20 px-5 py-3 text-center font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light sm:px-6"
                   >
                     View Profile
                   </Link>
@@ -151,40 +151,40 @@ export default async function LMSDashboard() {
           </div>
         </section>
 
-        <section className="mb-10 grid grid-cols-1 gap-5 md:grid-cols-4">
+        <section className="mb-6 grid grid-cols-2 gap-3 md:mb-10 md:grid-cols-4 md:gap-5">
           {[
             { label: "Courses Active", value: enrolledCourses.length },
             { label: "Lessons Done", value: totalCompleted },
             { label: "Total Lessons", value: totalAssignedLessons },
             { label: "Certificates", value: certificatesEarned },
           ].map((stat, index) => (
-            <div key={stat.label} className="animate-lms-rise rounded-2xl border border-white bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md" style={{ animationDelay: `${index * 80}ms` }}>
-              <p className="text-sm font-bold text-gray-500">{stat.label}</p>
-              <p className="mt-2 text-3xl font-extrabold text-dark">{stat.value}</p>
+            <div key={stat.label} className="animate-lms-rise rounded-2xl border border-white bg-white p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md sm:p-5" style={{ animationDelay: `${index * 80}ms` }}>
+              <p className="text-xs font-bold text-gray-500 sm:text-sm">{stat.label}</p>
+              <p className="mt-2 text-2xl font-extrabold text-dark sm:text-3xl">{stat.value}</p>
             </div>
           ))}
         </section>
 
         {continueCourse && (
-          <section className="mb-10 animate-fade-in rounded-3xl border border-primary/15 bg-white p-6 shadow-sm">
+          <section className="mb-8 animate-fade-in rounded-2xl border border-primary/15 bg-white p-5 shadow-sm md:mb-10 md:rounded-3xl md:p-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_220px_320px] lg:items-center">
               <div>
                 <p className="text-sm font-black uppercase tracking-widest text-primary">Continue Where You Left Off</p>
                 <h2 className="mt-2 text-2xl font-extrabold text-dark">{continueCourse.nextLesson?.title || continueCourse.course.title}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-                  {continueCourse.course.title} · {continueCourse.progress}% complete · next lesson ready.
+                  {continueCourse.course.title} - {continueCourse.progress}% complete - next lesson ready.
                 </p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Link href={`/lms/${continueCourse.course.id}`} className="rounded-xl bg-dark px-6 py-3 font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-primary active:translate-y-0">
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <Link href={`/lms/${continueCourse.course.id}`} className="rounded-xl bg-dark px-5 py-3 text-center font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-primary active:translate-y-0 sm:px-6">
                     Open Lesson
                   </Link>
-                  <a href={`/api/notes/${continueCourse.nextLesson?.id}`} className="rounded-xl border border-gray-200 px-6 py-3 font-bold text-dark transition duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary">
+                  <a href={`/api/notes/${continueCourse.nextLesson?.id}`} className="rounded-xl border border-gray-200 px-5 py-3 text-center font-bold text-dark transition duration-300 hover:-translate-y-0.5 hover:border-primary hover:text-primary sm:px-6">
                     Download Notes
                   </a>
                 </div>
               </div>
 
-              <div className="flex justify-center lg:flex" aria-hidden="true">
+              <div className="hidden justify-center md:flex" aria-hidden="true">
                 <div className="study-buddy-mobile">
                   <div className="study-buddy">
                     <div className="study-buddy-shadow" />
@@ -234,27 +234,27 @@ export default async function LMSDashboard() {
         )}
 
         <section className="mb-10">
-          <div className="mb-7 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="mb-5 flex flex-col gap-3 md:mb-7 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-black uppercase tracking-widest text-primary">My Courses</p>
-              <h2 className="text-3xl font-extrabold tracking-tight text-dark">Unlocked learning paths</h2>
+              <h2 className="text-2xl font-extrabold tracking-tight text-dark sm:text-3xl">Unlocked learning paths</h2>
             </div>
             <Link href="/resources" className="rounded-full bg-white px-5 py-2.5 text-sm font-extrabold text-primary shadow-sm ring-1 ring-primary/10 transition duration-300 hover:-translate-y-0.5 hover:bg-primary hover:text-white">
               Open Resources
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-7 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 md:gap-7 lg:grid-cols-2">
             {courseStats.map(({ course, courseLessons, progress, completedLessons, nextLesson }, index) => {
               const meta = getProgressMeta(progress);
               const previewLessons = courseLessons.slice(0, 3);
               return (
                 <article
                   key={course.id}
-                  className="group animate-lms-rise overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_18px_55px_rgba(10,15,30,0.08)] ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_26px_70px_rgba(26,143,227,0.18)]"
+                  className="group animate-lms-rise overflow-hidden rounded-2xl border border-white/80 bg-white shadow-[0_18px_55px_rgba(10,15,30,0.08)] ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_26px_70px_rgba(26,143,227,0.18)] md:rounded-[28px]"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="relative min-h-48 overflow-hidden p-6 text-white">
+                  <div className="relative min-h-40 overflow-hidden p-5 text-white sm:min-h-48 sm:p-6">
                     <img src={course.image} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                     <div className={`absolute inset-0 bg-gradient-to-br ${course.color} opacity-80 mix-blend-multiply`} />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/72 via-black/38 to-black/10" />
@@ -268,10 +268,10 @@ export default async function LMSDashboard() {
                         <span className={`ml-3 inline-flex rounded-full border bg-white/90 px-3 py-1 text-xs font-black uppercase tracking-widest shadow-sm ${meta.tone}`}>
                           {meta.label}
                         </span>
-                        <h3 className="mt-4 max-w-sm text-2xl font-extrabold leading-tight drop-shadow-sm">{course.title}</h3>
+                        <h3 className="mt-4 max-w-sm text-xl font-extrabold leading-tight drop-shadow-sm sm:text-2xl">{course.title}</h3>
                         <p className="mt-2 text-sm font-semibold text-white/82">{course.level}</p>
                       </div>
-                      <div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-full bg-white/15 shadow-2xl ring-1 ring-white/25 backdrop-blur">
+                      <div className="relative hidden h-24 w-24 shrink-0 place-items-center rounded-full bg-white/15 shadow-2xl ring-1 ring-white/25 backdrop-blur sm:grid">
                         <div className="absolute inset-2 rounded-full bg-white/10" />
                         <div
                           className="lms-progress-ring h-20 w-20"
@@ -282,7 +282,7 @@ export default async function LMSDashboard() {
                     </div>
                   </div>
 
-                  <div className="p-6">
+                  <div className="p-5 sm:p-6">
                     <div className="mb-5 h-2 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className="progress-sheen h-full rounded-full bg-gradient-to-r from-primary via-primary-light to-emerald-400 transition-all duration-1000 ease-out"

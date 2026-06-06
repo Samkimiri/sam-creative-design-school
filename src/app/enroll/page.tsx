@@ -163,9 +163,9 @@ function EnrollForm() {
 
   if (status === "failed") {
     return (
-      <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border-2 border-red-200 animate-fade-in">
-        <div className="text-center py-6">
-          <div className="text-5xl mb-4 animate-pulse text-red-500">!</div>
+      <div className="bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-red-200 animate-fade-in">
+        <div className="text-center py-4 sm:py-6">
+          <div className="text-4xl sm:text-5xl mb-4 animate-pulse text-red-500">!</div>
           <h2 className="text-2xl font-black text-dark mb-3">Payment Not Started</h2>
           <p className="text-gray-600 mb-6" role="alert">{errorMessage}</p>
           {ref && (
@@ -190,10 +190,10 @@ function EnrollForm() {
 
   if (status === "stk") {
     return (
-      <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border-4 border-primary relative overflow-hidden animate-fade-in">
-        <div className="text-center py-10">
-          <div className="text-5xl mb-6 animate-pulse font-black text-primary">M-PESA</div>
-          <h2 className="text-3xl font-black text-dark mb-4">Check Your Phone</h2>
+      <div className="bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-4 border-primary relative overflow-hidden animate-fade-in">
+        <div className="text-center py-5 sm:py-10">
+          <div className="text-4xl sm:text-5xl mb-5 sm:mb-6 animate-pulse font-black text-primary">M-PESA</div>
+          <h2 className="text-2xl sm:text-3xl font-black text-dark mb-4">Check Your Phone</h2>
           <p className="text-gray-600 mb-4 max-w-md mx-auto">
             Safaricom sent an M-Pesa prompt to <span className="font-bold text-primary">{formData.phone}</span>.
           </p>
@@ -209,7 +209,7 @@ function EnrollForm() {
             </span>
           </p>
 
-          <div className="bg-primary/5 rounded-2xl p-6 mb-8 border border-primary/10">
+          <div className="bg-primary/5 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-primary/10">
             <div className="flex items-center justify-center gap-3 text-primary font-bold mb-2">
               <span className="w-2 h-2 bg-primary rounded-full animate-ping" />
               Waiting for Safaricom confirmation...
@@ -243,13 +243,13 @@ function EnrollForm() {
 
   if (status === "success") {
     return (
-      <div className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border-2 border-primary animate-fade-in">
+      <div className="bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-primary animate-fade-in">
         <div className="text-center">
-          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-xl font-black animate-fade-in">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6 text-xl font-black animate-fade-in">
             OK
           </div>
-          <h2 className="text-3xl font-bold mb-4">Payment Received for Review</h2>
-          <p className="text-gray-600 mb-8 text-lg">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Payment Received for Review</h2>
+          <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">
             {formData.name ? (
               <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your {activePaymentLabel} payment details are ready to send to WhatsApp so the school can activate your LMS access quickly.</>
             ) : (
@@ -257,7 +257,7 @@ function EnrollForm() {
             )}
           </p>
 
-          <div className="bg-light-gray p-8 rounded-2xl mb-8 text-left border-l-4 border-primary animate-fade-in">
+          <div className="bg-light-gray p-5 sm:p-8 rounded-2xl mb-6 sm:mb-8 text-left border-l-4 border-primary animate-fade-in">
             <h3 className="font-bold text-lg mb-4">WhatsApp Activation Message</h3>
             <p className="text-gray-700 mb-4">The button below opens a prepared message with your name, course, reference, amount, and next step.</p>
             <div className="space-y-2">
@@ -295,10 +295,10 @@ function EnrollForm() {
   }
 
   return (
-    <div className="animate-fade-in bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-100 transition duration-300 hover:shadow-primary/10">
-      <h2 className="text-3xl font-bold mb-8 tracking-tight">Course Enrollment</h2>
-      <form className="space-y-8" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="animate-fade-in bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border border-gray-100 transition duration-300 hover:shadow-primary/10">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 tracking-tight">Course Enrollment</h2>
+      <form className="space-y-6 md:space-y-8" onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <label htmlFor="enroll-name" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Full Name</label>
             <input
@@ -306,7 +306,7 @@ function EnrollForm() {
               required
               type="text"
               autoComplete="name"
-              className="w-full bg-light-gray border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
+              className="w-full bg-light-gray border-none rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
               placeholder="e.g., John Kamau"
               value={formData.name}
               onChange={(event) => setFormData({ ...formData, name: event.target.value })}
@@ -320,7 +320,7 @@ function EnrollForm() {
               type="tel"
               autoComplete="tel"
               pattern="0[17][0-9]{8}"
-              className="w-full bg-light-gray border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
+              className="w-full bg-light-gray border-none rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
               placeholder="07XXXXXXXX"
               value={formData.phone}
               onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
@@ -335,7 +335,7 @@ function EnrollForm() {
             required={formData.paymentMethod === "flutterwave"}
             type="email"
             autoComplete="email"
-            className="w-full bg-light-gray border-none rounded-xl p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
+            className="w-full bg-light-gray border-none rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
             placeholder="you@example.com"
             value={formData.email}
             onChange={(event) => setFormData({ ...formData, email: event.target.value })}
@@ -361,7 +361,7 @@ function EnrollForm() {
                       paymentMethod: option.id as "mpesa" | "flutterwave",
                     })
                   }
-                  className={`rounded-xl border-2 p-4 text-left transition-all duration-300 ${
+                  className={`rounded-xl border-2 p-3.5 sm:p-4 text-left transition-all duration-300 ${
                     selected
                       ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
                       : "border-gray-100 hover:-translate-y-0.5 hover:border-gray-200 hover:shadow-sm"
@@ -386,7 +386,7 @@ function EnrollForm() {
                   key={course.id}
                   onClick={() => toggleCourse(course.id)}
                   aria-pressed={isSelected}
-                  className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                  className={`flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border-2 transition-all duration-300 text-left ${
                     isSelected ? "scale-[1.01] border-primary bg-primary/5 shadow-md shadow-primary/10" : "border-gray-100 hover:-translate-y-0.5 hover:border-gray-200 hover:shadow-sm"
                   }`}
                 >
@@ -401,18 +401,18 @@ function EnrollForm() {
                       <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-widest">{course.duration}</span>
                     </span>
                   </span>
-                  <span className="font-black text-primary text-sm">Ksh {course.price.toLocaleString()}</span>
+                  <span className="shrink-0 font-black text-primary text-sm">Ksh {course.price.toLocaleString()}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="pt-4 border-t border-gray-100">
-          <div className="flex justify-between items-end mb-6">
+        <div className="sticky bottom-3 z-20 rounded-2xl border border-primary/10 bg-white/95 p-3 shadow-2xl shadow-slate-900/15 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0 md:pt-4 md:shadow-none">
+          <div className="flex justify-between items-end gap-4 mb-4 sm:mb-6">
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total to Pay</p>
-              <p className="text-3xl font-black text-dark tracking-tighter">Ksh {totalAmount.toLocaleString()}</p>
+              <p className="text-2xl sm:text-3xl font-black text-dark tracking-tighter">Ksh {totalAmount.toLocaleString()}</p>
             </div>
             <p className="text-[10px] font-bold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
               {formData.selectedCourses.length} Course(s) Selected
@@ -421,7 +421,7 @@ function EnrollForm() {
 
           <button
             disabled={status === "submitting" || formData.selectedCourses.length === 0}
-            className="w-full bg-primary text-white font-black py-4 rounded-xl shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-primary/40 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 text-lg flex items-center justify-center gap-3"
+            className="w-full bg-primary text-white font-black py-3.5 sm:py-4 rounded-xl shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-primary/40 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 text-base sm:text-lg flex items-center justify-center gap-3"
           >
             {status === "submitting" ? (
               <>
@@ -441,17 +441,17 @@ function EnrollForm() {
 
 export default function Enroll() {
   return (
-    <div className="pt-32 pb-24 min-h-screen bg-light-gray">
-      <div className="container mx-auto px-6 max-w-2xl">
-        <header className="mb-8 text-center">
+    <div className="pt-24 pb-28 md:pt-32 md:pb-24 min-h-screen bg-light-gray">
+      <div className="container mx-auto px-4 sm:px-6 max-w-2xl">
+        <header className="mb-6 sm:mb-8 text-center">
           <p className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-primary">Enrollment</p>
-          <h1 className="text-4xl font-black tracking-tight text-dark">Join Sam Creative Design School</h1>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-dark">Join Sam Creative Design School</h1>
         </header>
         <Suspense fallback={<div>Loading...</div>}>
           <EnrollForm />
         </Suspense>
 
-        <div className="mt-8 animate-fade-in p-6 bg-white/70 rounded-2xl border border-dashed border-gray-300 text-center transition duration-300 hover:border-primary/40 hover:bg-white" style={{ animationDelay: "120ms" }}>
+        <div className="mt-6 sm:mt-8 animate-fade-in p-5 sm:p-6 bg-white/70 rounded-2xl border border-dashed border-gray-300 text-center transition duration-300 hover:border-primary/40 hover:bg-white" style={{ animationDelay: "120ms" }}>
           <h2 className="font-bold mb-2 text-base">Need Help?</h2>
           <p className="text-gray-600 mb-3">If you encounter any issues during enrollment, contact our support team immediately.</p>
           <span className="font-bold text-primary">WhatsApp: 0748201131</span>

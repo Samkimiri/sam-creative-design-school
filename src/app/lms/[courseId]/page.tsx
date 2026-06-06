@@ -209,25 +209,25 @@ export default function CoursePlayer() {
     }
   };
 
-  if (!course) return <div className="pt-32 text-center text-2xl font-bold">Course not found</div>;
+  if (!course) return <div className="pt-28 text-center text-2xl font-bold">Course not found</div>;
 
   return (
-    <div className="relative isolate min-h-screen overflow-x-hidden bg-[#F5F7FB] pt-24">
+    <div className="relative isolate min-h-screen overflow-x-hidden bg-[#F5F7FB] pt-20 sm:pt-24">
       <div
         className="fixed inset-0 -z-10 bg-[url('/images/hero.png')] bg-cover bg-center opacity-10"
         aria-hidden="true"
       />
       <div className="fixed inset-0 -z-10 bg-white/80" aria-hidden="true" />
       {/* Top Course Bar */}
-      <div className="mx-auto mb-6 mt-4 flex max-w-7xl flex-col gap-4 rounded-[1.75rem] border border-white/70 bg-slate-950 px-5 py-5 text-white shadow-2xl shadow-slate-900/10 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-4">
+      <div className="mx-4 mb-4 mt-3 flex max-w-7xl flex-col gap-3 rounded-2xl border border-white/70 bg-slate-950 px-4 py-4 text-white shadow-2xl shadow-slate-900/10 sm:mx-auto sm:mb-6 sm:mt-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Link href="/lms" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-            ← Dashboard
+            Dashboard
           </Link>
           <span className="text-gray-600">|</span>
           <span className="font-bold text-sm truncate max-w-xs">{course.title}</span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <div className="hidden md:flex items-center gap-2">
             <div className="w-36 h-2 bg-gray-700 rounded-full overflow-hidden">
               <div className="h-full bg-primary rounded-full transition-all duration-1000 ease-out" style={{ width: `${progress}%` }} />
@@ -242,8 +242,8 @@ export default function CoursePlayer() {
               Certificate
             </a>
           )}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-white transition-colors">
-            {sidebarOpen ? "▶ Hide" : "◀ Show"} lessons
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-sm font-bold text-gray-400 hover:text-white transition-colors">
+            {sidebarOpen ? "Hide" : "Show"} lessons
           </button>
         </div>
       </div>
@@ -260,13 +260,13 @@ export default function CoursePlayer() {
             {/* Video Player */}
             {!showQuiz ? (
               <>
-                <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm sm:grid-cols-5">
+                <div className="mb-4 grid grid-cols-3 gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm sm:mb-6 sm:grid-cols-5">
                   {(["video", "notes", "resources", "assignment", "quiz"] as LessonTab[]).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => openTab(tab)}
                       disabled={tab === "quiz" && !activeLesson.quiz}
-                      className={`rounded-xl px-3 py-3 text-sm font-bold capitalize transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
+                      className={`rounded-xl px-2 py-2.5 text-xs font-bold capitalize transition-all disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:py-3 sm:text-sm ${
                         activeTab === tab ? "scale-[1.02] bg-primary text-white shadow-sm shadow-primary/20" : "text-gray-600 hover:-translate-y-0.5 hover:bg-gray-50 hover:text-dark"
                       }`}
                     >
@@ -285,7 +285,7 @@ export default function CoursePlayer() {
                           className="h-full w-full object-cover opacity-80"
                         />
                         <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-950/60 to-transparent" />
-                        <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+                        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
                           <p className="mb-3 text-xs font-black uppercase tracking-[0.25em] text-primary-light">Preview Lesson</p>
                           <h2 className="max-w-2xl text-2xl font-black text-white sm:text-3xl">{activeLesson.title}</h2>
                           <p className="mt-3 max-w-xl text-sm leading-6 text-slate-200">
@@ -315,26 +315,26 @@ export default function CoursePlayer() {
                 )}
 
                 {/* Lesson Details */}
-                <div className="animate-fade-in bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
+                <div className="animate-fade-in bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-gray-100 mb-5 sm:mb-6">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs font-bold text-primary uppercase tracking-widest">Lesson {activeLesson.order}</span>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-xs text-gray-500">⏱ {activeLesson.duration}</span>
+                        <span className="text-gray-300">-</span>
+                        <span className="text-xs text-gray-500">{activeLesson.duration}</span>
                         {completedLessons.includes(activeLesson.id) && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">✓ Done</span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">Done</span>
                         )}
                       </div>
-                      <h1 className="text-2xl font-extrabold text-dark">{activeLesson.title}</h1>
+                      <h1 className="text-xl font-extrabold text-dark sm:text-2xl">{activeLesson.title}</h1>
                     </div>
-                    <div className="flex gap-3 shrink-0">
+                    <div className="flex w-full flex-col gap-3 shrink-0 sm:w-auto sm:flex-row">
                       {!isPreview && !activeLesson.quiz && !completedLessons.includes(activeLesson.id) && (
                         <button
                           onClick={() => markComplete(activeLesson.id)}
                           className="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm hover:-translate-y-0.5 hover:bg-green-600 active:translate-y-0 transition-all duration-300"
                         >
-                          ✓ Mark Complete
+                          Mark Complete
                         </button>
                       )}
                       {activeLesson.quiz && (
@@ -342,7 +342,7 @@ export default function CoursePlayer() {
                           onClick={() => openTab("quiz")}
                           className="bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 transition-all duration-300"
                         >
-                          📝 Take Quiz
+                          Take Quiz
                         </button>
                       )}
                     </div>
@@ -371,9 +371,9 @@ export default function CoursePlayer() {
 
                   <div className="mt-8">
                     <h3 className="text-lg font-bold text-dark mb-4 flex items-center gap-2">
-                      <span className="text-primary">📝</span> Lesson Notes
+                      Lesson Notes
                     </h3>
-                    <div className="bg-blue-50/30 border border-blue-100/50 rounded-2xl p-6 md:p-8">
+                    <div className="bg-blue-50/30 border border-blue-100/50 rounded-2xl p-5 md:p-8">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                         <p className="text-sm font-bold text-primary uppercase tracking-widest">Student Notes</p>
                         <a
@@ -408,13 +408,13 @@ export default function CoursePlayer() {
                   {activeLesson.resources && activeLesson.resources.length > 0 && (
                     <div className="mt-8 pt-8 border-t border-gray-100">
                       <h4 className="font-bold text-dark mb-4 text-sm uppercase tracking-wider flex items-center gap-2">
-                        <span className="text-primary">📥</span> Downloadable Resources
+                        Downloadable Resources
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {activeLesson.resources.map((r, i) => (
-                          <a key={i} href={r.url} className="flex items-center justify-between bg-white border border-gray-200 px-5 py-4 rounded-xl text-sm font-bold hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-md transition-all duration-300 group">
+                          <a key={i} href={r.url} className="flex items-center justify-between gap-3 bg-white border border-gray-200 px-4 py-3.5 sm:px-5 sm:py-4 rounded-xl text-sm font-bold hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-md transition-all duration-300 group">
                             <span className="flex items-center gap-3">
-                              <span className="text-xl">{r.type === "pdf" ? "📄" : r.type === "zip" ? "📦" : "🔗"}</span>
+                              <span className="text-xs font-black uppercase text-primary">{r.type}</span>
                               {r.name}
                             </span>
                             <span className="text-xs bg-gray-100 group-hover:bg-primary/10 px-2 py-1 rounded text-gray-500 group-hover:text-primary uppercase">{r.type}</span>
@@ -453,40 +453,40 @@ export default function CoursePlayer() {
                 </div>
 
                 {/* Navigation */}
-                <div className="flex justify-between">
+                <div className="flex gap-3 sm:justify-between">
                   <button
                     onClick={() => {
                       const idx = courseLessons.findIndex((l) => l.id === activeLesson.id);
                       if (idx > 0) selectLesson(courseLessons[idx - 1]);
                     }}
                     disabled={courseLessons.findIndex((l) => l.id === activeLesson.id) === 0}
-                    className="bg-white border border-gray-200 px-6 py-3 rounded-xl font-bold text-dark hover:-translate-y-0.5 hover:border-primary hover:text-primary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0"
+                    className="flex-1 bg-white border border-gray-200 px-4 py-3 rounded-xl text-sm font-bold text-dark hover:-translate-y-0.5 hover:border-primary hover:text-primary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0 sm:flex-none sm:px-6 sm:text-base"
                   >
-                    ← Previous
+                    Previous
                   </button>
                   <button
                     onClick={nextLesson}
                     disabled={isPreview || isLastLesson || !isActiveLessonComplete}
-                    className="bg-dark text-white px-6 py-3 rounded-xl font-bold hover:-translate-y-0.5 hover:bg-primary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0"
+                    className="flex-1 bg-dark text-white px-4 py-3 rounded-xl text-sm font-bold hover:-translate-y-0.5 hover:bg-primary transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0 sm:flex-none sm:px-6 sm:text-base"
                   >
-                    {isPreview ? "Enroll to Continue" : isActiveLessonComplete ? "Next →" : "Pass Quiz to Continue"}
+                    {isPreview ? "Enroll to Continue" : isActiveLessonComplete ? "Next" : "Pass Quiz to Continue"}
                   </button>
                 </div>
               </>
             ) : (
               /* Quiz UI */
-              <div className="animate-fade-in bg-white rounded-2xl p-6 md:p-10 shadow-sm border border-gray-100">
+              <div className="animate-fade-in bg-white rounded-2xl p-5 md:p-10 shadow-sm border border-gray-100">
                 {!quizResult ? (
                   <>
-                    <div className="mb-8">
+                    <div className="mb-6 sm:mb-8">
                       <button onClick={() => openTab("video")} className="text-sm text-gray-500 hover:text-dark mb-4 block">
-                        ← Back to Lesson
+                        Back to Lesson
                       </button>
                       <h2 className="text-2xl font-extrabold text-dark mb-1">Lesson Quiz</h2>
-                      <p className="text-gray-500">{activeLesson.title} — Answer all questions to complete this lesson</p>
+                      <p className="text-gray-500">{activeLesson.title} - Answer all questions to complete this lesson</p>
                     </div>
 
-                    <div className="space-y-8">
+                    <div className="space-y-6 sm:space-y-8">
                       {activeLesson.quiz?.questions.map((q, qi) => (
                         <div key={q.id} className="animate-fade-in" style={{ animationDelay: `${qi * 80}ms` }}>
                           <p className="font-bold text-dark mb-4">Q{qi + 1}. {q.question}</p>
@@ -499,7 +499,7 @@ export default function CoursePlayer() {
                                   newAnswers[qi] = oi;
                                   setQuizAnswers(newAnswers);
                                 }}
-                                className={`w-full text-left px-5 py-4 rounded-xl border-2 font-medium transition-all duration-300 ${
+                                className={`w-full text-left px-4 py-3.5 sm:px-5 sm:py-4 rounded-xl border-2 font-medium transition-all duration-300 ${
                                   quizAnswers[qi] === oi
                                     ? "scale-[1.01] border-primary bg-primary/5 text-primary shadow-sm"
                                     : "border-gray-200 hover:-translate-y-0.5 hover:border-gray-300 text-gray-700"
@@ -530,12 +530,12 @@ export default function CoursePlayer() {
                       </div>
                     ) : null}
                     <div className={`w-28 h-28 rounded-full mx-auto mb-6 flex items-center justify-center text-5xl animate-fade-in ${quizResult.passed ? "bg-green-100" : "bg-red-100"}`}>
-                      {quizResult.passed ? "🎉" : "😅"}
+                      {quizResult.passed ? "OK" : "!"}
                     </div>
                     <h2 className="text-3xl font-extrabold mb-2">{quizResult.passed ? "Quiz Passed!" : "Not Quite"}</h2>
                     <p className="text-gray-500 mb-6">
                       You scored <span className="font-bold text-dark">{quizResult.score}/{quizResult.total}</span> ({quizResult.percentage}%)
-                      {quizResult.passed ? " — Lesson marked complete! 🏆" : " — You need 70% to pass. Try again!"}
+                      {quizResult.passed ? " - Lesson marked complete!" : " - You need 70% to pass. Try again!"}
                     </p>
                     <div className="text-left max-w-3xl mx-auto mb-8 space-y-4">
                       {quizResult.results.map((result, index) => (
@@ -564,7 +564,7 @@ export default function CoursePlayer() {
                         </div>
                       ))}
                     </div>
-                    <div className="flex gap-4 justify-center">
+                    <div className="flex flex-col gap-3 justify-center sm:flex-row sm:gap-4">
                       <button
                         onClick={() => { setQuizResult(null); setQuizAnswers([]); }}
                         className="bg-gray-100 text-dark px-6 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
@@ -575,7 +575,7 @@ export default function CoursePlayer() {
                         onClick={() => { openTab("video"); setQuizResult(null); nextLesson(); }}
                         className="bg-dark text-white px-6 py-3 rounded-xl font-bold hover:bg-primary transition-all"
                       >
-                        Next Lesson →
+                        Next Lesson
                       </button>
                     </div>
                   </div>
@@ -619,15 +619,15 @@ export default function CoursePlayer() {
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-xs ${
                         isDone ? "bg-green-500 text-white" : isLocked ? "bg-gray-100 text-gray-400" : isActive ? "bg-primary text-white" : "bg-gray-100 text-gray-400"
                       }`}>
-                        {isDone ? "✓" : isLocked ? "🔒" : index + 1}
+                        {isDone ? "OK" : isLocked ? "-" : index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`font-bold text-sm truncate ${isActive ? "text-primary" : isDone ? "text-gray-400" : "text-dark"}`}>
                           {lesson.title}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-gray-400">⏱ {lesson.duration}</span>
-                          {lesson.quiz && <span className="text-xs text-primary font-bold">📝 Quiz</span>}
+                          <span className="text-xs text-gray-400">{lesson.duration}</span>
+                          {lesson.quiz && <span className="text-xs text-primary font-bold">Quiz</span>}
                           {isLocked && <span className="text-xs font-bold text-gray-400">Locked</span>}
                         </div>
                       </div>
