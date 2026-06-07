@@ -3,6 +3,7 @@ import { getDB } from "@/lib/db";
 import { buildAnalyticsSummary } from "@/lib/analytics";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 import { getContentSettings } from "@/lib/contentSettings";
+import { getDiscountSettings } from "@/lib/discountSettings";
 import { requireAdminRequest } from "@/lib/adminAuth";
 import type {
   AnalyticsEvent,
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
     assignmentsResult,
     intakeResult,
     contentResult,
+    discountsResult,
   ] = await Promise.allSettled([
     getDB<Student>("students.json"),
     getDB<Enrollment>("enrollments.json"),
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
     getDB<AssignmentSubmission>("assignments.json"),
     getUpcomingIntakeSettings(),
     getContentSettings(),
+    getDiscountSettings(),
   ]);
 
   const students = fulfilled(studentsResult, []).map(({ password: _password, avatar: _avatar, profileImage: _profileImage, ...student }) => {
@@ -54,6 +57,7 @@ export async function POST(request: Request) {
   const assignments = fulfilled(assignmentsResult, []);
   const intake = fulfilled(intakeResult, undefined);
   const content = fulfilled(contentResult, undefined);
+  const discounts = fulfilled(discountsResult, undefined);
   const summary = buildAnalyticsSummary(sessions, events);
   const recentEvents = [...events]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
       reviews,
       projects,
       assignments,
-      settings: intake || content ? { intake, content } : undefined,
+      settings: intake || content || discounts ? { intake, content, discounts } : undefined,
       analytics: {
         summary,
         sessions: sessions.slice(0, 200),
@@ -84,6 +88,7 @@ export async function POST(request: Request) {
       assignmentsResult,
       intakeResult,
       contentResult,
+      discountsResult,
     ]),
   });
 }

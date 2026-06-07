@@ -31,6 +31,9 @@ export interface Enrollment {
   amount: number;
   referralCode?: string;
   referralDiscount?: number;
+  promoCode?: string;
+  promoDiscount?: number;
+  promoDescription?: string;
   referredByStudentId?: string;
   referredByName?: string;
   referredByEmail?: string;
@@ -222,5 +225,33 @@ export interface ContentSettings {
   courses: CourseContentOverride[];
   lessons: LessonContentOverride[];
   faqs: FAQSection[];
+  updatedAt: string;
+}
+
+export interface PromoCode {
+  id: string;
+  code: string;
+  description: string;
+  type: "percentage" | "fixed";
+  value: number;
+  active: boolean;
+  startsAt?: string;
+  expiresAt?: string;
+  usageLimit?: number;
+  courseIds?: string[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ReferralRewardSettings {
+  active: boolean;
+  studentDiscountPercent: number;
+  rewardNote: string;
+}
+
+export interface DiscountSettings {
+  id: "discount-manager";
+  referral: ReferralRewardSettings;
+  promoCodes: PromoCode[];
   updatedAt: string;
 }

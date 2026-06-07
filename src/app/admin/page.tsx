@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
-import type { ContentSettings, CourseContentOverride, FAQSection, LessonContentOverride, LessonResourceOverride } from "@/types";
+import type { ContentSettings, CourseContentOverride, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, PromoCode } from "@/types";
 
 interface Student {
   id: string;
@@ -24,6 +24,9 @@ interface Enrollment {
   amount: number;
   referralCode?: string;
   referralDiscount?: number;
+  promoCode?: string;
+  promoDiscount?: number;
+  promoDescription?: string;
   referredByStudentId?: string;
   referredByName?: string;
   referredByEmail?: string;
@@ -134,6 +137,7 @@ interface UpcomingIntakeSettings {
 interface AdminSettings {
   intake: UpcomingIntakeSettings;
   content?: ContentSettings;
+  discounts?: DiscountSettings;
 }
 
 interface AdminDashboardPayload {
@@ -150,7 +154,7 @@ interface AdminDashboardPayload {
   };
 }
 
-type AdminTab = "analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "settings" | "content";
+type AdminTab = "analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "discounts" | "settings" | "content";
 
 type AdminResponse<T> = {
   success?: boolean;
@@ -162,7 +166,7 @@ type AdminResponse<T> = {
   events?: AnalyticsEvent[];
 };
 
-const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "reviews", "projects", "assignments", "settings", "content"];
+const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "reviews", "projects", "assignments", "discounts", "settings", "content"];
 const defaultIntakeSettings: UpcomingIntakeSettings = {
   id: "upcoming-intake",
   title: "Join the Next SCDS Class",
@@ -194,6 +198,16 @@ const defaultContentSettings: ContentSettings = {
       ],
     },
   ],
+  updatedAt: "",
+};
+const defaultDiscountSettings: DiscountSettings = {
+  id: "discount-manager",
+  referral: {
+    active: true,
+    studentDiscountPercent: 10,
+    rewardNote: "Students who share referral links help new learners save during enrollment.",
+  },
+  promoCodes: [],
   updatedAt: "",
 };
 
@@ -248,6 +262,7 @@ export default function AdminDashboard() {
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
   const [intakeSettings, setIntakeSettings] = useState<UpcomingIntakeSettings>(defaultIntakeSettings);
   const [contentSettings, setContentSettings] = useState<ContentSettings>(defaultContentSettings);
+  const [discountSettings, setDiscountSettings] = useState<DiscountSettings>(defaultDiscountSettings);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -296,6 +311,7 @@ export default function AdminDashboard() {
         setAnalyticsSummary(dashboard.analytics?.summary ?? null);
         if (dashboard.settings?.intake) setIntakeSettings(dashboard.settings.intake);
         if (dashboard.settings?.content) setContentSettings(dashboard.settings.content);
+        if (dashboard.settings?.discounts) setDiscountSettings(dashboard.settings.discounts);
         setAuthed(true);
         setAccessChecked(true);
         if (pw) setPassword(pw);
@@ -549,6 +565,65 @@ export default function AdminDashboard() {
       setNotice(err instanceof DOMException && err.name === "AbortError"
         ? "The content update took too long. Please try again."
         : "Could not save content updates. Check your connection and try again.");
+    } finally {
+      setPendingAction("");
+    }
+  };
+
+  const updatePromoCode = (id: string, patch: Partial<PromoCode>) => {
+    setDiscountSettings((current) => ({
+      ...current,
+      promoCodes: current.promoCodes.map((promo) => promo.id === id ? { ...promo, ...patch, updatedAt: new Date().toISOString() } : promo),
+    }));
+  };
+
+  const addPromoCode = () => {
+    const now = new Date().toISOString();
+    setDiscountSettings((current) => ({
+      ...current,
+      promoCodes: [
+        {
+          id: `PROMO-${Date.now()}`,
+          code: "NEWCODE",
+          description: "New discount code",
+          type: "percentage",
+          value: 10,
+          active: true,
+          courseIds: [],
+          createdAt: now,
+          updatedAt: now,
+        },
+        ...current.promoCodes,
+      ],
+    }));
+  };
+
+  const removePromoCode = (id: string) => {
+    setDiscountSettings((current) => ({
+      ...current,
+      promoCodes: current.promoCodes.filter((promo) => promo.id !== id),
+    }));
+  };
+
+  const saveDiscountSettings = async () => {
+    setPendingAction("discounts-save");
+    setNotice("");
+    try {
+      const { res, data } = await fetchAdminJson<{ discounts: DiscountSettings }>("/api/admin/discounts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, discounts: discountSettings }),
+      });
+      if (!res.ok || !data.success || !data.data?.discounts) {
+        setNotice(data.message || "Could not save discount settings.");
+        return;
+      }
+      setDiscountSettings(data.data.discounts);
+      setNotice("Discount settings saved. New enrollments will use the updated rules.");
+    } catch (err) {
+      setNotice(err instanceof DOMException && err.name === "AbortError"
+        ? "The discount update took too long. Please try again."
+        : "Could not save discount settings. Check your connection and try again.");
     } finally {
       setPendingAction("");
     }
@@ -847,6 +922,11 @@ export default function AdminDashboard() {
                             Saved Ksh {e.referralDiscount}
                           </div>
                         ) : null}
+                        {e.promoDiscount ? (
+                          <div className="text-xs font-semibold text-blue-700">
+                            Promo Ksh {e.promoDiscount}
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-6 py-4 text-xs">
                         {e.referredByName ? (
@@ -858,6 +938,11 @@ export default function AdminDashboard() {
                           <span className="rounded-full bg-yellow-50 px-3 py-1 font-bold text-yellow-700">Code not matched</span>
                         ) : (
                           <span className="text-gray-400">None</span>
+                        )}
+                        {e.promoCode && (
+                          <div className="mt-2 rounded-lg bg-blue-50 px-2 py-1 font-mono font-bold text-blue-700">
+                            {e.promoCode}
+                          </div>
                         )}
                       </td>
                       <td className="px-6 py-4 font-mono text-xs text-gray-600">{e.reference}</td>
@@ -1081,6 +1166,115 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {tab === "discounts" && (
+          <div className="space-y-8">
+            <div className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="text-2xl font-extrabold text-dark">Coupon & Discount Manager</h3>
+                  <p className="mt-1 text-sm text-gray-500">Create promo codes, referral reward rules, expiry dates, usage limits, and course-specific discounts.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void saveDiscountSettings()}
+                  disabled={pendingAction === "discounts-save"}
+                  className={`rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white disabled:opacity-50 ${adminActionMotion}`}
+                >
+                  {pendingAction === "discounts-save" ? "Saving..." : "Save Discounts"}
+                </button>
+              </div>
+            </div>
+
+            <section className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+              <h4 className="mb-5 text-lg font-extrabold text-dark">Referral Reward Rules</h4>
+              <div className="grid gap-4 md:grid-cols-[180px_1fr]">
+                <label className="flex items-center gap-3 rounded-2xl bg-light-gray px-4 py-3 text-sm font-bold text-dark">
+                  <input
+                    type="checkbox"
+                    checked={discountSettings.referral.active}
+                    onChange={(e) => setDiscountSettings((prev) => ({ ...prev, referral: { ...prev.referral, active: e.target.checked } }))}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  Active
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={discountSettings.referral.studentDiscountPercent}
+                  onChange={(e) => setDiscountSettings((prev) => ({ ...prev, referral: { ...prev.referral, studentDiscountPercent: Number(e.target.value) } }))}
+                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+                  placeholder="Student referral discount percent"
+                />
+                <textarea
+                  value={discountSettings.referral.rewardNote}
+                  onChange={(e) => setDiscountSettings((prev) => ({ ...prev, referral: { ...prev.referral, rewardNote: e.target.value } }))}
+                  rows={3}
+                  className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2"
+                  placeholder="Admin note about referral rewards"
+                />
+              </div>
+            </section>
+
+            <section className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+              <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h4 className="text-lg font-extrabold text-dark">Promo Codes</h4>
+                  <p className="text-sm text-gray-500">Leave course selection empty to apply a code to all courses.</p>
+                </div>
+                <button type="button" onClick={addPromoCode} className={`rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-primary ${adminActionMotion}`}>
+                  Add Promo Code
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                {discountSettings.promoCodes.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-gray-300 p-6 text-sm text-gray-400">No promo codes yet.</p>
+                ) : discountSettings.promoCodes.map((promo) => (
+                  <div key={promo.id} className="rounded-2xl border border-gray-100 p-5">
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <input value={promo.code} onChange={(e) => updatePromoCode(promo.id, { code: e.target.value.toUpperCase() })} className="rounded-xl border border-gray-200 px-4 py-3 font-mono text-sm font-bold uppercase outline-none focus:border-primary" placeholder="CODE" />
+                      <select value={promo.type} onChange={(e) => updatePromoCode(promo.id, { type: e.target.value as PromoCode["type"] })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary">
+                        <option value="percentage">Percentage</option>
+                        <option value="fixed">Fixed Amount</option>
+                      </select>
+                      <input type="number" min={0} value={promo.value} onChange={(e) => updatePromoCode(promo.id, { value: Number(e.target.value) })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder={promo.type === "percentage" ? "Percent" : "Amount"} />
+                      <label className="flex items-center gap-3 rounded-xl bg-light-gray px-4 py-3 text-sm font-bold text-dark">
+                        <input type="checkbox" checked={promo.active} onChange={(e) => updatePromoCode(promo.id, { active: e.target.checked })} className="h-4 w-4 accent-primary" />
+                        Active
+                      </label>
+                      <input value={promo.description} onChange={(e) => updatePromoCode(promo.id, { description: e.target.value })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary md:col-span-2" placeholder="Description" />
+                      <input type="date" value={promo.startsAt ? promo.startsAt.slice(0, 10) : ""} onChange={(e) => updatePromoCode(promo.id, { startsAt: e.target.value || undefined })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" />
+                      <input type="date" value={promo.expiresAt ? promo.expiresAt.slice(0, 10) : ""} onChange={(e) => updatePromoCode(promo.id, { expiresAt: e.target.value || undefined })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" />
+                      <input type="number" min={1} value={promo.usageLimit || ""} onChange={(e) => updatePromoCode(promo.id, { usageLimit: e.target.value ? Number(e.target.value) : undefined })} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Usage limit" />
+                      <div className="md:col-span-3">
+                        <p className="mb-2 text-xs font-black uppercase tracking-widest text-gray-400">Applies To</p>
+                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                          {courses.map((course) => {
+                            const selected = promo.courseIds?.includes(course.id) || false;
+                            const nextCourseIds = selected
+                              ? (promo.courseIds || []).filter((id) => id !== course.id)
+                              : [...(promo.courseIds || []), course.id];
+                            return (
+                              <label key={course.id} className="flex items-center gap-2 rounded-xl bg-light-gray px-3 py-2 text-xs font-bold text-gray-600">
+                                <input type="checkbox" checked={selected} onChange={() => updatePromoCode(promo.id, { courseIds: nextCourseIds })} className="h-4 w-4 accent-primary" />
+                                {course.shortTitle}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => removePromoCode(promo.id)} className={`rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700 hover:bg-red-100 ${adminActionMotion}`}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         )}
 

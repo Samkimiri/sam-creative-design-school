@@ -8,7 +8,8 @@ import {
 } from "@/lib/flutterwave";
 import { getMpesaConfig, initiateStkPush, isMpesaConfigured } from "@/lib/mpesa";
 import { getManagedCourses } from "@/lib/contentSettings";
-import { calculateReferralDiscount, findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
+import { findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
+import { applyPromoCode, calculateReferralDiscount, getDiscountSettings, normalizePromoCode } from "@/lib/discountSettings";
 import type { Enrollment, Student } from "@/types";
 
 const clean = (value: unknown, maxLength: number) =>
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
     const email = clean(body.email, 120);
     const paymentMethod = clean(body.paymentMethod || "mpesa", 20);
     const referralCode = normalizeReferralCode(body.referralCode).slice(0, 24);
+    const promoCode = normalizePromoCode(body.promoCode);
     const courseIds = String(body.courseId || "")
       .split(",")
       .map((id) => id.trim())
@@ -77,8 +79,20 @@ export async function POST(request: Request) {
     const students = referralCode ? await getDB<Student>("students.json") : [];
     const referrer = findReferrerByCode(students, referralCode);
     const isSelfReferral = Boolean(referrer && session?.user.id && referrer.id === session.user.id);
-    const referralDiscount = referrer && !isSelfReferral ? calculateReferralDiscount(parsedAmount) : 0;
-    const payableAmount = Math.max(0, parsedAmount - referralDiscount);
+    const [discountSettings, enrollments] = await Promise.all([
+      getDiscountSettings(),
+      getDB<Enrollment>("enrollments.json"),
+    ]);
+    const referralDiscount = referrer && !isSelfReferral ? calculateReferralDiscount(parsedAmount, discountSettings) : 0;
+    const promoResult = applyPromoCode({
+      amount: Math.max(0, parsedAmount - referralDiscount),
+      selectedCourses,
+      promoCode,
+      settings: discountSettings,
+      enrollments,
+    });
+    const promoDiscount = promoResult.valid ? promoResult.discount : 0;
+    const payableAmount = Math.max(0, parsedAmount - referralDiscount - promoDiscount);
 
     let pushSuccess = false;
     let checkoutUrl = "";
@@ -167,6 +181,9 @@ export async function POST(request: Request) {
       amount: payableAmount,
       referralCode: referralCode || undefined,
       referralDiscount: referralDiscount || undefined,
+      promoCode: promoResult.valid ? promoResult.promo?.code : promoCode || undefined,
+      promoDiscount: promoDiscount || undefined,
+      promoDescription: promoResult.valid ? promoResult.promo?.description : undefined,
       referredByStudentId: referrer && !isSelfReferral ? referrer.id : undefined,
       referredByName: referrer && !isSelfReferral ? referrer.name : undefined,
       referredByEmail: referrer && !isSelfReferral ? referrer.email : undefined,
@@ -197,6 +214,10 @@ export async function POST(request: Request) {
       referralDiscount,
       referralApplied: Boolean(referrer && !isSelfReferral),
       referredByName: referrer && !isSelfReferral ? referrer.name : "",
+      promoDiscount,
+      promoApplied: promoResult.valid,
+      promoMessage: promoCode ? promoResult.message : "",
+      promoDescription: promoResult.valid ? promoResult.promo?.description : "",
       pushSuccess,
       checkoutUrl,
       paymentProvider: paymentMethod,
