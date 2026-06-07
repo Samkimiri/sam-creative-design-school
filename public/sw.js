@@ -5,6 +5,7 @@ const APP_SHELL = [
   "/offline.html",
   "/images/scds-monogram.svg",
   "/images/app-icon.svg",
+  "/favicon.svg",
   "/images/logo.jpg",
 ];
 

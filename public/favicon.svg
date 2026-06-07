@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">SCDS app icon</title>
-  <desc id="desc">Professional Sam Creative Design School shield favicon and app icon.</desc>
+  <title id="title">SCDS favicon</title>
+  <desc id="desc">Professional Sam Creative Design School shield favicon.</desc>
   <defs>
     <linearGradient id="bg" x1="62" y1="36" x2="450" y2="478" gradientUnits="userSpaceOnUse">
       <stop stop-color="#071E5F"/>
@@ -15,26 +15,13 @@
       <stop stop-color="#FFD56A"/>
       <stop offset="1" stop-color="#E7A005"/>
     </linearGradient>
-    <filter id="shadow" x="-18%" y="-18%" width="136%" height="136%">
-      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#020617" flood-opacity="0.34"/>
-    </filter>
   </defs>
-
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <path d="M256 61l144 55v119c0 97-56 165-144 207-88-42-144-110-144-207V116l144-55z" fill="#031B55" opacity="0.34"/>
-  <path d="M256 74l127 48v106c0 86-48 146-127 184-79-38-127-98-127-184V122l127-48z" fill="url(#shield)" filter="url(#shadow)"/>
+  <path d="M256 74l127 48v106c0 86-48 146-127 184-79-38-127-98-127-184V122l127-48z" fill="url(#shield)"/>
   <path d="M256 104l99 37v84c0 68-36 115-99 147-63-32-99-79-99-147v-84l99-37z" fill="#07246D"/>
   <path d="M256 126l76 29v65c0 51-27 87-76 113-49-26-76-62-76-113v-65l76-29z" fill="#FFFFFF"/>
-  <path d="M256 126v207c49-26 76-62 76-113v-65l-76-29z" fill="#F3F9FF"/>
-
-  <path d="M188 165l68-26 68 26v28l-68-26-68 26v-28z" fill="#07246D"/>
   <path d="M256 331l25-40 25 13-37 59h-26l-37-59 25-13 25 40z" fill="url(#gold)"/>
   <path d="M244 245h24v86h-24z" fill="url(#gold)"/>
   <circle cx="256" cy="234" r="15" fill="url(#gold)"/>
-
   <text x="256" y="271" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="82" font-weight="900" letter-spacing="-7" fill="#0056FF">SCDS</text>
-  <path d="M112 116l144-55 144 55" fill="none" stroke="#F5B400" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M202 82h108l47 18-101 38-101-38 47-18z" fill="#061F62"/>
-  <path d="M357 103v56" fill="none" stroke="#F5B400" stroke-width="9" stroke-linecap="round"/>
-  <circle cx="357" cy="167" r="12" fill="#F5B400"/>
 </svg>
