@@ -1,27 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">SCDS favicon</title>
-  <desc id="desc">Professional Sam Creative Design School shield favicon.</desc>
-  <defs>
-    <linearGradient id="bg" x1="62" y1="36" x2="450" y2="478" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#071E5F"/>
-      <stop offset="0.58" stop-color="#0056FF"/>
-      <stop offset="1" stop-color="#0A0F1E"/>
-    </linearGradient>
-    <linearGradient id="shield" x1="148" y1="90" x2="364" y2="424" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#EAF4FF"/>
-    </linearGradient>
-    <linearGradient id="gold" x1="220" y1="108" x2="306" y2="416" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFD56A"/>
-      <stop offset="1" stop-color="#E7A005"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <path d="M256 74l127 48v106c0 86-48 146-127 184-79-38-127-98-127-184V122l127-48z" fill="url(#shield)"/>
-  <path d="M256 104l99 37v84c0 68-36 115-99 147-63-32-99-79-99-147v-84l99-37z" fill="#07246D"/>
-  <path d="M256 126l76 29v65c0 51-27 87-76 113-49-26-76-62-76-113v-65l76-29z" fill="#FFFFFF"/>
-  <path d="M256 331l25-40 25 13-37 59h-26l-37-59 25-13 25 40z" fill="url(#gold)"/>
-  <path d="M244 245h24v86h-24z" fill="url(#gold)"/>
-  <circle cx="256" cy="234" r="15" fill="url(#gold)"/>
-  <text x="256" y="271" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="82" font-weight="900" letter-spacing="-7" fill="#0056FF">SCDS</text>
+  <desc id="desc">Sam Creative Design School favicon using the official website monogram logo.</desc>
+  <rect width="512" height="512" rx="96" fill="#ffffff"/>
+  <image href="/images/scds-monogram.svg" x="42" y="42" width="428" height="428" preserveAspectRatio="xMidYMid meet"/>
 </svg>
