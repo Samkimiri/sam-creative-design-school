@@ -27,8 +27,8 @@ function renderHeroTitle(title: string) {
   if (normalizedTitle === "master creative & tech skills that pay") {
     return (
       <>
-        <span className="text-primary-light">Master Creative &amp; Tech</span>{" "}
-        <span className="text-[#F5B400]">Skills That Pay</span>
+        <span className="text-white">Master Creative &amp; Tech</span>{" "}
+        <span className="text-primary-light">Skills That Pay</span>
       </>
     );
   }
