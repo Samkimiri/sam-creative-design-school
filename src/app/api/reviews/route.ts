@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDB, saveDB } from "@/lib/db";
+import { getManagedCourses } from "@/lib/contentSettings";
 import type { Review } from "@/types";
 
 const seedReviews: Review[] = [
@@ -7,6 +8,8 @@ const seedReviews: Review[] = [
     id: "seed-grace-njeri",
     name: "Grace Njeri",
     role: "Freelance Graphic Designer",
+    courseId: "photoshop-masterclass",
+    courseName: "Adobe Photoshop Masterclass",
     rating: 5,
     text: "The Photoshop masterclass completely changed my life. Within 3 weeks of finishing I had my first paid client.",
     approved: true,
@@ -16,6 +19,8 @@ const seedReviews: Review[] = [
     id: "seed-kevin-omondi",
     name: "Kevin Omondi",
     role: "Content Creator",
+    courseId: "capcut-masterclass",
+    courseName: "CapCut Video Editing Masterclass",
     rating: 5,
     text: "CapCut training helped me understand how to edit videos that keep people watching. The lessons are very practical.",
     approved: true,
@@ -25,6 +30,8 @@ const seedReviews: Review[] = [
     id: "seed-daniel-otieno",
     name: "Daniel Otieno",
     role: "Mechanical Engineer",
+    courseId: "solidworks-engineers",
+    courseName: "SolidWorks for Engineers",
     rating: 5,
     text: "SolidWorks training gave me confidence to create proper CAD models and explain my design process professionally.",
     approved: true,
@@ -38,21 +45,25 @@ function normalizeRating(value: unknown): number {
   return Math.min(5, Math.max(1, Math.round(rating)));
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const courseId = new URL(request.url).searchParams.get("courseId") || "";
   const reviews = await getDB<Review>("reviews.json");
   const customReviews = reviews.filter((review) => !review.id.startsWith("seed-") && review.approved === true);
+  const allReviews = [...customReviews, ...seedReviews];
+  const filteredReviews = courseId ? allReviews.filter((review) => review.courseId === courseId) : allReviews;
   return NextResponse.json({
     success: true,
-    data: [...customReviews, ...seedReviews].slice(0, 12),
+    data: filteredReviews.slice(0, 12),
   });
 }
 
 export async function POST(request: Request) {
   try {
-    const { name, role, rating, text } = await request.json();
+    const { name, role, rating, text, courseId } = await request.json();
     const cleanName = String(name || "").trim();
     const cleanText = String(text || "").trim();
     const cleanRole = String(role || "").trim();
+    const cleanCourseId = String(courseId || "").trim();
 
     if (!cleanName || !cleanText) {
       return NextResponse.json(
@@ -62,10 +73,14 @@ export async function POST(request: Request) {
     }
 
     const reviews = await getDB<Review>("reviews.json");
+    const managedCourses = await getManagedCourses();
+    const course = managedCourses.find((item) => item.id === cleanCourseId);
     const newReview: Review = {
       id: `REV-${Date.now()}`,
       name: cleanName.slice(0, 80),
       role: cleanRole.slice(0, 80),
+      courseId: course?.id,
+      courseName: course?.title,
       rating: normalizeRating(rating),
       text: cleanText.slice(0, 280),
       approved: false,

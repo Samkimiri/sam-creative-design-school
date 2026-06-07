@@ -3,6 +3,12 @@ import { getDB, saveDB } from "@/lib/db";
 import type { AssignmentSubmission } from "@/types";
 import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
 
+function score(value: unknown) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.min(5, Math.max(0, Math.round(numeric)));
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdminRequest(request);
   if ("response" in auth) return auth.response;
@@ -28,11 +34,21 @@ export async function PATCH(request: Request) {
   if (index === -1) {
     return notFound("Assignment not found");
   }
+  const rubric = (auth.body.rubric && typeof auth.body.rubric === "object"
+    ? auth.body.rubric
+    : {}) as Record<string, unknown>;
 
   assignments[index] = {
     ...assignments[index],
     status: status.value,
     feedback: String(auth.body.feedback || "").slice(0, 800),
+    rubric: {
+      creativity: score(rubric.creativity),
+      technicalSkill: score(rubric.technicalSkill),
+      completeness: score(rubric.completeness),
+      presentation: score(rubric.presentation),
+      revisionNotes: String(rubric.revisionNotes || "").slice(0, 800),
+    },
     updatedAt: new Date().toISOString(),
   };
   await saveDB("assignments.json", assignments);

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { CheckCircle2, Eye, UserPlus } from "lucide-react";
+import { CheckCircle2, Eye, Star, UserPlus } from "lucide-react";
 import { getManagedCourses } from "@/lib/contentSettings";
+import { getDB } from "@/lib/db";
+import CourseReviewForm from "@/components/CourseReviewForm";
+import type { Review } from "@/types";
 
 export const metadata: Metadata = {
   title: "Courses in Kenya | Design, Coding, AI, Video and CAD",
@@ -21,7 +24,11 @@ export const metadata: Metadata = {
 };
 
 export default async function Courses() {
-  const courses = await getManagedCourses();
+  const [courses, savedReviews] = await Promise.all([
+    getManagedCourses(),
+    getDB<Review>("reviews.json"),
+  ]);
+  const approvedReviews = savedReviews.filter((review) => review.approved === true);
 
   return (
     <div className="pt-32 pb-24 bg-white">
@@ -34,7 +41,13 @@ export default async function Courses() {
         </div>
 
         <div className="grid grid-cols-1 gap-16">
-          {courses.map((course, index) => (
+          {courses.map((course, index) => {
+            const courseReviews = approvedReviews.filter((review) => review.courseId === course.id);
+            const ratingAverage = courseReviews.length
+              ? courseReviews.reduce((sum, review) => sum + review.rating, 0) / courseReviews.length
+              : 0;
+
+            return (
             <div key={course.id} className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-12 items-center border-b border-gray-100 pb-16 last:border-0 animate-fade-in`}>
               <div className="flex-1 w-full">
                 <div className="aspect-video bg-dark rounded-3xl overflow-hidden shadow-2xl relative group transition-all duration-300 motion-safe:hover:-translate-y-1 hover:shadow-primary/20">
@@ -51,6 +64,15 @@ export default async function Courses() {
               </div>
               <div className="flex-1 transition-transform duration-300 motion-safe:hover:translate-x-1">
                 <h2 className="text-3xl font-bold mb-4">{course.title}</h2>
+                {courseReviews.length > 0 && (
+                  <div className="mb-4 flex flex-wrap items-center gap-2 text-sm font-bold text-primary">
+                    <span className="inline-flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-primary" aria-hidden="true" />
+                      {ratingAverage.toFixed(1)}
+                    </span>
+                    <span className="text-gray-400">from {courseReviews.length} review{courseReviews.length === 1 ? "" : "s"}</span>
+                  </div>
+                )}
                 <p className="text-lg text-gray-600 mb-8">{course.description}</p>
                 
                 <div className="mb-8">
@@ -87,9 +109,21 @@ export default async function Courses() {
                     </Link>
                   </div>
                 </div>
+                <div className="mt-6 grid gap-4">
+                  {courseReviews.slice(0, 2).map((review) => (
+                    <blockquote key={review.id} className="rounded-2xl border border-gray-100 bg-white p-4 text-sm text-gray-600 shadow-sm">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <span className="font-bold text-dark">{review.name}</span>
+                        <span className="text-xs font-black text-primary">{review.rating}/5</span>
+                      </div>
+                      <p>{review.text}</p>
+                    </blockquote>
+                  ))}
+                  <CourseReviewForm courseId={course.id} courseName={course.title} />
+                </div>
               </div>
             </div>
-          ))}
+          );})}
         </div>
       </div>
     </div>

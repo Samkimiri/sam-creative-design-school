@@ -109,6 +109,8 @@ export interface Review {
   id: string;
   name: string;
   role?: string;
+  courseId?: string;
+  courseName?: string;
   rating: number;
   text: string;
   approved?: boolean;
@@ -138,9 +140,18 @@ export interface AssignmentSubmission {
   fileUrl?: string;
   notes?: string;
   status: "submitted" | "reviewed" | "revision";
+  rubric?: AssignmentRubric;
   feedback?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface AssignmentRubric {
+  creativity: number;
+  technicalSkill: number;
+  completeness: number;
+  presentation: number;
+  revisionNotes?: string;
 }
 
 export interface UpcomingIntakeSettings {

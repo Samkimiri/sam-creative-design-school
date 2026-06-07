@@ -80,6 +80,8 @@ interface AdminReview {
   id: string;
   name: string;
   role?: string;
+  courseId?: string;
+  courseName?: string;
   rating: number;
   text: string;
   approved?: boolean;
@@ -105,6 +107,13 @@ interface AdminAssignment {
   fileUrl?: string;
   notes?: string;
   status: "submitted" | "reviewed" | "revision";
+  rubric?: {
+    creativity: number;
+    technicalSkill: number;
+    completeness: number;
+    presentation: number;
+    revisionNotes?: string;
+  };
   feedback?: string;
   createdAt: string;
 }
@@ -246,6 +255,7 @@ export default function AdminDashboard() {
   const [notice, setNotice] = useState("");
   const [pendingAction, setPendingAction] = useState("");
   const [assignmentFeedback, setAssignmentFeedback] = useState<Record<string, string>>({});
+  const [assignmentRubrics, setAssignmentRubrics] = useState<Record<string, NonNullable<AdminAssignment["rubric"]>>>({});
 
   const fetchAdminJson = useCallback(async <T,>(url: string, init: RequestInit): Promise<{ res: Response; data: AdminResponse<T> }> => {
     const controller = new AbortController();
@@ -409,12 +419,38 @@ export default function AdminDashboard() {
 
   const markAssignment = async (id: string, status: "reviewed" | "revision") => {
     const feedback = assignmentFeedback[id] || "";
+    const rubric = assignmentRubrics[id] || assignments.find((assignment) => assignment.id === id)?.rubric || {
+      creativity: 0,
+      technicalSkill: 0,
+      completeness: 0,
+      presentation: 0,
+      revisionNotes: "",
+    };
     await runMutation<AdminAssignment>(
       `assignment-${id}`,
       "/api/admin/assignments",
-      { password, id, status, feedback },
+      { password, id, status, feedback, rubric },
       (updated) => setAssignments((prev) => prev.map((item) => item.id === id ? { ...item, ...updated } : item))
     );
+  };
+
+  const setRubricValue = (assignment: AdminAssignment, key: keyof NonNullable<AdminAssignment["rubric"]>, value: string) => {
+    setAssignmentRubrics((prev) => {
+      const current = prev[assignment.id] || assignment.rubric || {
+        creativity: 0,
+        technicalSkill: 0,
+        completeness: 0,
+        presentation: 0,
+        revisionNotes: "",
+      };
+      return {
+        ...prev,
+        [assignment.id]: {
+          ...current,
+          [key]: key === "revisionNotes" ? value : Number(value),
+        },
+      };
+    });
   };
 
   const deleteAssignment = async (id: string, studentName: string) => {
@@ -915,7 +951,7 @@ export default function AdminDashboard() {
                 <div key={review.id} className={`p-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between ${adminRowMotion}`}>
                   <div>
                     <p className="font-bold text-dark">{review.name} - {review.rating}/5</p>
-                    <p className="text-xs text-gray-400">{review.role || "Student"} - {review.approved ? "Approved" : "Pending"}</p>
+                    <p className="text-xs text-gray-400">{review.role || "Student"} - {review.courseName || "General review"} - {review.approved ? "Approved" : "Pending"}</p>
                     <p className="mt-3 text-sm text-gray-600">{review.text}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -981,8 +1017,52 @@ export default function AdminDashboard() {
                     {assignment.fileUrl && <a href={assignment.fileUrl} className={`mt-2 block text-sm font-bold text-primary ${adminTabMotion}`} target="_blank" rel="noreferrer">Open submitted file</a>}
                     {assignment.notes && <p className="mt-2 text-sm text-gray-600">{assignment.notes}</p>}
                     <p className="mt-2 text-xs text-gray-400">Status: {assignment.status}{assignment.feedback ? ` - Feedback: ${assignment.feedback}` : ""}</p>
+                    {assignment.rubric && (
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
+                        {[
+                          ["Creativity", assignment.rubric.creativity],
+                          ["Technical", assignment.rubric.technicalSkill],
+                          ["Complete", assignment.rubric.completeness],
+                          ["Presentation", assignment.rubric.presentation],
+                        ].map(([label, value]) => (
+                          <span key={label} className="rounded-lg bg-gray-50 px-3 py-2 font-bold text-gray-600">{label}: {value}/5</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="w-full space-y-3 md:w-80">
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        ["creativity", "Creativity"],
+                        ["technicalSkill", "Technical Skill"],
+                        ["completeness", "Completeness"],
+                        ["presentation", "Presentation"],
+                      ].map(([key, label]) => {
+                        const rubric = assignmentRubrics[assignment.id] || assignment.rubric;
+                        return (
+                          <label key={key} className="block text-xs font-black uppercase tracking-widest text-gray-400">
+                            {label}
+                            <input
+                              type="number"
+                              min={0}
+                              max={5}
+                              value={Number(rubric?.[key as keyof NonNullable<AdminAssignment["rubric"]>] || 0)}
+                              onChange={(e) => setRubricValue(assignment, key as keyof NonNullable<AdminAssignment["rubric"]>, e.target.value)}
+                              className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-bold text-dark outline-none focus:border-primary"
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <label htmlFor={`assignment-revision-${assignment.id}`} className="block text-xs font-black uppercase tracking-widest text-gray-400">Revision Notes</label>
+                    <textarea
+                      id={`assignment-revision-${assignment.id}`}
+                      value={assignmentRubrics[assignment.id]?.revisionNotes ?? assignment.rubric?.revisionNotes ?? ""}
+                      onChange={(e) => setRubricValue(assignment, "revisionNotes", e.target.value)}
+                      className="min-h-20 w-full resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary"
+                      maxLength={800}
+                      placeholder="Specific revision instructions tied to the rubric"
+                    />
                     <label htmlFor={`assignment-feedback-${assignment.id}`} className="block text-xs font-black uppercase tracking-widest text-gray-400">Feedback</label>
                     <textarea
                       id={`assignment-feedback-${assignment.id}`}
