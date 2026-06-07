@@ -21,6 +21,21 @@ import {
 
 export const dynamic = "force-dynamic";
 
+function renderHeroTitle(title: string) {
+  const normalizedTitle = title.trim().toLowerCase();
+
+  if (normalizedTitle === "master creative & tech skills that pay") {
+    return (
+      <>
+        <span className="text-primary-light">Master Creative &amp; Tech</span>{" "}
+        <span className="text-[#F5B400]">Skills That Pay</span>
+      </>
+    );
+  }
+
+  return title;
+}
+
 export default async function Home() {
   const [intake, content, courses] = await Promise.all([
     getUpcomingIntakeSettings(),
@@ -94,7 +109,7 @@ export default async function Home() {
           </div>
 
           <h1 className="animate-fade-in mb-6 max-w-5xl text-5xl font-extrabold leading-[0.95] text-white md:text-7xl">
-            {content.homepage.title}
+            {renderHeroTitle(content.homepage.title)}
           </h1>
           <p className="animate-fade-in mb-10 max-w-2xl text-lg leading-8 text-white/80 md:text-xl" style={{ animationDelay: "0.2s" }}>
             {content.homepage.subtitle}
