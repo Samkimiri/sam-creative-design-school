@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 interface IntakeCountdownProps {
   targetDate: string;
+  title?: string;
 }
 
 function getRemaining(target: number) {
@@ -19,7 +20,7 @@ function getRemaining(target: number) {
   };
 }
 
-export default function IntakeCountdown({ targetDate }: IntakeCountdownProps) {
+export default function IntakeCountdown({ targetDate, title = "Live Intake Countdown" }: IntakeCountdownProps) {
   const target = useMemo(() => new Date(targetDate).getTime(), [targetDate]);
   const [remaining, setRemaining] = useState(() => getRemaining(target));
 
@@ -35,8 +36,13 @@ export default function IntakeCountdown({ targetDate }: IntakeCountdownProps) {
   if (!Number.isFinite(target)) {
     return (
       <div className="rounded-2xl border border-primary/20 bg-white p-5 shadow-sm">
-        <p className="text-xs font-black uppercase tracking-widest text-primary">Countdown</p>
-        <p className="mt-2 text-lg font-extrabold text-dark">Next intake date will be announced soon.</p>
+        <div className="flex items-center gap-3">
+          <span className="h-10 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-primary">{title}</p>
+            <p className="mt-1 text-lg font-extrabold text-dark">Next intake date will be announced soon.</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -49,24 +55,26 @@ export default function IntakeCountdown({ targetDate }: IntakeCountdownProps) {
   ];
 
   return (
-    <div className="rounded-2xl border border-primary/20 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="overflow-hidden rounded-2xl border border-primary/20 bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-primary">Live Intake Countdown</p>
+          <p className="text-xs font-black uppercase tracking-widest text-primary">{title}</p>
           <p className="mt-1 text-sm font-semibold text-gray-500">
             {remaining.ended ? "This intake has started." : `Counting down to ${targetDate}`}
           </p>
         </div>
+        <span className="inline-flex w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary">
+          {remaining.ended ? "Open now" : "Live"}
+        </span>
       </div>
-      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+      <div className="grid grid-cols-4 divide-x divide-gray-100">
         {units.map((unit) => (
-          <div key={unit.label} className="rounded-xl bg-light-gray p-3 text-center">
-            <p className="text-xl font-black text-dark sm:text-2xl">{String(unit.value).padStart(2, "0")}</p>
-            <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-gray-400">{unit.label}</p>
+          <div key={unit.label} className="min-h-24 bg-white px-2 py-5 text-center transition-colors hover:bg-light-gray sm:min-h-28">
+            <p className="text-2xl font-black tabular-nums text-dark sm:text-4xl">{String(unit.value).padStart(2, "0")}</p>
+            <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400">{unit.label}</p>
           </div>
         ))}
       </div>
     </div>
   );
 }
-

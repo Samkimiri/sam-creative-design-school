@@ -125,10 +125,16 @@ interface UpcomingIntakeSettings {
   id: "upcoming-intake";
   title: string;
   subtitle: string;
+  countdownTitle: string;
   nextIntake: string;
+  nextIntakeLabel: string;
   learningMode: string;
+  learningModeLabel: string;
   classDuration: string;
+  classDurationLabel: string;
   availableSeats: string;
+  availableSeatsLabel: string;
+  weeklyScheduleLabel: string;
   weeklySchedule: string;
   badge: string;
   updatedAt: string;
@@ -171,10 +177,16 @@ const defaultIntakeSettings: UpcomingIntakeSettings = {
   id: "upcoming-intake",
   title: "Join the Next SCDS Class",
   subtitle: "The next class is open for enrollment with a structured schedule, guided assignments, and mentor feedback so students know exactly what happens after joining.",
-  nextIntake: "June 10, 2026",
+  countdownTitle: "Live Intake Countdown",
+  nextIntake: "July 1, 2026",
+  nextIntakeLabel: "Next Intake",
   learningMode: "Online LMS + WhatsApp mentorship",
+  learningModeLabel: "Learning Mode",
   classDuration: "2 to 6 weeks, based on course",
+  classDurationLabel: "Class Duration",
   availableSeats: "24 seats open",
+  availableSeatsLabel: "Available Seats",
+  weeklyScheduleLabel: "Weekly Schedule",
   weeklySchedule: "Lessons unlock weekly, with assignments reviewed before certification.",
   badge: "Limited batch",
   updatedAt: "",
@@ -309,7 +321,9 @@ export default function AdminDashboard() {
         setVisitorSessions(Array.isArray(dashboard.analytics?.sessions) ? dashboard.analytics.sessions : []);
         setAnalyticsEvents(Array.isArray(dashboard.analytics?.events) ? dashboard.analytics.events : []);
         setAnalyticsSummary(dashboard.analytics?.summary ?? null);
-        if (dashboard.settings?.intake) setIntakeSettings(dashboard.settings.intake);
+        if (dashboard.settings?.intake) {
+          setIntakeSettings({ ...defaultIntakeSettings, ...dashboard.settings.intake });
+        }
         if (dashboard.settings?.content) setContentSettings(dashboard.settings.content);
         if (dashboard.settings?.discounts) setDiscountSettings(dashboard.settings.discounts);
         setAuthed(true);
@@ -494,7 +508,7 @@ export default function AdminDashboard() {
         setNotice(data.message || "Could not update intake settings.");
         return;
       }
-      setIntakeSettings(data.data.intake);
+      setIntakeSettings({ ...defaultIntakeSettings, ...data.data.intake });
       setNotice("Upcoming intake updated. Refresh the homepage to see the latest version.");
     } catch (err) {
       setNotice(err instanceof DOMException && err.name === "AbortError"
@@ -694,6 +708,37 @@ export default function AdminDashboard() {
       </div>
     );
   }
+
+  const intakeDetailFields = [
+    {
+      key: "nextIntake",
+      labelKey: "nextIntakeLabel",
+      fallbackLabel: "Next Intake",
+      valueLabel: "Date / Display Value",
+      maxLength: 60,
+    },
+    {
+      key: "learningMode",
+      labelKey: "learningModeLabel",
+      fallbackLabel: "Learning Mode",
+      valueLabel: "Mode Text",
+      maxLength: 90,
+    },
+    {
+      key: "classDuration",
+      labelKey: "classDurationLabel",
+      fallbackLabel: "Class Duration",
+      valueLabel: "Duration Text",
+      maxLength: 90,
+    },
+    {
+      key: "availableSeats",
+      labelKey: "availableSeatsLabel",
+      fallbackLabel: "Available Seats",
+      valueLabel: "Seats Text",
+      maxLength: 60,
+    },
+  ] as const;
 
   return (
     <div className="pt-24 pb-24 bg-[#F8F8F8] min-h-screen">
@@ -1297,42 +1342,12 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Next Intake Date</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Countdown Heading</label>
                   <input
-                    value={intakeSettings.nextIntake}
-                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, nextIntake: e.target.value }))}
+                    value={intakeSettings.countdownTitle}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, countdownTitle: e.target.value }))}
                     className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
-                    maxLength={60}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Learning Mode</label>
-                  <input
-                    value={intakeSettings.learningMode}
-                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, learningMode: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
-                    maxLength={90}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Class Duration</label>
-                  <input
-                    value={intakeSettings.classDuration}
-                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, classDuration: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
-                    maxLength={90}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Available Seats</label>
-                  <input
-                    value={intakeSettings.availableSeats}
-                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, availableSeats: e.target.value }))}
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
-                    maxLength={60}
+                    maxLength={50}
                     required
                   />
                 </div>
@@ -1359,26 +1374,93 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Weekly Schedule Note</label>
-                <textarea
-                  value={intakeSettings.weeklySchedule}
-                  onChange={(e) => setIntakeSettings((prev) => ({ ...prev, weeklySchedule: e.target.value }))}
-                  className="min-h-24 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
-                  maxLength={180}
-                  required
-                />
+              <div className="rounded-2xl border border-gray-100 bg-light-gray p-4">
+                <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-sm font-extrabold text-dark">Homepage Cards</p>
+                    <p className="text-xs text-gray-500">Edit both the small uppercase card label and the bold value shown underneath.</p>
+                  </div>
+                  <span className="text-xs font-bold text-primary">Live preview below</span>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {intakeDetailFields.map((field) => (
+                    <div key={field.key} className="rounded-2xl border border-gray-100 bg-white p-4">
+                      <div className="grid gap-3 sm:grid-cols-[0.85fr_1.15fr]">
+                        <div>
+                          <label className="mb-2 block text-[11px] font-black uppercase tracking-widest text-gray-400">Card Label</label>
+                          <input
+                            value={intakeSettings[field.labelKey] || field.fallbackLabel}
+                            onChange={(e) => setIntakeSettings((prev) => ({ ...prev, [field.labelKey]: e.target.value }))}
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-bold outline-none focus:border-primary"
+                            maxLength={40}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-2 block text-[11px] font-black uppercase tracking-widest text-gray-400">{field.valueLabel}</label>
+                          <input
+                            value={intakeSettings[field.key]}
+                            onChange={(e) => setIntakeSettings((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-bold outline-none focus:border-primary"
+                            maxLength={field.maxLength}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="rounded-2xl bg-light-gray p-5">
+              <div>
+                <div className="grid gap-4 md:grid-cols-[0.4fr_1fr]">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Schedule Label</label>
+                    <input
+                      value={intakeSettings.weeklyScheduleLabel}
+                      onChange={(e) => setIntakeSettings((prev) => ({ ...prev, weeklyScheduleLabel: e.target.value }))}
+                      className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                      maxLength={40}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Schedule Note</label>
+                    <textarea
+                      value={intakeSettings.weeklySchedule}
+                      onChange={(e) => setIntakeSettings((prev) => ({ ...prev, weeklySchedule: e.target.value }))}
+                      className="min-h-24 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                      maxLength={180}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-primary/10 bg-light-gray p-5">
                 <p className="text-xs font-black uppercase tracking-widest text-primary">Homepage Preview</p>
-                <h4 className="mt-2 text-2xl font-extrabold text-dark">{intakeSettings.title}</h4>
-                <p className="mt-2 text-sm text-gray-600">{intakeSettings.subtitle}</p>
-                <div className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-                  <span><strong>Next:</strong> {intakeSettings.nextIntake}</span>
-                  <span><strong>Mode:</strong> {intakeSettings.learningMode}</span>
-                  <span><strong>Duration:</strong> {intakeSettings.classDuration}</span>
-                  <span><strong>Seats:</strong> {intakeSettings.availableSeats}</span>
+                <div className="mt-3 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+                  <div>
+                    <h4 className="text-2xl font-extrabold text-dark">{intakeSettings.title}</h4>
+                    <p className="mt-2 text-sm leading-6 text-gray-600">{intakeSettings.subtitle}</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-primary/20 bg-white p-4 sm:col-span-2">
+                      <p className="text-xs font-black uppercase tracking-widest text-primary">{intakeSettings.countdownTitle}</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-500">Counting down to {intakeSettings.nextIntake}</p>
+                    </div>
+                    {intakeDetailFields.map((field) => (
+                      <div key={field.key} className="rounded-xl bg-white p-4">
+                        <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">{intakeSettings[field.labelKey] || field.fallbackLabel}</p>
+                        <p className="mt-2 text-lg font-extrabold leading-snug text-dark">{intakeSettings[field.key]}</p>
+                      </div>
+                    ))}
+                    <div className="rounded-xl border border-primary/20 bg-primary/10 p-4 sm:col-span-2">
+                      <p className="text-[11px] font-black uppercase tracking-widest text-primary">{intakeSettings.weeklyScheduleLabel}</p>
+                      <p className="mt-2 text-base font-extrabold text-dark">{intakeSettings.weeklySchedule}</p>
+                      <span className="mt-3 inline-flex rounded-full bg-white px-4 py-2 text-xs font-bold text-primary shadow-sm">{intakeSettings.badge}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -6,10 +6,16 @@ export const defaultUpcomingIntakeSettings: UpcomingIntakeSettings = {
   title: "Join the Next SCDS Class",
   subtitle:
     "The next class is open for enrollment with a structured schedule, guided assignments, and mentor feedback so students know exactly what happens after joining.",
-  nextIntake: "June 10, 2026",
+  countdownTitle: "Live Intake Countdown",
+  nextIntake: "July 1, 2026",
+  nextIntakeLabel: "Next Intake",
   learningMode: "Online LMS + WhatsApp mentorship",
+  learningModeLabel: "Learning Mode",
   classDuration: "2 to 6 weeks, based on course",
+  classDurationLabel: "Class Duration",
   availableSeats: "24 seats open",
+  availableSeatsLabel: "Available Seats",
+  weeklyScheduleLabel: "Weekly Schedule",
   weeklySchedule: "Lessons unlock weekly, with assignments reviewed before certification.",
   badge: "Limited batch",
   updatedAt: new Date(0).toISOString(),
@@ -20,10 +26,13 @@ export async function getUpcomingIntakeSettings() {
     "site-settings.json",
     defaultUpcomingIntakeSettings.id
   );
+  const savedSettings = saved?.nextIntake === "June 10, 2026"
+    ? { ...saved, nextIntake: defaultUpcomingIntakeSettings.nextIntake }
+    : saved;
 
   return {
     ...defaultUpcomingIntakeSettings,
-    ...saved,
+    ...savedSettings,
     id: defaultUpcomingIntakeSettings.id,
   };
 }
@@ -34,10 +43,16 @@ export async function saveUpcomingIntakeSettings(input: Record<string, unknown>)
     ...current,
     title: clean(input.title, current.title, 90),
     subtitle: clean(input.subtitle, current.subtitle, 260),
+    countdownTitle: clean(input.countdownTitle, current.countdownTitle, 50),
     nextIntake: clean(input.nextIntake, current.nextIntake, 60),
+    nextIntakeLabel: clean(input.nextIntakeLabel, current.nextIntakeLabel, 40),
     learningMode: clean(input.learningMode, current.learningMode, 90),
+    learningModeLabel: clean(input.learningModeLabel, current.learningModeLabel, 40),
     classDuration: clean(input.classDuration, current.classDuration, 90),
+    classDurationLabel: clean(input.classDurationLabel, current.classDurationLabel, 40),
     availableSeats: clean(input.availableSeats, current.availableSeats, 60),
+    availableSeatsLabel: clean(input.availableSeatsLabel, current.availableSeatsLabel, 40),
+    weeklyScheduleLabel: clean(input.weeklyScheduleLabel, current.weeklyScheduleLabel, 40),
     weeklySchedule: clean(input.weeklySchedule, current.weeklySchedule, 180),
     badge: clean(input.badge, current.badge, 40),
     id: defaultUpcomingIntakeSettings.id,

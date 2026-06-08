@@ -161,10 +161,16 @@ export interface UpcomingIntakeSettings {
   id: "upcoming-intake";
   title: string;
   subtitle: string;
+  countdownTitle: string;
   nextIntake: string;
+  nextIntakeLabel: string;
   learningMode: string;
+  learningModeLabel: string;
   classDuration: string;
+  classDurationLabel: string;
   availableSeats: string;
+  availableSeatsLabel: string;
+  weeklyScheduleLabel: string;
   weeklySchedule: string;
   badge: string;
   updatedAt: string;
