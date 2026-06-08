@@ -184,7 +184,7 @@ const defaultIntakeSettings: UpcomingIntakeSettings = {
   learningModeLabel: "Learning Mode",
   classDuration: "2 to 6 weeks, based on course",
   classDurationLabel: "Class Duration",
-  availableSeats: "24 seats open",
+  availableSeats: "200 seats open",
   availableSeatsLabel: "Available Seats",
   weeklyScheduleLabel: "Weekly Schedule",
   weeklySchedule: "Lessons unlock weekly, with assignments reviewed before certification.",

@@ -13,7 +13,7 @@ export const defaultUpcomingIntakeSettings: UpcomingIntakeSettings = {
   learningModeLabel: "Learning Mode",
   classDuration: "2 to 6 weeks, based on course",
   classDurationLabel: "Class Duration",
-  availableSeats: "24 seats open",
+  availableSeats: "200 seats open",
   availableSeatsLabel: "Available Seats",
   weeklyScheduleLabel: "Weekly Schedule",
   weeklySchedule: "Lessons unlock weekly, with assignments reviewed before certification.",
@@ -26,8 +26,18 @@ export async function getUpcomingIntakeSettings() {
     "site-settings.json",
     defaultUpcomingIntakeSettings.id
   );
-  const savedSettings = saved?.nextIntake === "June 10, 2026"
-    ? { ...saved, nextIntake: defaultUpcomingIntakeSettings.nextIntake }
+  const savedSettings = saved
+    ? {
+        ...saved,
+        nextIntake:
+          saved.nextIntake === "June 10, 2026"
+            ? defaultUpcomingIntakeSettings.nextIntake
+            : saved.nextIntake,
+        availableSeats:
+          saved.availableSeats === "24 seats open"
+            ? defaultUpcomingIntakeSettings.availableSeats
+            : saved.availableSeats,
+      }
     : saved;
 
   return {
