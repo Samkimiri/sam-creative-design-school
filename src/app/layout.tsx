@@ -6,6 +6,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import PWAInstaller from "@/components/PWAInstaller";
 import StudyBreakPrompt from "@/components/StudyBreakPrompt";
+import { getContentSettings } from "@/lib/contentSettings";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://sam-creative-design-school.vercel.app";
 
@@ -65,11 +66,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const content = await getContentSettings();
+
   return (
     <html lang="en">
       <body className="antialiased">
@@ -78,7 +81,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
-        <WhatsAppButton />
+        <WhatsAppButton number={content.homepage.whatsappNumber} />
         <PWAInstaller />
         <StudyBreakPrompt />
         <AnalyticsTracker />

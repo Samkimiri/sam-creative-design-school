@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
+import { getContentSettings } from "@/lib/contentSettings";
 
-export default function Footer() {
+export default async function Footer() {
   const year = new Date().getFullYear();
+  const content = await getContentSettings();
+  const whatsappNumber = content.homepage.whatsappNumber.replace(/\D/g, "");
 
   const socials = [
     { name: "Facebook", handle: "Sam Creatives", href: "https://www.facebook.com/SamCreatives", icon: (
@@ -104,15 +107,15 @@ export default function Footer() {
           <div>
             <h4 className="font-extrabold text-white mb-5 text-sm uppercase tracking-wider">Contact Us</h4>
             <div className="space-y-4">
-              <a href="tel:0748201131" className="flex items-center gap-3 text-white/80 hover:text-primary-light transition-colors text-sm font-semibold group">
+              <a href={`tel:${whatsappNumber}`} className="flex items-center gap-3 text-white/80 hover:text-primary-light transition-colors text-sm font-semibold group">
                 <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-primary shrink-0 text-[10px] font-black">TEL</span>
-                0748201131
+                {content.homepage.whatsappDisplay}
               </a>
               <a href="mailto:samcreativegraphics7@gmail.com" className="flex items-center gap-3 text-white/80 hover:text-primary-light transition-colors text-sm font-semibold group">
                 <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-primary shrink-0 text-[10px] font-black">MAIL</span>
                 <span className="truncate">samcreativegraphics7@gmail.com</span>
               </a>
-              <a href="https://wa.me/254748201131" target="_blank" rel="noreferrer" className="flex items-center gap-3 text-white/80 hover:text-[#25D366] transition-colors text-sm font-semibold group">
+              <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 text-white/80 hover:text-[#25D366] transition-colors text-sm font-semibold group">
                 <span className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-[#25D366] shrink-0">
                   <MessageCircle className="h-4 w-4" aria-hidden="true" />
                 </span>
@@ -120,7 +123,7 @@ export default function Footer() {
               </a>
               <div className="pt-2">
                 <p className="text-xs text-white/60 font-semibold">MPESA Payments:</p>
-                <p className="text-white/85 text-sm font-bold">0743475247 (Samuel Kimiri)</p>
+                <p className="text-white/85 text-sm font-bold">{content.homepage.mpesaPaymentText}</p>
               </div>
             </div>
           </div>

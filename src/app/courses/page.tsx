@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { CheckCircle2, Eye, Star, UserPlus } from "lucide-react";
+import { BookOpen, CheckCircle2, Eye, Star, UserPlus } from "lucide-react";
 import { getManagedCourses } from "@/lib/contentSettings";
 import { getDB } from "@/lib/db";
 import CourseReviewForm from "@/components/CourseReviewForm";
@@ -93,6 +93,13 @@ export default async function Courses() {
                     <span className="text-2xl font-extrabold text-dark">Ksh {course.price}</span>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row">
+                    <Link
+                      href={`/courses/${course.id}`}
+                      className="inline-flex items-center justify-center gap-2 border border-gray-200 bg-white text-dark px-6 py-4 rounded-xl font-bold text-center hover:border-primary hover:text-primary transition-all duration-300 motion-safe:hover:-translate-y-0.5"
+                    >
+                      <BookOpen className="h-4 w-4" aria-hidden="true" />
+                      View Details
+                    </Link>
                     <Link
                       href={`/lms/${course.id}?preview=1`}
                       className="inline-flex items-center justify-center gap-2 border border-primary text-primary px-6 py-4 rounded-xl font-bold text-center hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5"

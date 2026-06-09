@@ -45,47 +45,20 @@ export default async function Home() {
     getContentSettings(),
     getManagedCourses(),
   ]);
-  const stats = [
-    { value: "500+", label: "Students Trained" },
-    { value: "7", label: "Professional Courses" },
-    { value: "5+", label: "Years of Excellence" },
-    { value: "95%", label: "Completion Rate" },
-  ];
-  const trustBadges = [
-    { label: "Certificate Included", Icon: BadgeCheck },
-    { label: "WhatsApp Mentorship", Icon: MessageCircle },
-    { label: "Beginner Friendly", Icon: GraduationCap },
-    { label: "Pay via MPESA", Icon: CreditCard },
-  ];
+  const stats = content.homepage.stats;
+  const trustBadgeIcons = [BadgeCheck, MessageCircle, GraduationCap, CreditCard];
+  const trustBadges = content.homepage.trustBadges.map((label, index) => ({
+    label,
+    Icon: trustBadgeIcons[index] || BadgeCheck,
+  }));
   const intakeDetails = [
     { label: intake.nextIntakeLabel, value: intake.nextIntake, Icon: CalendarDays },
     { label: intake.learningModeLabel, value: intake.learningMode, Icon: MessageCircle },
     { label: intake.classDurationLabel, value: intake.classDuration, Icon: Clock },
     { label: intake.availableSeatsLabel, value: intake.availableSeats, Icon: UsersRound },
   ];
-  const learningBundle = [
-    { value: "7", label: "Skill tracks", detail: "Design, coding, AI, video, and CAD" },
-    { value: "30+", label: "Guided lessons", detail: "Step-by-step videos, notes, quizzes, and assignments" },
-    { value: "12+", label: "Portfolio projects", detail: "Posters, brand assets, reels, CAD parts, and presentations" },
-    { value: "24/7", label: "LMS access", detail: "Rewatch lessons and keep improving after class" },
-  ];
-  const toolStacks = [
-    {
-      title: "Design Software",
-      tools: ["Adobe Photoshop", "Adobe Illustrator", "Canva", "Mockup tools"],
-      note: "Build posters, social media kits, logos, print files, and brand presentations.",
-    },
-    {
-      title: "Video Workflow",
-      tools: ["CapCut", "Audio cleanup", "Reels formats", "Export presets"],
-      note: "Plan, cut, caption, and export short-form videos for TikTok, Reels, Shorts, and business pages.",
-    },
-    {
-      title: "Engineering Setup",
-      tools: ["SolidWorks", "Technical drawings", "Assemblies", "Rendering"],
-      note: "Model real parts, prepare drawings, and present mechanical ideas clearly.",
-    },
-  ];
+  const learningBundle = content.homepage.learningBundle;
+  const toolStacks = content.homepage.toolStacks;
   const outcomeTiers = [
     { tier: "Starter", range: "Practice work", note: "Build confidence with class assignments and instructor feedback." },
     { tier: "Portfolio", range: "Client-ready samples", note: "Package your best designs, videos, or CAD models for sharing." },

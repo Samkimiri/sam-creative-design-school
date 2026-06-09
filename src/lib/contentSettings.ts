@@ -29,7 +29,7 @@ export const defaultFAQs: FAQSection[] = [
     items: [
       {
         q: "How do I pay for a course?",
-        a: "You can pay through M-Pesa Express or Flutterwave checkout during enrollment.",
+        a: "You can pay through M-Pesa Till STK Push or Flutterwave checkout during enrollment.",
       },
       {
         q: "Do you offer discounts?",
@@ -65,6 +65,39 @@ export const defaultContentSettings: ContentSettings = {
       "Learn design, coding, AI, video editing, and CAD with practical, industry-level training. Join 500+ students who've already transformed their careers.",
     primaryCta: "Start Learning Today",
     secondaryCta: "Explore Courses",
+    whatsappNumber: "254748201131",
+    whatsappDisplay: "0748201131",
+    mpesaPaymentText: "0743475247 (Samuel Kimiri)",
+    stats: [
+      { value: "500+", label: "Students Trained" },
+      { value: "7", label: "Professional Courses" },
+      { value: "5+", label: "Years of Excellence" },
+      { value: "95%", label: "Completion Rate" },
+    ],
+    trustBadges: ["Certificate Included", "WhatsApp Mentorship", "Beginner Friendly", "Pay via MPESA"],
+    learningBundle: [
+      { value: "7", label: "Skill tracks", detail: "Design, coding, AI, video, and CAD" },
+      { value: "30+", label: "Guided lessons", detail: "Step-by-step videos, notes, quizzes, and assignments" },
+      { value: "12+", label: "Portfolio projects", detail: "Posters, brand assets, reels, CAD parts, and presentations" },
+      { value: "24/7", label: "LMS access", detail: "Rewatch lessons and keep improving after class" },
+    ],
+    toolStacks: [
+      {
+        title: "Design Software",
+        tools: ["Adobe Photoshop", "Adobe Illustrator", "Canva", "Mockup tools"],
+        note: "Build posters, social media kits, logos, print files, and brand presentations.",
+      },
+      {
+        title: "Video Workflow",
+        tools: ["CapCut", "Audio cleanup", "Reels formats", "Export presets"],
+        note: "Plan, cut, caption, and export short-form videos for TikTok, Reels, Shorts, and business pages.",
+      },
+      {
+        title: "Engineering Setup",
+        tools: ["SolidWorks", "Technical drawings", "Assemblies", "Rendering"],
+        note: "Model real parts, prepare drawings, and present mechanical ideas clearly.",
+      },
+    ],
   },
   courses: [],
   lessons: [],
@@ -144,6 +177,10 @@ function normalizeContentSettings(input?: Partial<ContentSettings> | null): Cont
     homepage: {
       ...defaultContentSettings.homepage,
       ...(input?.homepage || {}),
+      stats: normalizeStats(input?.homepage?.stats),
+      trustBadges: normalizeTrustBadges(input?.homepage?.trustBadges),
+      learningBundle: normalizeLearningBundle(input?.homepage?.learningBundle),
+      toolStacks: normalizeToolStacks(input?.homepage?.toolStacks),
     },
     courses: Array.isArray(input?.courses) ? input.courses.map((course) => ({
       ...course,
@@ -174,6 +211,50 @@ function normalizeFAQs(faqs: unknown): FAQSection[] {
   })).filter((section) => section.category && section.items.length);
 
   return normalized.length ? normalized : defaultFAQs;
+}
+
+function normalizeStats(stats: unknown) {
+  if (!Array.isArray(stats)) return defaultContentSettings.homepage.stats;
+  const normalized = stats.map((item) => {
+    const record = item as Record<string, unknown>;
+    return {
+      value: String(record.value || "").trim(),
+      label: String(record.label || "").trim(),
+    };
+  }).filter((item) => item.value && item.label);
+  return normalized.length ? normalized : defaultContentSettings.homepage.stats;
+}
+
+function normalizeTrustBadges(badges: unknown) {
+  if (!Array.isArray(badges)) return defaultContentSettings.homepage.trustBadges;
+  const normalized = badges.map((item) => String(item || "").trim()).filter(Boolean);
+  return normalized.length ? normalized : defaultContentSettings.homepage.trustBadges;
+}
+
+function normalizeLearningBundle(items: unknown) {
+  if (!Array.isArray(items)) return defaultContentSettings.homepage.learningBundle;
+  const normalized = items.map((item) => {
+    const record = item as Record<string, unknown>;
+    return {
+      value: String(record.value || "").trim(),
+      label: String(record.label || "").trim(),
+      detail: String(record.detail || "").trim(),
+    };
+  }).filter((item) => item.value && item.label && item.detail);
+  return normalized.length ? normalized : defaultContentSettings.homepage.learningBundle;
+}
+
+function normalizeToolStacks(items: unknown) {
+  if (!Array.isArray(items)) return defaultContentSettings.homepage.toolStacks;
+  const normalized = items.map((item) => {
+    const record = item as Record<string, unknown>;
+    return {
+      title: String(record.title || "").trim(),
+      note: String(record.note || "").trim(),
+      tools: Array.isArray(record.tools) ? record.tools.map(String).map((tool: string) => tool.trim()).filter(Boolean) : [],
+    };
+  }).filter((item) => item.title && item.note && item.tools.length);
+  return normalized.length ? normalized : defaultContentSettings.homepage.toolStacks;
 }
 
 function cleanEmpty<T extends object>(value: T) {

@@ -192,6 +192,13 @@ export interface HomepageContentSettings {
   subtitle: string;
   primaryCta: string;
   secondaryCta: string;
+  whatsappNumber: string;
+  whatsappDisplay: string;
+  mpesaPaymentText: string;
+  stats: { value: string; label: string }[];
+  trustBadges: string[];
+  learningBundle: { value: string; label: string; detail: string }[];
+  toolStacks: { title: string; note: string; tools: string[] }[];
 }
 
 export interface CourseContentOverride {

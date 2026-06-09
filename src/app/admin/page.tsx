@@ -199,6 +199,39 @@ const defaultContentSettings: ContentSettings = {
     subtitle: "Learn design, coding, AI, video editing, and CAD with practical, industry-level training.",
     primaryCta: "Start Learning Today",
     secondaryCta: "Explore Courses",
+    whatsappNumber: "254748201131",
+    whatsappDisplay: "0748201131",
+    mpesaPaymentText: "0743475247 (Samuel Kimiri)",
+    stats: [
+      { value: "500+", label: "Students Trained" },
+      { value: "7", label: "Professional Courses" },
+      { value: "5+", label: "Years of Excellence" },
+      { value: "95%", label: "Completion Rate" },
+    ],
+    trustBadges: ["Certificate Included", "WhatsApp Mentorship", "Beginner Friendly", "Pay via MPESA"],
+    learningBundle: [
+      { value: "7", label: "Skill tracks", detail: "Design, coding, AI, video, and CAD" },
+      { value: "30+", label: "Guided lessons", detail: "Step-by-step videos, notes, quizzes, and assignments" },
+      { value: "12+", label: "Portfolio projects", detail: "Posters, brand assets, reels, CAD parts, and presentations" },
+      { value: "24/7", label: "LMS access", detail: "Rewatch lessons and keep improving after class" },
+    ],
+    toolStacks: [
+      {
+        title: "Design Software",
+        tools: ["Adobe Photoshop", "Adobe Illustrator", "Canva", "Mockup tools"],
+        note: "Build posters, social media kits, logos, print files, and brand presentations.",
+      },
+      {
+        title: "Video Workflow",
+        tools: ["CapCut", "Audio cleanup", "Reels formats", "Export presets"],
+        note: "Plan, cut, caption, and export short-form videos for TikTok, Reels, Shorts, and business pages.",
+      },
+      {
+        title: "Engineering Setup",
+        tools: ["SolidWorks", "Technical drawings", "Assemblies", "Rendering"],
+        note: "Model real parts, prepare drawings, and present mechanical ideas clearly.",
+      },
+    ],
   },
   courses: [],
   lessons: [],
@@ -257,6 +290,66 @@ function textToResources(value: string): LessonResourceOverride[] {
         url: urlParts.join("|").trim() || "#",
       };
     });
+}
+
+function statsToText(stats?: { value: string; label: string }[]) {
+  return (stats || []).map((item) => `${item.value}|${item.label}`).join("\n");
+}
+
+function textToStats(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [statValue, ...labelParts] = line.split("|");
+      return { value: statValue.trim(), label: labelParts.join("|").trim() };
+    })
+    .filter((item) => item.value && item.label);
+}
+
+function listToText(items?: string[]) {
+  return (items || []).join("\n");
+}
+
+function textToList(value: string) {
+  return value.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+function bundleToText(items?: { value: string; label: string; detail: string }[]) {
+  return (items || []).map((item) => `${item.value}|${item.label}|${item.detail}`).join("\n");
+}
+
+function textToBundle(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [itemValue, label, ...detailParts] = line.split("|");
+      return { value: itemValue.trim(), label: (label || "").trim(), detail: detailParts.join("|").trim() };
+    })
+    .filter((item) => item.value && item.label && item.detail);
+}
+
+function toolStacksToText(items?: { title: string; note: string; tools: string[] }[]) {
+  return (items || []).map((item) => `${item.title}|${item.note}|${item.tools.join(", ")}`).join("\n");
+}
+
+function textToToolStacks(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [title, note, ...toolParts] = line.split("|");
+      return {
+        title: (title || "").trim(),
+        note: (note || "").trim(),
+        tools: toolParts.join("|").split(",").map((tool) => tool.trim()).filter(Boolean),
+      };
+    })
+    .filter((item) => item.title && item.note && item.tools.length);
 }
 
 export default function AdminDashboard() {
@@ -1498,10 +1591,18 @@ export default function AdminDashboard() {
               <div className="grid gap-4 md:grid-cols-2">
                 <input value={contentSettings.homepage.eyebrow} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, eyebrow: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Hero eyebrow" />
                 <input value={contentSettings.homepage.title} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, title: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Hero title" />
+                <input value={contentSettings.homepage.whatsappNumber} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, whatsappNumber: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="WhatsApp number, e.g. 254748201131" />
+                <input value={contentSettings.homepage.whatsappDisplay} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, whatsappDisplay: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Displayed phone number" />
                 <input value={contentSettings.homepage.primaryCta} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, primaryCta: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Primary CTA" />
                 <input value={contentSettings.homepage.secondaryCta} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, secondaryCta: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" placeholder="Secondary CTA" />
+                <input value={contentSettings.homepage.mpesaPaymentText} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, mpesaPaymentText: e.target.value } }))} className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary md:col-span-2" placeholder="M-Pesa payment display text" />
                 <textarea value={contentSettings.homepage.subtitle} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, subtitle: e.target.value } }))} rows={3} className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2" placeholder="Hero subtitle" />
+                <textarea value={statsToText(contentSettings.homepage.stats)} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, stats: textToStats(e.target.value) } }))} rows={4} className="rounded-xl border border-gray-200 px-4 py-3 font-mono text-xs outline-none focus:border-primary md:col-span-2" placeholder="Stats: 500+|Students Trained" />
+                <textarea value={listToText(contentSettings.homepage.trustBadges)} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, trustBadges: textToList(e.target.value) } }))} rows={4} className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2" placeholder="Trust badges, one per line" />
+                <textarea value={bundleToText(contentSettings.homepage.learningBundle)} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, learningBundle: textToBundle(e.target.value) } }))} rows={5} className="rounded-xl border border-gray-200 px-4 py-3 font-mono text-xs outline-none focus:border-primary md:col-span-2" placeholder="What You Get: 7|Skill tracks|Design, coding, AI..." />
+                <textarea value={toolStacksToText(contentSettings.homepage.toolStacks)} onChange={(e) => setContentSettings((prev) => ({ ...prev, homepage: { ...prev.homepage, toolStacks: textToToolStacks(e.target.value) } }))} rows={5} className="rounded-xl border border-gray-200 px-4 py-3 font-mono text-xs outline-none focus:border-primary md:col-span-2" placeholder="Tool stack: Design Software|Build posters...|Photoshop, Illustrator, Canva" />
               </div>
+              <p className="mt-4 text-xs font-semibold text-gray-500">Use | to separate columns in stats, What You Get, and tool stack fields. Put each item on a new line.</p>
             </section>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
