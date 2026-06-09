@@ -1,16 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Sam Creative Design School favicon</title>
-  <desc id="desc">A graduation cap above a pen tool nib.</desc>
-  <rect width="512" height="512" rx="96" fill="#FFFFFF"/>
-  <rect x="34" y="34" width="444" height="444" rx="86" fill="#F8FBFF" stroke="#D8E8FF" stroke-width="10"/>
-  <path d="M256 78 394 138 256 198 118 138 256 78Z" fill="#168AF0"/>
-  <path d="M178 170v54c0 28 34 52 78 52s78-24 78-52v-54l-78 34-78-34Z" fill="#0755D8"/>
-  <path d="M394 138v94" fill="none" stroke="#0755D8" stroke-width="20" stroke-linecap="round"/>
-  <circle cx="394" cy="252" r="18" fill="#168AF0"/>
-  <path d="M256 160 350 330 286 394 256 362 226 394 162 330 256 160Z" fill="#0F172A"/>
-  <path d="M256 160 350 330 286 394 256 362V160Z" fill="#172033"/>
-  <path d="M214 326h84" fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round"/>
-  <circle cx="256" cy="302" r="24" fill="#FFFFFF"/>
-  <circle cx="256" cy="302" r="11" fill="#168AF0"/>
-  <path d="M256 362 232 420h48l-24-58Z" fill="#168AF0"/>
+  <desc id="desc">A modern graduation cap and pen tool nib icon.</desc>
+  <defs>
+    <linearGradient id="bg" x1="74" y1="36" x2="446" y2="478" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10B8FF"/>
+      <stop offset="0.48" stop-color="#1269F3"/>
+      <stop offset="1" stop-color="#071B68"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <path d="M92 64h234c68 0 124 55 124 124v260H212C145 448 92 394 92 328V64Z" fill="#FFFFFF" opacity="0.14"/>
+  <path d="M256 86 407 151 256 217 105 151 256 86Z" fill="#FFFFFF"/>
+  <path d="M171 183v42c0 34 38 60 85 60s85-26 85-60v-42l-85 37-85-37Z" fill="#EAF3FF"/>
+  <path d="M407 151v96" fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="407" cy="268" r="18" fill="#FFFFFF"/>
+  <path d="M256 161 356 337 292 407 256 371 220 407 156 337 256 161Z" fill="#FFFFFF"/>
+  <path d="M256 161 356 337 292 407 256 371V161Z" fill="#CFE2FF" opacity="0.62"/>
+  <path d="M216 336h80" fill="none" stroke="#1269F3" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="256" cy="307" r="25" fill="#1269F3"/>
+  <circle cx="256" cy="307" r="10" fill="#FFFFFF"/>
+  <path d="M256 371 232 430h48l-24-59Z" fill="#FFFFFF"/>
 </svg>
