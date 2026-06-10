@@ -17,6 +17,10 @@ function EnrollForm() {
     referralCode: initialReferralCode,
     promoCode: "",
     paymentMethod: "mpesa" as "mpesa" | "flutterwave",
+    mpesaReceiptNumber: "",
+    mpesaPayerName: "",
+    mpesaPhoneNumber: "",
+    mpesaNotes: "",
     selectedCourses: initialCourse ? [initialCourse] : ([] as string[]),
   });
   const [status, setStatus] = useState<"idle" | "submitting" | "stk" | "success" | "failed">("idle");
@@ -25,6 +29,14 @@ function EnrollForm() {
   const [stkMessage, setStkMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentDetails, setPaymentDetails] = useState({
+    paymentLabel: "Buy Goods Till",
+    paymentNumber: "9322260",
+    recipientName: "Samuel Kimiri",
+    mpesaReceiptNumber: "",
+    mpesaPayerName: "",
+    mpesaPhoneNumber: "",
+  });
   const [referralMessage, setReferralMessage] = useState("");
   const [promoMessage, setPromoMessage] = useState("");
   const [courses, setCourses] = useState<Course[]>(fallbackCourses);
@@ -150,6 +162,10 @@ function EnrollForm() {
           email: formData.email,
           phone: formData.phone,
           paymentMethod: formData.paymentMethod,
+          mpesaReceiptNumber: formData.mpesaReceiptNumber,
+          mpesaPayerName: formData.mpesaPayerName,
+          mpesaPhoneNumber: formData.mpesaPhoneNumber || formData.phone,
+          mpesaNotes: formData.mpesaNotes,
           courseId: formData.selectedCourses.join(","),
           courseName: courseNames,
           amount: totalAmount,
@@ -173,6 +189,22 @@ function EnrollForm() {
         setCheckoutRequestId(data.checkoutRequestId || "");
         setStkMessage(data.message || "M-Pesa prompt sent to your phone.");
         setStatus("stk");
+      } else if (data.success && data.manualPayment) {
+        setRef(data.reference);
+        setPaymentAmount(Number(data.amount) || totalAmount);
+        setPaymentDetails({
+          paymentLabel: data.paymentLabel || "Buy Goods Till",
+          paymentNumber: data.paymentNumber || "9322260",
+          recipientName: data.recipientName || "Samuel Kimiri",
+          mpesaReceiptNumber: data.mpesaReceiptNumber || formData.mpesaReceiptNumber,
+          mpesaPayerName: data.mpesaPayerName || formData.mpesaPayerName || formData.name,
+          mpesaPhoneNumber: data.mpesaPhoneNumber || formData.mpesaPhoneNumber || formData.phone,
+        });
+        if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
+        if (data.promoApplied) setPromoMessage(`${data.promoDescription || "Promo code"} applied. Discount: Ksh ${Number(data.promoDiscount || 0).toLocaleString()}.`);
+        if (!data.promoApplied && data.promoMessage) setPromoMessage(data.promoMessage);
+        setStkMessage(data.message || "Payment details saved for admin review.");
+        setStatus("success");
       } else if (data.success) {
         setRef(data.reference);
         setPaymentAmount(Number(data.amount) || totalAmount);
@@ -196,7 +228,7 @@ function EnrollForm() {
       <div className="bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-red-200 animate-fade-in">
         <div className="text-center py-4 sm:py-6">
           <div className="text-4xl sm:text-5xl mb-4 animate-pulse text-red-500">!</div>
-          <h2 className="text-2xl font-black text-dark mb-3">Payment Not Started</h2>
+          <h2 className="text-2xl font-black text-dark mb-3">Till Payment Not Started</h2>
           <p className="text-gray-600 mb-6" role="alert">{errorMessage}</p>
           {ref && (
             <p className="text-sm text-gray-500 mb-6">
@@ -288,12 +320,12 @@ function EnrollForm() {
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6 text-xl font-black animate-fade-in">
             OK
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Payment Received for Review</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Payment Details Ready for Review</h2>
           <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">
             {formData.name ? (
-              <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your {activePaymentLabel} payment details are ready to send to WhatsApp so the school can activate your LMS access quickly.</>
+              <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Send your {activePaymentLabel} details on WhatsApp so the school can confirm them and activate your LMS access.</>
             ) : (
-              <>Your {activePaymentLabel} payment has been verified. Send the reference to WhatsApp so the school can activate your LMS access quickly.</>
+              <>Your {activePaymentLabel} details are saved. Send the reference to WhatsApp so the school can activate your LMS access quickly.</>
             )}
           </p>
 
@@ -302,6 +334,9 @@ function EnrollForm() {
             <p className="text-gray-700 mb-4">The button below opens a prepared message with your name, course, reference, amount, and next step.</p>
             <div className="space-y-2">
               <p className="flex justify-between"><span>Reference:</span> <span className="font-bold text-primary">{ref}</span></p>
+              {paymentDetails.mpesaReceiptNumber && (
+                <p className="flex justify-between"><span>M-Pesa Code:</span> <span className="font-bold">{paymentDetails.mpesaReceiptNumber}</span></p>
+              )}
               {amountForStatus > 0 && (
                 <p className="flex justify-between"><span>Total Amount:</span> <span className="font-bold">Ksh {amountForStatus.toLocaleString()}</span></p>
               )}
@@ -324,12 +359,15 @@ function EnrollForm() {
               const courseNames = selectedCourses.map((course) => course.title).join(", ");
               const amountText = amountForStatus > 0 ? ` of Ksh ${amountForStatus}` : "";
               const courseText = courseNames ? ` for ${courseNames}` : "";
-              const message = `Hi, my name is ${formData.name || "a student"}. I just completed a ${activePaymentLabel} payment${amountText}${courseText}. Reference: ${ref}. Please activate my LMS access and send the next steps.`;
+              const mpesaCodeText = paymentDetails.mpesaReceiptNumber ? ` M-Pesa confirmation code: ${paymentDetails.mpesaReceiptNumber}.` : "";
+              const payerText = paymentDetails.mpesaPayerName ? ` Paid by: ${paymentDetails.mpesaPayerName}.` : "";
+              const phoneText = paymentDetails.mpesaPhoneNumber ? ` Payment phone: ${paymentDetails.mpesaPhoneNumber}.` : "";
+              const message = `Hi, my name is ${formData.name || "a student"}. I have paid${amountText}${courseText} via ${activePaymentLabel}.${mpesaCodeText}${payerText}${phoneText} Enrollment reference: ${ref}. Please confirm my payment in the admin portal and activate my LMS access.`;
               window.open(`https://wa.me/254743475247?text=${encodeURIComponent(message)}`, "_blank");
             }}
             className="inline-block w-full bg-[#25D366] text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:opacity-90 transition-all duration-300 text-center shadow-lg active:translate-y-0"
           >
-            Send WhatsApp Confirmation
+            Send WhatsApp Payment Details
           </button>
         </div>
       </div>
@@ -418,7 +456,7 @@ function EnrollForm() {
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Payment Method</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { id: "mpesa", label: "M-Pesa Express", note: "STK Push to your phone" },
+              { id: "mpesa", label: "Manual M-Pesa Confirmation", note: "Enter your M-Pesa code, then send details on WhatsApp" },
               { id: "flutterwave", label: "Flutterwave", note: "Card, mobile money, or bank options" },
             ].map((option) => {
               const selected = formData.paymentMethod === option.id;
@@ -446,6 +484,75 @@ function EnrollForm() {
             })}
           </div>
         </div>
+
+        {formData.paymentMethod === "mpesa" && (
+          <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">M-Pesa Payment Details</p>
+                <h3 className="mt-1 text-lg font-black text-dark">Pay first, then enter the confirmation message details</h3>
+              </div>
+              <div className="rounded-xl bg-white px-4 py-3 text-sm shadow-sm">
+                <p className="font-black text-dark">Till 9322260</p>
+                <p className="text-xs font-bold text-gray-500">Buy Goods and Services</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label htmlFor="mpesa-code" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">M-Pesa Code</label>
+                <input
+                  id="mpesa-code"
+                  required
+                  type="text"
+                  autoComplete="off"
+                  className="w-full bg-white border border-primary/10 rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold uppercase transition-all duration-300"
+                  placeholder="e.g., RFA1B2C3D4"
+                  value={formData.mpesaReceiptNumber}
+                  onChange={(event) => setFormData({ ...formData, mpesaReceiptNumber: event.target.value.toUpperCase() })}
+                />
+              </div>
+              <div>
+                <label htmlFor="mpesa-phone" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Payment Phone</label>
+                <input
+                  id="mpesa-phone"
+                  required
+                  type="tel"
+                  autoComplete="tel"
+                  pattern="0[17][0-9]{8}"
+                  className="w-full bg-white border border-primary/10 rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300"
+                  placeholder="07XXXXXXXX"
+                  value={formData.mpesaPhoneNumber || formData.phone}
+                  onChange={(event) => setFormData({ ...formData, mpesaPhoneNumber: event.target.value })}
+                />
+              </div>
+              <div>
+                <label htmlFor="mpesa-name" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Name on M-Pesa</label>
+                <input
+                  id="mpesa-name"
+                  required
+                  type="text"
+                  autoComplete="name"
+                  className="w-full bg-white border border-primary/10 rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300"
+                  placeholder="Name shown in the M-Pesa message"
+                  value={formData.mpesaPayerName}
+                  onChange={(event) => setFormData({ ...formData, mpesaPayerName: event.target.value })}
+                />
+              </div>
+              <div>
+                <label htmlFor="mpesa-notes" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Payment Note</label>
+                <input
+                  id="mpesa-notes"
+                  type="text"
+                  autoComplete="off"
+                  className="w-full bg-white border border-primary/10 rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300"
+                  placeholder="Optional extra detail"
+                  value={formData.mpesaNotes}
+                  onChange={(event) => setFormData({ ...formData, mpesaNotes: event.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         <div>
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Select Courses to Join</p>
@@ -504,12 +611,12 @@ function EnrollForm() {
             {status === "submitting" ? (
               <>
                 <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-                {formData.paymentMethod === "flutterwave" ? "Opening Checkout..." : "Initializing STK..."}
+                {formData.paymentMethod === "flutterwave" ? "Opening Checkout..." : "Saving Payment Details..."}
               </>
-            ) : formData.paymentMethod === "flutterwave" ? "Enroll & Pay via Flutterwave" : "Enroll & Pay via M-Pesa"}
+            ) : formData.paymentMethod === "flutterwave" ? "Enroll & Pay via Flutterwave" : "Save Details & Send WhatsApp"}
           </button>
           <p className="text-[10px] text-center text-gray-400 mt-4 font-medium uppercase tracking-widest">
-            Security Verified | {formData.paymentMethod === "flutterwave" ? "Hosted Checkout" : "Instant STK Push"}
+            Security Verified | {formData.paymentMethod === "flutterwave" ? "Hosted Checkout" : "Manual M-Pesa admin approval"}
           </p>
         </div>
       </form>

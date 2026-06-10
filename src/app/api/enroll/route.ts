@@ -6,8 +6,8 @@ import {
   getFlutterwaveCurrency,
   isFlutterwaveConfigured,
 } from "@/lib/flutterwave";
-import { getMpesaConfig, initiateStkPush, isMpesaConfigured } from "@/lib/mpesa";
 import { getManagedCourses } from "@/lib/contentSettings";
+import { courses } from "@/data/courses";
 import { findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
 import { applyPromoCode, calculateReferralDiscount, getDiscountSettings, normalizePromoCode } from "@/lib/discountSettings";
 import type { Enrollment, Student } from "@/types";
@@ -22,6 +22,10 @@ export async function POST(request: Request) {
     const phone = clean(body.phone, 20);
     const email = clean(body.email, 120);
     const paymentMethod = clean(body.paymentMethod || "mpesa", 20);
+    const mpesaReceiptNumber = clean(body.mpesaReceiptNumber, 40).toUpperCase();
+    const mpesaPayerName = clean(body.mpesaPayerName, 80);
+    const mpesaPhoneNumber = clean(body.mpesaPhoneNumber || phone, 20);
+    const mpesaNotes = clean(body.mpesaNotes, 240);
     const referralCode = normalizeReferralCode(body.referralCode).slice(0, 24);
     const promoCode = normalizePromoCode(body.promoCode);
     const courseIds = String(body.courseId || "")
@@ -50,6 +54,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (paymentMethod === "mpesa" && !mpesaReceiptNumber) {
+      return NextResponse.json(
+        { success: false, message: "Enter the M-Pesa confirmation code before sending payment details." },
+        { status: 400 }
+      );
+    }
+
     const phoneRegex = /^0[71]\d{8}$/;
     if (!phoneRegex.test(phone)) {
       return NextResponse.json(
@@ -61,16 +72,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const managedCourses = await getManagedCourses();
-    const selectedCourses = managedCourses.filter((course) => courseIds.includes(course.id));
-    const missingCourse = selectedCourses.length !== new Set(courseIds).size;
+    const requestedCourseIds = new Set(courseIds);
+    const validCourseIds = new Set(courses.map((course) => course.id));
+    const missingCourse = [...requestedCourseIds].some((id) => !validCourseIds.has(id));
 
-    if (missingCourse || selectedCourses.length === 0) {
+    if (missingCourse || requestedCourseIds.size === 0) {
       return NextResponse.json(
         { success: false, message: "Select a valid course before enrolling." },
         { status: 400 }
       );
     }
+
+    const managedCourses = await getManagedCourses();
+    const selectedCourses = managedCourses.filter((course) => requestedCourseIds.has(course.id));
 
     const courseName = selectedCourses.map((course) => course.title).join(", ");
     const parsedAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
@@ -94,13 +108,18 @@ export async function POST(request: Request) {
     const promoDiscount = promoResult.valid ? promoResult.discount : 0;
     const payableAmount = Math.max(0, parsedAmount - referralDiscount - promoDiscount);
 
-    let pushSuccess = false;
+    const pushSuccess = false;
     let checkoutUrl = "";
-    let checkoutRequestId: string | undefined;
-    let merchantRequestId: string | undefined;
-    let mpesaMessage = "";
-    const mpesaConfig = isMpesaConfigured() ? getMpesaConfig() : null;
-    const mpesaConfigured = Boolean(mpesaConfig);
+    const paymentNumber =
+      process.env.MPESA_TILL_NUMBER ||
+      process.env.MPESA_PARTY_B ||
+      process.env.MPESA_SHORTCODE ||
+      "9322260";
+    const paymentLabel =
+      (process.env.MPESA_PAYMENT_MODE || "").toLowerCase().includes("paybill")
+        ? "PayBill"
+        : "Buy Goods Till";
+    const recipientName = process.env.MPESA_ACCOUNT_NAME || "Samuel Kimiri";
 
     if (paymentMethod === "flutterwave") {
       if (!isFlutterwaveConfigured()) {
@@ -141,33 +160,6 @@ export async function POST(request: Request) {
       }
 
       checkoutUrl = checkout.link;
-    } else if (mpesaConfigured) {
-      const stk = await initiateStkPush(phone, payableAmount, reference);
-      pushSuccess = stk.success;
-      checkoutRequestId = stk.checkoutRequestId;
-      merchantRequestId = stk.merchantRequestId;
-      mpesaMessage =
-        stk.customerMessage ||
-        stk.responseDescription ||
-        stk.errorMessage ||
-        "";
-
-      if (!stk.success) {
-        return NextResponse.json(
-          {
-            success: false,
-            message:
-              stk.errorMessage ||
-              "Could not send M-Pesa prompt. Check your phone number and try again.",
-            mpesaConfigured: true,
-            mpesaError: stk.raw,
-          },
-          { status: 502 }
-        );
-      }
-    } else {
-      mpesaMessage =
-        "M-Pesa API credentials are not configured on the server. Contact support to complete payment.";
     }
 
     const newEnrollment: Enrollment = {
@@ -190,8 +182,11 @@ export async function POST(request: Request) {
       phone,
       reference,
       paymentProvider: paymentMethod,
-      checkoutRequestId,
-      merchantRequestId,
+      mpesaReceiptNumber: paymentMethod === "mpesa" ? mpesaReceiptNumber : undefined,
+      mpesaAmount: paymentMethod === "mpesa" ? payableAmount : undefined,
+      mpesaPhoneNumber: paymentMethod === "mpesa" ? mpesaPhoneNumber : undefined,
+      mpesaPayerName: paymentMethod === "mpesa" ? mpesaPayerName || name : undefined,
+      mpesaNotes: paymentMethod === "mpesa" ? mpesaNotes : undefined,
       flutterwaveTxRef: paymentMethod === "flutterwave" ? reference : undefined,
       flutterwaveCurrency:
         paymentMethod === "flutterwave" ? getFlutterwaveCurrency() : undefined,
@@ -205,9 +200,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: pushSuccess
-        ? mpesaMessage || "M-Pesa prompt sent! Check your phone and enter your PIN."
-        : mpesaMessage,
+      message: paymentMethod === "mpesa"
+        ? "Payment details saved. Send them on WhatsApp so the school can approve your LMS access."
+        : "Opening secure checkout.",
       reference,
       amount: payableAmount,
       originalAmount: parsedAmount,
@@ -220,18 +215,20 @@ export async function POST(request: Request) {
       promoDescription: promoResult.valid ? promoResult.promo?.description : "",
       pushSuccess,
       checkoutUrl,
+      manualPayment: paymentMethod === "mpesa",
       paymentProvider: paymentMethod,
       flutterwaveConfigured:
         paymentMethod === "flutterwave" ? isFlutterwaveConfigured() : false,
-      mpesaConfigured,
-      checkoutRequestId,
-      merchantRequestId,
-      paymentMode: mpesaConfig?.paymentMode || "",
-      paymentLabel: mpesaConfig?.paymentLabel || "M-Pesa",
-      paymentNumber: mpesaConfig?.partyB || "",
-      paybillNumber: mpesaConfig?.paymentMode === "paybill" ? mpesaConfig.partyB : "",
-      tillNumber: mpesaConfig?.paymentMode === "buygoods" ? mpesaConfig.partyB : "",
-      recipientName: process.env.MPESA_ACCOUNT_NAME || "Samuel Kimiri",
+      mpesaConfigured: true,
+      paymentMode: paymentLabel === "PayBill" ? "paybill" : "buygoods",
+      paymentLabel,
+      paymentNumber,
+      paybillNumber: paymentLabel === "PayBill" ? paymentNumber : "",
+      tillNumber: paymentLabel === "Buy Goods Till" ? paymentNumber : "",
+      recipientName,
+      mpesaReceiptNumber,
+      mpesaPayerName: mpesaPayerName || name,
+      mpesaPhoneNumber,
     });
   } catch (error) {
     console.error("Enrollment error:", error);
@@ -253,6 +250,7 @@ export async function PATCH(request: Request) {
 
     if (idx > -1) {
       enrollments[idx].whatsappConfirmed = Boolean(whatsappConfirmed);
+      enrollments[idx].whatsappSentAt = whatsappConfirmed ? new Date().toISOString() : undefined;
       await upsertDBRecord("enrollments.json", enrollments[idx]);
       return NextResponse.json({ success: true });
     }

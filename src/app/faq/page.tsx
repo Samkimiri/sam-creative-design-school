@@ -18,7 +18,7 @@ export default async function FAQPage() {
             Frequently Asked <span className="text-primary">Questions</span>
           </h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Everything you need to know before joining Sam Creative Design School. Can&apos;t find your answer? WhatsApp us at 0748201131.
+            Everything you need to know before joining Sam Creative Design School, from Vibe Designing and Vibe Coding to AI & Prompt Engineering. Can&apos;t find your answer? WhatsApp us at 0748201131.
           </p>
         </div>
 

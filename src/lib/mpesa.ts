@@ -87,7 +87,9 @@ export function getMpesaConfig(): MpesaConfig {
     .trim()
     .toLowerCase();
   const requestedTransactionType = process.env.MPESA_TRANSACTION_TYPE;
+  const defaultsToBuyGoods = !requestedPaymentMode && !requestedTransactionType;
   const isBuyGoods =
+    defaultsToBuyGoods ||
     requestedTransactionType === "CustomerBuyGoodsOnline" ||
     requestedPaymentMode === "buygoods" ||
     requestedPaymentMode === "buy-goods" ||
@@ -105,7 +107,7 @@ export function getMpesaConfig(): MpesaConfig {
 
   if (!consumerKey || !consumerSecret || !shortcode || !passkey || !callbackUrl) {
     throw new Error(
-      "M-Pesa is not configured. Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE or MPESA_TILL_NUMBER, MPESA_PASSKEY, and MPESA_CALLBACK_URL."
+      "M-Pesa Till STK Push is not configured. Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_TILL_NUMBER, MPESA_PASSKEY, and MPESA_CALLBACK_URL."
     );
   }
 
@@ -114,7 +116,7 @@ export function getMpesaConfig(): MpesaConfig {
     transactionType !== "CustomerBuyGoodsOnline"
   ) {
     throw new Error(
-      "Invalid MPESA_TRANSACTION_TYPE. Use CustomerBuyGoodsOnline for a Till or CustomerPayBillOnline for a PayBill."
+      "Invalid MPESA_TRANSACTION_TYPE. Use CustomerBuyGoodsOnline for a Buy Goods Till."
     );
   }
 

@@ -56,11 +56,14 @@ export interface Enrollment {
   mpesaReceiptNumber?: string;
   mpesaAmount?: number;
   mpesaPhoneNumber?: string;
+  mpesaPayerName?: string;
+  mpesaNotes?: string;
   mpesaTransactionDate?: string;
   mpesaResultCode?: string;
   mpesaResultDesc?: string;
   status: "pending" | "confirmed" | "failed" | string;
   whatsappConfirmed?: boolean;
+  whatsappSentAt?: string;
   createdAt: string;
 }
 

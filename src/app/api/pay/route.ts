@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     if (!isMpesaConfigured()) {
-      return NextResponse.json({ error: "M-Pesa API is not configured on the server." }, { status: 500 });
+      return NextResponse.json({ error: "M-Pesa Till STK Push is not configured on the server." }, { status: 500 });
     }
 
     const amount = course.price;

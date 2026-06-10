@@ -32,8 +32,15 @@ interface Enrollment {
   referredByEmail?: string;
   phone: string;
   reference: string;
+  paymentProvider?: string;
+  mpesaReceiptNumber?: string;
+  mpesaAmount?: number;
+  mpesaPhoneNumber?: string;
+  mpesaPayerName?: string;
+  mpesaNotes?: string;
   status: "pending" | "confirmed" | "failed";
   whatsappConfirmed?: boolean;
+  whatsappSentAt?: string;
   createdAt: string;
 }
 
@@ -1036,6 +1043,7 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4 text-left">Student</th>
                     <th className="px-6 py-4 text-left">Course</th>
                     <th className="px-6 py-4 text-left">Amount</th>
+                    <th className="px-6 py-4 text-left">Payment</th>
                     <th className="px-6 py-4 text-left">Referral</th>
                     <th className="px-6 py-4 text-left">Ref</th>
                     <th className="px-6 py-4 text-left">Date</th>
@@ -1045,7 +1053,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {enrollments.length === 0 ? (
-                    <tr><td colSpan={8} className="text-center py-12 text-gray-400">No enrollments yet</td></tr>
+                    <tr><td colSpan={9} className="text-center py-12 text-gray-400">No enrollments yet</td></tr>
                   ) : enrollments.map((e) => (
                     <tr key={e.id} className={adminRowMotion}>
                       <td className="px-6 py-4">
@@ -1065,6 +1073,19 @@ export default function AdminDashboard() {
                             Promo Ksh {e.promoDiscount}
                           </div>
                         ) : null}
+                      </td>
+                      <td className="px-6 py-4 text-xs">
+                        <div className="font-bold uppercase text-dark">{e.paymentProvider || "mpesa"}</div>
+                        {e.mpesaReceiptNumber ? (
+                          <div className="mt-2 space-y-1 rounded-xl bg-green-50 p-3 text-green-900">
+                            <div className="font-mono font-black">{e.mpesaReceiptNumber}</div>
+                            <div>Paid by: <span className="font-bold">{e.mpesaPayerName || e.studentName}</span></div>
+                            <div>Phone: <span className="font-bold">{e.mpesaPhoneNumber || e.phone}</span></div>
+                            {e.mpesaNotes && <div className="text-green-700">{e.mpesaNotes}</div>}
+                          </div>
+                        ) : (
+                          <span className="mt-2 inline-block text-gray-400">No manual details</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-xs">
                         {e.referredByName ? (
@@ -1090,8 +1111,8 @@ export default function AdminDashboard() {
                           {e.status}
                         </span>
                         {e.whatsappConfirmed && (
-                          <span className="ml-2 inline-flex items-center justify-center w-5 h-5 bg-[#25D366] text-white rounded-full text-[10px]" title="WhatsApp Confirmation Sent">
-                            WA
+                          <span className="ml-2 inline-flex items-center rounded-full bg-[#25D366] px-2 py-1 text-[10px] font-black text-white" title={e.whatsappSentAt ? `WhatsApp sent ${new Date(e.whatsappSentAt).toLocaleString()}` : "WhatsApp Confirmation Sent"}>
+                            WhatsApp sent
                           </span>
                         )}
                       </td>

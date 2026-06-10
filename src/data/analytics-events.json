@@ -894,5 +894,49 @@
     "device": "Desktop",
     "browser": "Chrome",
     "createdAt": "2026-06-03T23:29:55.736Z"
+  },
+  {
+    "id": "evt-1781021588554-5xstb",
+    "visitorId": "v-1780319858157-auno8yv",
+    "sessionId": "s-1781021582646-kxychb0",
+    "type": "page_view",
+    "path": "/courses/photoshop-masterclass",
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "createdAt": "2026-06-09T16:13:08.554Z"
+  },
+  {
+    "id": "evt-1781021597403-vq92x",
+    "visitorId": "v-1780319858157-auno8yv",
+    "sessionId": "s-1781021582646-kxychb0",
+    "type": "session_end",
+    "path": "/courses/photoshop-masterclass",
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "createdAt": "2026-06-09T16:13:17.403Z"
+  },
+  {
+    "id": "evt-1781021607409-moqyz",
+    "visitorId": "v-1780319858157-auno8yv",
+    "sessionId": "s-1781021582646-kxychb0",
+    "type": "page_view",
+    "path": "/courses/photoshop-masterclass",
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "createdAt": "2026-06-09T16:13:27.409Z"
+  },
+  {
+    "id": "evt-1781021723561-4u2n4",
+    "visitorId": "v-1780319858157-auno8yv",
+    "sessionId": "s-1781021582646-kxychb0",
+    "type": "session_start",
+    "path": "/blog/graphic-design-school-in-kenya-career-path",
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome",
+    "createdAt": "2026-06-09T16:15:23.562Z"
   }
 ]

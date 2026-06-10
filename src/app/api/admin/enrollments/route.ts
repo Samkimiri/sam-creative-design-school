@@ -11,7 +11,16 @@ interface Enrollment {
   amount: number;
   phone: string;
   reference: string;
+  paymentProvider?: string;
+  mpesaReceiptNumber?: string;
+  mpesaAmount?: number;
+  mpesaPhoneNumber?: string;
+  mpesaPayerName?: string;
+  mpesaNotes?: string;
+  paymentConfirmedAt?: string;
   status: string;
+  whatsappConfirmed?: boolean;
+  whatsappSentAt?: string;
   createdAt: string;
 }
 
@@ -53,6 +62,9 @@ export async function PATCH(request: Request) {
   }
 
   enrollments[index].status = status.value;
+  if (status.value === "confirmed") {
+    enrollments[index].paymentConfirmedAt = new Date().toISOString();
+  }
   await saveDB("enrollments.json", enrollments);
 
   // If confirmed, add to student's enrolledCourses

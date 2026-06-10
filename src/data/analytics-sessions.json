@@ -226,5 +226,23 @@
     "referrer": "Direct",
     "device": "Desktop",
     "browser": "Chrome"
+  },
+  {
+    "id": "s-1781021582646-kxychb0",
+    "visitorId": "v-1780319858157-auno8yv",
+    "sessionId": "s-1781021582646-kxychb0",
+    "firstSeen": "2026-06-09T16:13:08.554Z",
+    "lastSeen": "2026-06-09T16:15:23.562Z",
+    "pageViews": 2,
+    "engagements": 2,
+    "landingPage": "/courses/photoshop-masterclass",
+    "lastPage": "/blog/graphic-design-school-in-kenya-career-path",
+    "pages": [
+      "/courses/photoshop-masterclass",
+      "/blog/graphic-design-school-in-kenya-career-path"
+    ],
+    "referrer": "Direct",
+    "device": "Desktop",
+    "browser": "Chrome"
   }
 ]
