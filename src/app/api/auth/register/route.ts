@@ -19,7 +19,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^(?:0[17]\d{8}|\+254[17]\d{8}|254[17]\d{8})$/;
 const imageUrlRegex = /^https?:\/\/.+/i;
 const imageDataRegex = /^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i;
-const maxAvatarLength = 950 * 1024;
+const maxAvatarLength = 6 * 1024 * 1024;
 const clean = (value: unknown, maxLength: number) =>
   String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
 const cleanImage = (value: unknown) => String(value || "").trim();
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
     if (!isAllowedAvatar(avatar)) {
       return NextResponse.json(
-        { success: false, message: "Use a PNG, JPG, WebP, or GIF avatar under 700 KB." },
+        { success: false, message: "Use a PNG, JPG, WebP, or GIF avatar. Large JPG, PNG, and WebP files are optimized on the form before upload." },
         { status: 400 }
       );
     }

@@ -2,16 +2,71 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { LoaderCircle } from "lucide-react";
+import { BadgeCheck, Crown, LoaderCircle, Palette, Rocket, Sparkles, Trophy, Video, Wrench, Zap } from "lucide-react";
 
 type Step = "start" | "login" | "identity" | "contact" | "security" | "ambition" | "success";
 
 const masteryPaths = [
-  { id: "ps", label: "Graphic Design", tag: "Design", code: "GD", tone: "from-sky-500 to-blue-600", ring: "border-sky-400 bg-sky-500/15 shadow-sky-500/20" },
-  { id: "ai", label: "Branding", tag: "Brand", code: "BR", tone: "from-amber-400 to-orange-500", ring: "border-amber-300 bg-amber-500/15 shadow-amber-500/20" },
-  { id: "cc", label: "Video Editing", tag: "Video", code: "VE", tone: "from-rose-500 to-pink-600", ring: "border-rose-300 bg-rose-500/15 shadow-rose-500/20" },
-  { id: "sw", label: "Engineering", tag: "Tech", code: "EN", tone: "from-emerald-400 to-teal-600", ring: "border-emerald-300 bg-emerald-500/15 shadow-emerald-500/20" },
+  { id: "ps", label: "Graphic Design", tag: "Design", code: "GD", icon: Palette, xp: 1200, reward: "Poster Boss", stats: ["Color", "Layout", "Brand"], tone: "from-sky-500 to-blue-600", ring: "border-sky-400 bg-sky-500/15 shadow-sky-500/20" },
+  { id: "ai", label: "Branding", tag: "Brand", code: "BR", icon: Crown, xp: 1350, reward: "Logo League", stats: ["Identity", "Strategy", "Mockups"], tone: "from-amber-400 to-orange-500", ring: "border-amber-300 bg-amber-500/15 shadow-amber-500/20" },
+  { id: "cc", label: "Video Editing", tag: "Video", code: "VE", icon: Video, xp: 1100, reward: "Reel Maker", stats: ["Cuts", "Captions", "Sound"], tone: "from-rose-500 to-pink-600", ring: "border-rose-300 bg-rose-500/15 shadow-rose-500/20" },
+  { id: "sw", label: "Engineering", tag: "Tech", code: "EN", icon: Wrench, xp: 1500, reward: "CAD Pilot", stats: ["Parts", "Drawings", "Renders"], tone: "from-emerald-400 to-teal-600", ring: "border-emerald-300 bg-emerald-500/15 shadow-emerald-500/20" },
 ];
+
+const maxUploadBytes = 5 * 1024 * 1024;
+const maxAvatarDataLength = 3.5 * 1024 * 1024;
+const maxSubmitAvatarLength = 5.8 * 1024 * 1024;
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Could not read that profile image. Try another file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function canvasToDataUrl(canvas: HTMLCanvasElement, type: string, quality: number) {
+  try {
+    return canvas.toDataURL(type, quality);
+  } catch {
+    return canvas.toDataURL("image/jpeg", quality);
+  }
+}
+
+async function compressAvatar(file: File) {
+  if (file.type === "image/gif") return readFileAsDataUrl(file);
+
+  const imageUrl = URL.createObjectURL(file);
+  try {
+    const image = document.createElement("img");
+    image.decoding = "async";
+    const loaded = new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Could not prepare that profile image. Try another file."));
+    });
+    image.src = imageUrl;
+    await loaded;
+
+    const maxSide = 720;
+    const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Could not prepare that profile image. Try another file.");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    for (const quality of [0.86, 0.78, 0.7, 0.62]) {
+      const dataUrl = canvasToDataUrl(canvas, "image/webp", quality);
+      if (dataUrl.length <= maxAvatarDataLength) return dataUrl;
+    }
+
+    return canvasToDataUrl(canvas, "image/jpeg", 0.68);
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
 
 export default function GamifiedRegistration() {
   const [step, setStep] = useState<Step>("start");
@@ -32,6 +87,7 @@ export default function GamifiedRegistration() {
   const [loginStatus, setLoginStatus] = useState<"idle" | "loading" | "error">("idle");
   const [loginError, setLoginError] = useState("");
   const [formError, setFormError] = useState("");
+  const [avatarBusy, setAvatarBusy] = useState(false);
 
   useEffect(() => {
     async function checkSession() {
@@ -59,7 +115,7 @@ export default function GamifiedRegistration() {
     checkSession();
   }, []);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -69,24 +125,36 @@ export default function GamifiedRegistration() {
       return;
     }
 
-    if (file.size > 700 * 1024) {
-      setFormError("Choose a profile image smaller than 700 KB.");
+    if (file.size > maxUploadBytes) {
+      setFormError("Choose a profile image under 5 MB.");
       event.target.value = "";
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData((prev) => ({ ...prev, avatar: reader.result as string }));
+    setAvatarBusy(true);
+    setFormError("");
+
+    try {
+      const avatar = await compressAvatar(file);
+      if (avatar.length > maxSubmitAvatarLength) {
+        setFormError("That image is still too large after optimization. Try a smaller JPG, PNG, or WebP.");
+        event.target.value = "";
+        return;
+      }
+      setFormData((prev) => ({ ...prev, avatar }));
       setFormError("");
-    };
-    reader.onerror = () => setFormError("Could not read that profile image. Try another file.");
-    reader.readAsDataURL(file);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not read that profile image. Try another file.");
+    } finally {
+      setAvatarBusy(false);
+    }
   };
 
   const register = async () => {
     setLoading(true);
     setFormError("");
+    const submissionAvatar =
+      formData.avatar && formData.avatar.length <= maxSubmitAvatarLength ? formData.avatar : null;
 
     try {
       if (isLoggedIn) {
@@ -96,8 +164,8 @@ export default function GamifiedRegistration() {
           body: JSON.stringify({
             name: formData.name,
             phone: formData.phone,
-            profileImage: formData.avatar,
-            avatar: formData.avatar,
+            profileImage: submissionAvatar,
+            avatar: submissionAvatar,
             interest: formData.interest,
           }),
         });
@@ -111,7 +179,7 @@ export default function GamifiedRegistration() {
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({ ...formData, avatar: submissionAvatar }),
         });
         const data = await res.json();
         if (data.success) {
@@ -172,6 +240,8 @@ export default function GamifiedRegistration() {
   };
 
   const renderStep = () => {
+    const selectedPath = masteryPaths.find((path) => path.label === formData.interest);
+
     switch (step) {
       case "start":
         return (
@@ -328,6 +398,8 @@ export default function GamifiedRegistration() {
               >
                 {formData.avatar ? (
                   <img src={formData.avatar} alt="Selected profile preview" className="w-full h-full object-cover" />
+                ) : avatarBusy ? (
+                  <LoaderCircle className="h-7 w-7 animate-spin" aria-label="Optimizing avatar" />
                 ) : "Avatar"}
               </button>
               <button
@@ -341,6 +413,9 @@ export default function GamifiedRegistration() {
             </div>
             <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Choose Your Identity</h3>
             <p className="text-gray-400 mb-8 font-medium">What should we call you in the LMS?</p>
+            <p className="mb-5 rounded-2xl border border-primary/15 bg-primary/10 px-4 py-3 text-xs font-bold text-sky-100">
+              Upload a JPG, PNG, or WebP up to 5 MB. We will optimize it for your student badge.
+            </p>
             <input
               required
               type="text"
@@ -429,27 +504,105 @@ export default function GamifiedRegistration() {
 
       case "ambition":
         return (
-          <div className="max-w-md mx-auto text-center animate-slide-up">
-            <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Choose Your Mastery Path</h3>
-            <p className="text-gray-400 mb-8 font-medium">Which skill are you aiming to master first?</p>
-            <div className="grid grid-cols-2 gap-3 mb-8">
-              {masteryPaths.map((path) => (
-                <button
-                  key={path.id}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, interest: path.label })}
-                  className={`group relative overflow-hidden rounded-2xl border-2 p-4 text-left font-bold shadow-lg transition-all hover:-translate-y-1 ${
-                    formData.interest === path.label ? `${path.ring} text-white` : "border-white/10 bg-white/[0.03] text-gray-400 shadow-transparent hover:border-white/25 hover:bg-white/[0.06]"
-                  }`}
-                >
-                  <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${path.tone}`} />
-                  <span className={`mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${path.tone} text-xs font-black text-white shadow-lg transition-transform group-hover:scale-105`}>
-                    {path.code}
-                  </span>
-                  <span className="block text-xs uppercase tracking-widest mb-1">{path.tag}</span>
-                  <span className="block text-sm text-white">{path.label}</span>
-                </button>
-              ))}
+          <div className="mx-auto max-w-3xl animate-slide-up">
+            <div className="mb-7 text-center">
+              <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-sky-100">
+                <Trophy className="h-4 w-4 text-primary" aria-hidden="true" />
+                Final Quest Choice
+              </div>
+              <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Choose Your Mastery Path</h3>
+              <p className="text-gray-400 font-medium">Pick your first skill track and unlock your starter badge.</p>
+            </div>
+
+            <div className="mb-6 grid gap-4 md:grid-cols-[1fr_0.78fr]">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {masteryPaths.map((path) => {
+                  const Icon = path.icon;
+                  const selected = formData.interest === path.label;
+                  return (
+                    <button
+                      key={path.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, interest: path.label })}
+                      className={`group relative min-h-[164px] overflow-hidden rounded-2xl border-2 p-4 text-left font-bold shadow-lg transition-all hover:-translate-y-1 ${
+                        selected ? `${path.ring} text-white shadow-2xl` : "border-white/10 bg-white/[0.035] text-gray-400 shadow-transparent hover:border-white/25 hover:bg-white/[0.065]"
+                      }`}
+                    >
+                      <span className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${path.tone}`} />
+                      <span className="flex items-start justify-between gap-3">
+                        <span className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br ${path.tone} text-white shadow-lg transition-transform group-hover:scale-105`}>
+                          <Icon className="h-6 w-6" aria-hidden="true" />
+                        </span>
+                        <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-black text-white">{path.xp} XP</span>
+                      </span>
+                      <span className="mt-4 block text-xs uppercase tracking-widest text-white/60">{path.tag}</span>
+                      <span className="mt-1 block text-lg font-black text-white">{path.label}</span>
+                      <span className="mt-3 flex flex-wrap gap-1.5">
+                        {path.stats.map((stat) => (
+                          <span key={stat} className="rounded-full bg-white/10 px-2 py-1 text-[10px] font-bold text-white/75">{stat}</span>
+                        ))}
+                      </span>
+                      {selected && (
+                        <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-dark">
+                          <BadgeCheck className="h-3.5 w-3.5 text-green-600" aria-hidden="true" />
+                          Locked
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 text-left shadow-2xl shadow-black/20">
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">Starter Badge</p>
+                    <h4 className="mt-1 text-xl font-black text-white">{selectedPath?.reward || "Awaiting Choice"}</h4>
+                  </div>
+                  <div className={`grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br ${selectedPath?.tone || "from-slate-500 to-slate-700"} text-white shadow-lg`}>
+                    {selectedPath ? <selectedPath.icon className="h-7 w-7" aria-hidden="true" /> : <Sparkles className="h-7 w-7" aria-hidden="true" />}
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {["Focus", "Practice", "Portfolio"].map((skill, index) => (
+                    <div key={skill}>
+                      <div className="mb-1 flex justify-between text-xs font-bold text-gray-400">
+                        <span>{skill}</span>
+                        <span>{selectedPath ? `${70 + index * 10}%` : "0%"}</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className={`h-full rounded-full bg-gradient-to-r ${selectedPath?.tone || "from-white/20 to-white/10"} transition-all duration-500`}
+                          style={{ width: selectedPath ? `${70 + index * 10}%` : "0%" }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-black text-white">
+                    <Zap className="h-4 w-4 text-yellow-300" aria-hidden="true" />
+                    Mission Preview
+                  </div>
+                  <p className="text-sm leading-6 text-gray-400">
+                    {selectedPath
+                      ? `Start with ${selectedPath.label}, earn ${selectedPath.xp} XP, and build your first portfolio-ready project.`
+                      : "Choose a path to reveal your first XP mission."}
+                  </p>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  {[
+                    ["Level", selectedPath ? "01" : "--"],
+                    ["XP", selectedPath ? `${selectedPath.xp}` : "--"],
+                    ["Badge", selectedPath ? "Ready" : "Locked"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] px-2 py-3">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-white/40">{label}</div>
+                      <div className="mt-1 text-sm font-black text-white">{value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
             <button
               type="button"
@@ -458,8 +611,17 @@ export default function GamifiedRegistration() {
               className="flex w-full items-center justify-center gap-3 rounded-[1.4rem] bg-gradient-to-r from-primary via-sky-400 to-emerald-400 py-5 text-lg font-black text-white shadow-xl shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-primary/35 disabled:opacity-50"
             >
               {loading ? (
-                <LoaderCircle className="h-6 w-6 animate-spin" aria-label="Creating account" />
-              ) : "Initialize Quest!"}
+                <>
+                  <LoaderCircle className="h-6 w-6 animate-spin" aria-label="Creating account" />
+                  Forging Student Pass...
+                </>
+              ) : (
+                <>
+                  <Rocket className="h-5 w-5" aria-hidden="true" />
+                  Initialize Quest
+                  {selectedPath ? <span className="rounded-full bg-white/20 px-2 py-1 text-xs">{selectedPath.reward}</span> : null}
+                </>
+              )}
             </button>
           </div>
         );

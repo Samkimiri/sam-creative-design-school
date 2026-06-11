@@ -16,7 +16,7 @@ function EnrollForm() {
     phone: "",
     referralCode: initialReferralCode,
     promoCode: "",
-    paymentMethod: "mpesa" as "mpesa" | "flutterwave",
+    paymentMethod: "mpesa" as const,
     mpesaReceiptNumber: "",
     mpesaPayerName: "",
     mpesaPhoneNumber: "",
@@ -72,26 +72,7 @@ function EnrollForm() {
   const selectedCourses = courses.filter((course) => formData.selectedCourses.includes(course.id));
   const totalAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
   const amountForStatus = paymentAmount || totalAmount;
-  const returnedPayment = searchParams.get("payment") || "";
-  const returnedMessage = searchParams.get("message") || "";
-  const activePaymentLabel =
-    formData.paymentMethod === "flutterwave" || returnedPayment.startsWith("flutterwave")
-      ? "Flutterwave"
-      : "M-Pesa";
-
-  useEffect(() => {
-    if (!returnedPayment.startsWith("flutterwave")) return;
-
-    setRef(searchParams.get("reference") || "");
-    if (returnedPayment === "flutterwave-success") {
-      setStkMessage(returnedMessage || "Flutterwave payment verified.");
-      setStatus("success");
-      return;
-    }
-
-    setErrorMessage(returnedMessage || "Flutterwave payment was not completed.");
-    setStatus("failed");
-  }, [returnedMessage, returnedPayment, searchParams]);
+  const activePaymentLabel = "M-Pesa";
 
   const checkPaymentStatus = useCallback(async () => {
     if (!checkoutRequestId) return;
@@ -175,13 +156,7 @@ function EnrollForm() {
       });
 
       const data = await res.json();
-      if (data.success && data.checkoutUrl) {
-        setRef(data.reference);
-        setPaymentAmount(Number(data.amount) || totalAmount);
-        if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
-        if (data.promoApplied) setPromoMessage(`${data.promoDescription || "Promo code"} applied. Discount: Ksh ${Number(data.promoDiscount || 0).toLocaleString()}.`);
-        window.location.href = data.checkoutUrl;
-      } else if (data.success && data.pushSuccess) {
+      if (data.success && data.pushSuccess) {
         setRef(data.reference);
         setPaymentAmount(Number(data.amount) || totalAmount);
         if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
@@ -412,7 +387,6 @@ function EnrollForm() {
           <label htmlFor="enroll-email" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Email Address</label>
           <input
             id="enroll-email"
-            required={formData.paymentMethod === "flutterwave"}
             type="email"
             autoComplete="email"
             className="w-full bg-light-gray border-none rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300 focus:-translate-y-0.5 focus:shadow-sm"
@@ -454,39 +428,13 @@ function EnrollForm() {
 
         <div>
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Payment Method</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[
-              { id: "mpesa", label: "Manual M-Pesa Confirmation", note: "Enter your M-Pesa code, then send details on WhatsApp" },
-              { id: "flutterwave", label: "Flutterwave", note: "Card, mobile money, or bank options" },
-            ].map((option) => {
-              const selected = formData.paymentMethod === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() =>
-                    setFormData({
-                      ...formData,
-                      paymentMethod: option.id as "mpesa" | "flutterwave",
-                    })
-                  }
-                  className={`rounded-xl border-2 p-3.5 sm:p-4 text-left transition-all duration-300 ${
-                    selected
-                      ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
-                      : "border-gray-100 hover:-translate-y-0.5 hover:border-gray-200 hover:shadow-sm"
-                  }`}
-                >
-                  <span className="block font-black text-dark text-sm">{option.label}</span>
-                  <span className="mt-1 block text-xs font-medium text-gray-500">{option.note}</span>
-                </button>
-              );
-            })}
+          <div className="rounded-2xl border-2 border-primary bg-primary/5 p-4 text-left shadow-md shadow-primary/10">
+            <span className="block font-black text-dark text-sm">Manual M-Pesa Confirmation</span>
+            <span className="mt-1 block text-xs font-medium text-gray-500">Enter your M-Pesa code, then send details on WhatsApp for admin approval.</span>
           </div>
         </div>
 
-        {formData.paymentMethod === "mpesa" && (
-          <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
+        <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">M-Pesa Payment Details</p>
@@ -552,7 +500,6 @@ function EnrollForm() {
               </div>
             </div>
           </div>
-        )}
 
         <div>
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Select Courses to Join</p>
@@ -611,12 +558,12 @@ function EnrollForm() {
             {status === "submitting" ? (
               <>
                 <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-                {formData.paymentMethod === "flutterwave" ? "Opening Checkout..." : "Saving Payment Details..."}
+                Saving Payment Details...
               </>
-            ) : formData.paymentMethod === "flutterwave" ? "Enroll & Pay via Flutterwave" : "Save Details & Send WhatsApp"}
+            ) : "Save Details & Send WhatsApp"}
           </button>
           <p className="text-[10px] text-center text-gray-400 mt-4 font-medium uppercase tracking-widest">
-            Security Verified | {formData.paymentMethod === "flutterwave" ? "Hosted Checkout" : "Manual M-Pesa admin approval"}
+            Security Verified | Manual M-Pesa admin approval
           </p>
         </div>
       </form>

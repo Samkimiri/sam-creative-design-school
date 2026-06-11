@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { appendDBRecord, getDB, upsertDBRecord } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import {
-  createFlutterwaveCheckout,
-  getFlutterwaveCurrency,
-  isFlutterwaveConfigured,
-} from "@/lib/flutterwave";
 import { getManagedCourses } from "@/lib/contentSettings";
 import { courses } from "@/data/courses";
 import { findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
@@ -21,7 +16,7 @@ export async function POST(request: Request) {
     const name = clean(body.name, 80);
     const phone = clean(body.phone, 20);
     const email = clean(body.email, 120);
-    const paymentMethod = clean(body.paymentMethod || "mpesa", 20);
+    const paymentMethod = "mpesa";
     const mpesaReceiptNumber = clean(body.mpesaReceiptNumber, 40).toUpperCase();
     const mpesaPayerName = clean(body.mpesaPayerName, 80);
     const mpesaPhoneNumber = clean(body.mpesaPhoneNumber || phone, 20);
@@ -40,21 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (paymentMethod !== "mpesa" && paymentMethod !== "flutterwave") {
-      return NextResponse.json(
-        { success: false, message: "Choose a valid payment method." },
-        { status: 400 }
-      );
-    }
-
-    if (paymentMethod === "flutterwave" && !email) {
-      return NextResponse.json(
-        { success: false, message: "Email is required for Flutterwave checkout." },
-        { status: 400 }
-      );
-    }
-
-    if (paymentMethod === "mpesa" && !mpesaReceiptNumber) {
+    if (!mpesaReceiptNumber) {
       return NextResponse.json(
         { success: false, message: "Enter the M-Pesa confirmation code before sending payment details." },
         { status: 400 }
@@ -109,7 +90,6 @@ export async function POST(request: Request) {
     const payableAmount = Math.max(0, parsedAmount - referralDiscount - promoDiscount);
 
     const pushSuccess = false;
-    let checkoutUrl = "";
     const paymentNumber =
       process.env.MPESA_TILL_NUMBER ||
       process.env.MPESA_PARTY_B ||
@@ -120,47 +100,6 @@ export async function POST(request: Request) {
         ? "PayBill"
         : "Buy Goods Till";
     const recipientName = process.env.MPESA_ACCOUNT_NAME || "Samuel Kimiri";
-
-    if (paymentMethod === "flutterwave") {
-      if (!isFlutterwaveConfigured()) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Flutterwave is not configured on the server.",
-          },
-          { status: 500 }
-        );
-      }
-
-      const redirectUrl =
-        process.env.FLUTTERWAVE_REDIRECT_URL ||
-        new URL("/api/flutterwave/callback", request.url).toString();
-      const checkout = await createFlutterwaveCheckout({
-        amount: payableAmount,
-        txRef: reference,
-        redirectUrl,
-        customer: {
-          email,
-          name,
-          phone,
-        },
-        courseName,
-      });
-
-      if (!checkout.success || !checkout.link) {
-        return NextResponse.json(
-          {
-            success: false,
-            message:
-              checkout.message || "Could not create Flutterwave checkout.",
-            flutterwaveError: checkout.raw,
-          },
-          { status: 502 }
-        );
-      }
-
-      checkoutUrl = checkout.link;
-    }
 
     const newEnrollment: Enrollment = {
       id: "ENR-" + Date.now(),
@@ -182,16 +121,11 @@ export async function POST(request: Request) {
       phone,
       reference,
       paymentProvider: paymentMethod,
-      mpesaReceiptNumber: paymentMethod === "mpesa" ? mpesaReceiptNumber : undefined,
-      mpesaAmount: paymentMethod === "mpesa" ? payableAmount : undefined,
-      mpesaPhoneNumber: paymentMethod === "mpesa" ? mpesaPhoneNumber : undefined,
-      mpesaPayerName: paymentMethod === "mpesa" ? mpesaPayerName || name : undefined,
-      mpesaNotes: paymentMethod === "mpesa" ? mpesaNotes : undefined,
-      flutterwaveTxRef: paymentMethod === "flutterwave" ? reference : undefined,
-      flutterwaveCurrency:
-        paymentMethod === "flutterwave" ? getFlutterwaveCurrency() : undefined,
-      flutterwaveCheckoutCreatedAt:
-        paymentMethod === "flutterwave" ? new Date().toISOString() : undefined,
+      mpesaReceiptNumber,
+      mpesaAmount: payableAmount,
+      mpesaPhoneNumber,
+      mpesaPayerName: mpesaPayerName || name,
+      mpesaNotes,
       status: "pending",
       createdAt: new Date().toISOString(),
     };
@@ -200,9 +134,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: paymentMethod === "mpesa"
-        ? "Payment details saved. Send them on WhatsApp so the school can approve your LMS access."
-        : "Opening secure checkout.",
+      message: "Payment details saved. Send them on WhatsApp so the school can approve your LMS access.",
       reference,
       amount: payableAmount,
       originalAmount: parsedAmount,
@@ -214,11 +146,8 @@ export async function POST(request: Request) {
       promoMessage: promoCode ? promoResult.message : "",
       promoDescription: promoResult.valid ? promoResult.promo?.description : "",
       pushSuccess,
-      checkoutUrl,
-      manualPayment: paymentMethod === "mpesa",
+      manualPayment: true,
       paymentProvider: paymentMethod,
-      flutterwaveConfigured:
-        paymentMethod === "flutterwave" ? isFlutterwaveConfigured() : false,
       mpesaConfigured: true,
       paymentMode: paymentLabel === "PayBill" ? "paybill" : "buygoods",
       paymentLabel,

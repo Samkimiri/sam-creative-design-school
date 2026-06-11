@@ -29,7 +29,7 @@ export const defaultFAQs: FAQSection[] = [
     items: [
       {
         q: "How do I pay for a course?",
-        a: "You can pay through M-Pesa Till STK Push or Flutterwave checkout during enrollment.",
+        a: "You can pay through manual M-Pesa Buy Goods confirmation during enrollment. Send the payment details on WhatsApp, then the school approves your LMS access.",
       },
       {
         q: "Do you offer discounts?",
