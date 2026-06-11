@@ -61,7 +61,7 @@ export default function RegisterPage() {
             <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg group-hover:scale-105 transition-transform duration-300">
               <img src="/images/scds-monogram.svg" alt="Sam Creative" className="w-full h-full object-contain rounded-xl" />
             </div>
-            <span className="text-white font-extrabold text-2xl tracking-tight">Sam Creative <span className="text-primary">Graphics</span></span>
+            <span className="text-white font-extrabold text-2xl tracking-tight">Sam Creative <span className="text-primary">Design School</span></span>
           </Link>
           <h1 className="text-3xl font-extrabold text-white mb-2">Join the Academy</h1>
           <p className="text-gray-400">Create your account and start learning today</p>
