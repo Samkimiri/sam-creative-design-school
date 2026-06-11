@@ -7,13 +7,13 @@ export const defaultUpcomingIntakeSettings: UpcomingIntakeSettings = {
   subtitle:
     "The next class is open for enrollment with a structured schedule, guided assignments, and mentor feedback so students know exactly what happens after joining.",
   countdownTitle: "Live Intake Countdown",
-  nextIntake: "July 1, 2026",
+  nextIntake: "July 6, 2026",
   nextIntakeLabel: "Next Intake",
   learningMode: "Online LMS + WhatsApp mentorship",
   learningModeLabel: "Learning Mode",
   classDuration: "2 to 6 weeks, based on course",
   classDurationLabel: "Class Duration",
-  availableSeats: "200 seats open",
+  availableSeats: "280 seats total",
   availableSeatsLabel: "Available Seats",
   weeklyScheduleLabel: "Weekly Schedule",
   weeklySchedule: "Lessons unlock weekly, with assignments reviewed before certification.",
@@ -30,11 +30,11 @@ export async function getUpcomingIntakeSettings() {
     ? {
         ...saved,
         nextIntake:
-          saved.nextIntake === "June 10, 2026"
+          saved.nextIntake === "June 10, 2026" || saved.nextIntake === "July 1, 2026"
             ? defaultUpcomingIntakeSettings.nextIntake
             : saved.nextIntake,
         availableSeats:
-          saved.availableSeats === "24 seats open"
+          saved.availableSeats === "24 seats open" || saved.availableSeats === "200 seats open"
             ? defaultUpcomingIntakeSettings.availableSeats
             : saved.availableSeats,
       }
