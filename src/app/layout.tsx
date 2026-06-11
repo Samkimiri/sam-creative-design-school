@@ -42,9 +42,9 @@ export const metadata: Metadata = {
     siteName: "Sam Creative Design School",
     images: [
       {
-        url: "/images/app-icon.svg",
-        width: 800,
-        height: 800,
+        url: "/images/app-icon-512.png",
+        width: 512,
+        height: 512,
         alt: "Sam Creative Design School logo",
       },
     ],
@@ -55,14 +55,15 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Sam Creative Design School",
     description: "Practical creative and engineering software training in Kenya.",
-    images: ["/images/app-icon.svg"],
+    images: ["/images/app-icon-512.png"],
   },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/images/app-icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/images/app-icon.svg", type: "image/svg+xml" },
     ],
-    apple: "/images/app-icon.svg",
+    apple: "/images/apple-touch-icon.png",
   },
 };
 
