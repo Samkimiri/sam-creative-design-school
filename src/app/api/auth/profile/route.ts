@@ -17,6 +17,10 @@ function isAllowedAvatar(value: string) {
   return imageUrlRegex.test(value) || imageDataRegex.test(value);
 }
 
+function optionalAvatar(value: string) {
+  return isAllowedAvatar(value) ? value : "";
+}
+
 export async function POST(request: Request) {
   try {
     const session = await getSession();
@@ -35,20 +39,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Enter a valid Kenyan phone number." }, { status: 400 });
     }
 
-    if (!isAllowedAvatar(profileImage) || !isAllowedAvatar(avatar)) {
-      return NextResponse.json(
-        { success: false, message: "Use a PNG, JPG, WebP, or GIF avatar. Large JPG, PNG, and WebP files are optimized on the form before upload." },
-        { status: 400 }
-      );
-    }
+    const safeProfileImage = optionalAvatar(profileImage);
+    const safeAvatar = optionalAvatar(avatar);
 
     const student = await getDBRecord<Student>("students.json", session.user.id);
 
     if (student) {
       if (name) student.name = name;
       if (phone) student.phone = phone;
-      if (profileImage) student.profileImage = profileImage;
-      if (avatar) student.avatar = avatar;
+      if (safeProfileImage) student.profileImage = safeProfileImage;
+      if (safeAvatar) student.avatar = safeAvatar;
       if (interest) student.interest = interest;
       
       await upsertDBRecord("students.json", student);

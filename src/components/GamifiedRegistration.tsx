@@ -120,13 +120,11 @@ export default function GamifiedRegistration() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setFormError("Choose a PNG, JPG, WebP, or GIF profile image.");
       event.target.value = "";
       return;
     }
 
     if (file.size > maxUploadBytes) {
-      setFormError("Choose a profile image under 5 MB.");
       event.target.value = "";
       return;
     }
@@ -137,14 +135,15 @@ export default function GamifiedRegistration() {
     try {
       const avatar = await compressAvatar(file);
       if (avatar.length > maxSubmitAvatarLength) {
-        setFormError("That image is still too large after optimization. Try a smaller JPG, PNG, or WebP.");
+        setFormData((prev) => ({ ...prev, avatar: null }));
         event.target.value = "";
         return;
       }
       setFormData((prev) => ({ ...prev, avatar }));
       setFormError("");
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Could not read that profile image. Try another file.");
+      console.error("Avatar upload skipped:", error);
+      setFormData((prev) => ({ ...prev, avatar: null }));
     } finally {
       setAvatarBusy(false);
     }

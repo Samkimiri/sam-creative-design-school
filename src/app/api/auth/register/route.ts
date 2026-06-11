@@ -30,6 +30,10 @@ function isAllowedAvatar(value: string) {
   return imageUrlRegex.test(value) || imageDataRegex.test(value);
 }
 
+function optionalAvatar(value: string) {
+  return isAllowedAvatar(value) ? value : "";
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -68,12 +72,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!isAllowedAvatar(avatar)) {
-      return NextResponse.json(
-        { success: false, message: "Use a PNG, JPG, WebP, or GIF avatar. Large JPG, PNG, and WebP files are optimized on the form before upload." },
-        { status: 400 }
-      );
-    }
+    const safeAvatar = optionalAvatar(avatar);
 
     const existingStudent = await findDBRecordByField<Student>("students.json", "email", email);
     if (existingStudent) {
@@ -95,7 +94,7 @@ export async function POST(request: Request) {
       phone: phone || "",
       password: hashedPassword,
       role,
-      avatar: avatar || undefined,
+      avatar: safeAvatar || undefined,
       interest,
       enrolledCourses: [],
       createdAt: new Date().toISOString(),
