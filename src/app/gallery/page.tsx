@@ -4,7 +4,7 @@ export default function GalleryPage() {
   const categories = ["All", "Photoshop", "Illustrator", "CapCut", "SolidWorks"];
 
   const projects = [
-    { id: 1, student: "Grace Njeri", course: "Photoshop", title: "Brand Identity Poster", image: "/images/gallery-photoshop.png", emoji: "🎨", color: "from-blue-400 to-indigo-600", desc: "A premium brand poster created for a local coffee shop using advanced Photoshop techniques." },
+    { id: 1, student: "Naomi", course: "Photoshop", title: "Naomi's Kitchen Menu Poster", image: "/images/gallery-naomis-hotel.jpg", emoji: "🎨", color: "from-red-500 to-yellow-400", desc: "A bold restaurant menu poster designed for Naomi's Kitchen with vivid food imagery, clear menu hierarchy, and strong contact details." },
     { id: 2, student: "Kevin Omondi", course: "Illustrator", title: "Vector Logo Pack", image: "/images/gallery-illustrator.png", emoji: "✏️", color: "from-sky-400 to-cyan-500", desc: "A complete logo system with 4 variations designed for a tech startup." },
     { id: 3, student: "Sharon Wanjiru", course: "CapCut", title: "Product Promo Reel", emoji: "🎬", color: "from-pink-500 to-rose-600", desc: "A 30-second Instagram Reel for a fashion brand with custom transitions and music sync." },
     { id: 4, student: "Brian Mutua", course: "SolidWorks", title: "Mechanical Bracket Assembly", emoji: "⚙️", color: "from-gray-500 to-gray-700", desc: "A fully constrained SolidWorks assembly with 12 parts and engineering drawings." },
