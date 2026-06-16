@@ -8,11 +8,11 @@ export default function GalleryPage() {
     { id: 2, student: "Kevin Omondi", course: "Illustrator", title: "Vector Logo Pack", image: "/images/gallery-illustrator.png", emoji: "✏️", color: "from-sky-400 to-cyan-500", desc: "A complete logo system with 4 variations designed for a tech startup." },
     { id: 3, student: "Sharon Wanjiru", course: "CapCut", title: "Product Promo Reel", emoji: "🎬", color: "from-pink-500 to-rose-600", desc: "A 30-second Instagram Reel for a fashion brand with custom transitions and music sync." },
     { id: 4, student: "Brian Mutua", course: "SolidWorks", title: "Mechanical Bracket Assembly", emoji: "⚙️", color: "from-gray-500 to-gray-700", desc: "A fully constrained SolidWorks assembly with 12 parts and engineering drawings." },
-    { id: 5, student: "Lydia Kamau", course: "Photoshop", title: "Social Media Content Kit", image: "/images/gallery-photoshop.png", emoji: "📱", color: "from-purple-400 to-pink-500", desc: "A 9-post Instagram grid for a beauty brand with consistent colour and typography." },
+    { id: 5, student: "Lydia Kamau", course: "Photoshop", title: "Social Media Content Kit", image: "/images/course-photoshop.png", emoji: "📱", color: "from-purple-400 to-pink-500", desc: "A 9-post Instagram grid for a beauty brand with consistent colour and typography." },
     { id: 6, student: "Daniel Otieno", course: "Illustrator", title: "Custom Icon Set", image: "/images/gallery-illustrator.png", emoji: "🎯", color: "from-teal-400 to-cyan-500", desc: "40 custom flat-design icons for a mobile app, delivered in SVG and PNG formats." },
     { id: 7, student: "Faith Chebet", course: "CapCut", title: "YouTube Intro Animation", emoji: "▶️", color: "from-rose-400 to-pink-500", desc: "An animated logo reveal and channel intro sequence for a YouTube cooking channel." },
     { id: 8, student: "Moses Kipchoge", course: "SolidWorks", title: "Sheet Metal Enclosure", emoji: "🔩", color: "from-slate-500 to-slate-700", desc: "A sheet metal enclosure design with bend reliefs, hardware cutouts and flat pattern." },
-    { id: 9, student: "Patricia Adhiambo", course: "Photoshop", title: "Event Flyer Series", image: "/images/gallery-photoshop.png", emoji: "🪄", color: "from-violet-400 to-purple-600", desc: "A series of 6 event flyers for a music festival, featuring custom photo manipulation." },
+    { id: 9, student: "Patricia Adhiambo", course: "Photoshop", title: "Event Flyer Series", image: "/images/gallery-naomis-hotel.jpg", emoji: "🪄", color: "from-violet-400 to-purple-600", desc: "A series of 6 event flyers for a music festival, featuring custom photo manipulation." },
   ];
 
   return (

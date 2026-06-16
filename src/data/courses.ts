@@ -901,16 +901,16 @@ const lessonVisuals: Record<string, Pick<Lesson, "image" | "imageAlt">> = {
     imageAlt: "Photoshop workspace and design tools overview",
   },
   "ps-2": {
-    image: "/images/gallery-photoshop.png",
-    imageAlt: "Layered Photoshop design composition example",
+    image: "/images/course-photoshop.png",
+    imageAlt: "Photoshop class project being designed on screen",
   },
   "ps-3": {
     image: "/images/graphic-design.png",
     imageAlt: "Graphic design composition showing image manipulation concepts",
   },
   "ps-4": {
-    image: "/images/gallery-photoshop.png",
-    imageAlt: "Photoshop editing sample for retouching and effects practice",
+    image: "/images/graphic-design.png",
+    imageAlt: "Graphic design project visual for Photoshop retouching and effects practice",
   },
   "ps-5": {
     image: "/images/course-photoshop.png",
