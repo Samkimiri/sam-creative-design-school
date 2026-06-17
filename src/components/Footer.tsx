@@ -25,6 +25,8 @@ export default async function Footer() {
   const quickLinks = [
     { href: "/courses", label: "All Courses" },
     { href: "/portfolio-builder", label: "Portfolio Builder" },
+    { href: "/design-challenge", label: "Design Challenge" },
+    { href: "/opportunities", label: "Opportunities Board" },
     { href: "/about", label: "About Us" },
     { href: "/gallery", label: "Student Gallery" },
     { href: "/blog", label: "Blog & Tips" },
@@ -36,6 +38,9 @@ export default async function Footer() {
     { href: "/auth/login", label: "Student Login" },
     { href: "/auth/register", label: "Create Account" },
     { href: "/lms", label: "My Dashboard" },
+    { href: "/lms/leaderboard", label: "Leaderboard" },
+    { href: "/tool-setup-guides", label: "Tool Setup Guides" },
+    { href: "/corporate-training", label: "Group Training" },
     { href: "/install", label: "Install App" },
   ];
 

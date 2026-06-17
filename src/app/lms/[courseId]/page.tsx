@@ -259,6 +259,9 @@ export default function CoursePlayer() {
               Certificate
             </a>
           )}
+          <Link href="/lms/leaderboard" className="rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-gray-300 transition hover:border-primary-light hover:text-primary-light">
+            Leaders
+          </Link>
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-sm font-bold text-gray-400 hover:text-white transition-colors">
             {sidebarOpen ? "Hide" : "Show"} lessons
           </button>

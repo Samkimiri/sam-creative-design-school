@@ -40,6 +40,7 @@ export default function Navbar() {
     { href: "/courses", label: "Courses" },
     { href: "/about", label: "About" },
     { href: "/gallery", label: "Gallery" },
+    { href: "/opportunities", label: "Opportunities" },
     { href: "/reviews", label: "Reviews" },
     { href: "/blog", label: "Blog" },
     { href: "/resources", label: "Resources" },

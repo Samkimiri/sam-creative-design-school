@@ -142,6 +142,12 @@ export default async function LMSDashboard() {
                     View Profile
                   </Link>
                 )}
+                <Link
+                  href="/lms/leaderboard"
+                  className="rounded-xl border border-white/20 px-5 py-3 text-center font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light sm:px-6"
+                >
+                  View Leaderboard
+                </Link>
               </div>
             </div>
 
