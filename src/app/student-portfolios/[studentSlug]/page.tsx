@@ -115,22 +115,33 @@ export default async function StudentPortfolioPage({ params }: StudentPortfolioP
               <h2 className="mt-2 text-3xl font-black text-dark">Portfolio work</h2>
             </div>
             <div className="grid gap-5 md:grid-cols-2">
-              {profileProjects.map((project) => (
-                <article key={project.id} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                  <div className="h-56 overflow-hidden bg-primary/10">
-                    {project.imageUrl ? (
-                      <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="grid h-full place-items-center text-6xl font-black text-primary">{project.courseName.slice(0, 1)}</div>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <p className="text-xs font-black uppercase tracking-widest text-primary">{project.courseName}</p>
-                    <h3 className="mt-2 text-xl font-extrabold text-dark">{project.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-gray-500">{project.description}</p>
-                  </div>
-                </article>
-              ))}
+              {profileProjects.map((project) => {
+                const projectHref = `/gallery/${project.id}`;
+
+                return (
+                  <article key={project.id} className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+                    <Link href={projectHref} className="block h-56 overflow-hidden bg-primary/10" aria-label={`View ${project.title}`}>
+                      {project.imageUrl ? (
+                        <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" />
+                      ) : (
+                        <div className="grid h-full place-items-center text-6xl font-black text-primary transition-transform duration-300 motion-safe:group-hover:scale-110">{project.courseName.slice(0, 1)}</div>
+                      )}
+                    </Link>
+                    <div className="p-5">
+                      <p className="text-xs font-black uppercase tracking-widest text-primary">{project.courseName}</p>
+                      <h3 className="mt-2 text-xl font-extrabold text-dark">
+                        <Link href={projectHref} className="transition-colors hover:text-primary">
+                          {project.title}
+                        </Link>
+                      </h3>
+                      <p className="mt-3 text-sm leading-6 text-gray-500">{project.description}</p>
+                      <Link href={projectHref} className="mt-4 inline-flex rounded-full bg-light-gray px-4 py-2 text-xs font-black uppercase tracking-widest text-primary transition hover:bg-primary hover:text-white">
+                        View project
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -138,4 +149,3 @@ export default async function StudentPortfolioPage({ params }: StudentPortfolioP
     </main>
   );
 }
-

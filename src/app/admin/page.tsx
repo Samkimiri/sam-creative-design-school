@@ -1232,6 +1232,11 @@ export default function AdminDashboard() {
                         {project.status}
                       </span>
                     </p>
+                    {project.status === "approved" && (
+                      <Link href={`/gallery/${project.id}`} className="mt-3 inline-flex text-xs font-black uppercase tracking-widest text-primary hover:underline">
+                        View public page
+                      </Link>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2 md:flex-col">
                     <button disabled={pendingAction === `project-${project.id}`} onClick={() => setProjectStatus(project.id, "approved")} className={`rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50 ${adminActionMotion}`}>{pendingAction === `project-${project.id}` ? "Saving..." : "Approve"}</button>

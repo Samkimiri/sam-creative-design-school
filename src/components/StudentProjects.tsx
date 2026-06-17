@@ -86,28 +86,36 @@ export default function StudentProjects() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {approvedProjects.map((project) => (
-            <article key={project.id} className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-lg motion-safe:hover:-translate-y-1">
-              <div className="h-48 bg-primary/10 overflow-hidden">
-                {project.imageUrl ? (
-                  <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-5xl font-black text-primary transition-transform duration-300 motion-safe:group-hover:scale-110">{project.courseName.slice(0, 1)}</div>
-                )}
-              </div>
-              <div className="p-5">
-                <p className="mb-2 text-xs font-black uppercase tracking-widest text-primary">{project.courseName}</p>
-                <h3 className="font-extrabold text-dark">{project.title}</h3>
-                <Link href={`/student-portfolios/${slugifyName(project.studentName)}`} className="mt-1 inline-flex text-xs font-bold text-primary hover:underline">
-                  by {project.studentName}
+          {approvedProjects.map((project) => {
+            const projectHref = `/gallery/${project.id}`;
+
+            return (
+              <article key={project.id} className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-lg motion-safe:hover:-translate-y-1">
+                <Link href={projectHref} className="block h-48 bg-primary/10 overflow-hidden" aria-label={`View ${project.title}`}>
+                  {project.imageUrl ? (
+                    <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-5xl font-black text-primary transition-transform duration-300 motion-safe:group-hover:scale-110">{project.courseName.slice(0, 1)}</div>
+                  )}
                 </Link>
-                <p className="mt-3 text-sm leading-6 text-gray-500">{project.description}</p>
-                <Link href={`/gallery/${project.id}`} className="mt-4 inline-flex rounded-full bg-light-gray px-4 py-2 text-xs font-black uppercase tracking-widest text-primary transition hover:bg-primary hover:text-white">
-                  View project
-                </Link>
-              </div>
-            </article>
-          ))}
+                <div className="p-5">
+                  <p className="mb-2 text-xs font-black uppercase tracking-widest text-primary">{project.courseName}</p>
+                  <h3 className="font-extrabold text-dark">
+                    <Link href={projectHref} className="transition-colors hover:text-primary">
+                      {project.title}
+                    </Link>
+                  </h3>
+                  <Link href={`/student-portfolios/${slugifyName(project.studentName)}`} className="mt-1 inline-flex text-xs font-bold text-primary hover:underline">
+                    by {project.studentName}
+                  </Link>
+                  <p className="mt-3 text-sm leading-6 text-gray-500">{project.description}</p>
+                  <Link href={projectHref} className="mt-4 inline-flex rounded-full bg-light-gray px-4 py-2 text-xs font-black uppercase tracking-widest text-primary transition hover:bg-primary hover:text-white">
+                    View project
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
         </div>
 
         <form onSubmit={submitProject} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg">

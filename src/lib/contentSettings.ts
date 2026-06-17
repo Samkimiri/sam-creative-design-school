@@ -37,7 +37,7 @@ export const defaultFAQs: FAQSection[] = [
       },
       {
         q: "Can I get a refund?",
-        a: "Contact support within 48 hours of enrollment if you need help with a payment or course access issue.",
+        a: "Refund requests must be submitted to SCDS support within 48 hours of enrollment and before the student has substantially accessed course lessons, downloads, live class placement, or mentorship support. Course fees are generally non-refundable once access to paid learning materials or services has been provided. A refund may be considered where there is a duplicate payment, an incorrect payment amount, or a verified access issue that SCDS is unable to resolve within a reasonable time. Approved refunds are returned to the original payer where possible and may exclude M-Pesa, bank, or payment processing charges. Each request is reviewed fairly, in good faith, and subject to applicable consumer protection laws.",
       },
     ],
   },
