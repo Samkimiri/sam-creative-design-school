@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Brain,
   CheckCircle2,
@@ -23,6 +23,12 @@ const reflexColors = [
 const designWords = ["poster", "vector", "layers", "motion", "caption", "export", "mockup", "sketch"];
 const sequenceItems = ["PS", "UX", "AI", "3D", "JS", "VE"];
 const layoutBlocks = ["Header", "Hero", "CTA", "Gallery", "Footer"];
+const sudokuPuzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
+const sudokuSolution = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+const snakeBoardSize = 12;
+
+type Direction = "up" | "down" | "left" | "right";
+type SnakePoint = { x: number; y: number };
 
 function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
@@ -31,6 +37,25 @@ function shuffle<T>(items: T[]) {
 function scramble(word: string) {
   const shuffled = shuffle(word.split("")).join("");
   return shuffled === word ? word.split("").reverse().join("") : shuffled;
+}
+
+function randomFood(snake: SnakePoint[]) {
+  const openCells: SnakePoint[] = [];
+
+  for (let y = 0; y < snakeBoardSize; y += 1) {
+    for (let x = 0; x < snakeBoardSize; x += 1) {
+      if (!snake.some((part) => part.x === x && part.y === y)) openCells.push({ x, y });
+    }
+  }
+
+  return openCells[Math.floor(Math.random() * openCells.length)] || { x: 8, y: 6 };
+}
+
+function nextSnakeHead(head: SnakePoint, direction: Direction) {
+  if (direction === "up") return { x: head.x, y: head.y - 1 };
+  if (direction === "down") return { x: head.x, y: head.y + 1 };
+  if (direction === "left") return { x: head.x - 1, y: head.y };
+  return { x: head.x + 1, y: head.y };
 }
 
 export default function StudyBreakGames() {
@@ -51,8 +76,64 @@ export default function StudyBreakGames() {
   const [layoutPlaced, setLayoutPlaced] = useState<string[]>([]);
   const [layoutScore, setLayoutScore] = useState(0);
   const [layoutMessage, setLayoutMessage] = useState("Build the landing page from top to bottom.");
+  const [sudokuCells, setSudokuCells] = useState(() => sudokuPuzzle.split(""));
+  const [sudokuMessage, setSudokuMessage] = useState("Fill the missing numbers without breaking the grid.");
+  const [sudokuScore, setSudokuScore] = useState(0);
+  const [snake, setSnake] = useState<SnakePoint[]>([
+    { x: 5, y: 6 },
+    { x: 4, y: 6 },
+    { x: 3, y: 6 },
+  ]);
+  const [snakeFood, setSnakeFood] = useState<SnakePoint>({ x: 8, y: 6 });
+  const [snakeDirection, setSnakeDirection] = useState<Direction>("right");
+  const [snakeRunning, setSnakeRunning] = useState(false);
+  const [snakeScore, setSnakeScore] = useState(0);
+  const [snakeMessage, setSnakeMessage] = useState("Press start, then guide the learner line to collect focus dots.");
 
   const scrambledWord = useMemo(() => scramble(designWords[wordIndex]), [wordIndex]);
+
+  useEffect(() => {
+    if (!snakeRunning) return;
+
+    const interval = window.setInterval(() => {
+      setSnake((currentSnake) => {
+        const head = nextSnakeHead(currentSnake[0], snakeDirection);
+        const hitWall = head.x < 0 || head.x >= snakeBoardSize || head.y < 0 || head.y >= snakeBoardSize;
+        const hitSelf = currentSnake.some((part) => part.x === head.x && part.y === head.y);
+
+        if (hitWall || hitSelf) {
+          setSnakeRunning(false);
+          setSnakeMessage("Nice run. Reset and try for a longer focus streak.");
+          return currentSnake;
+        }
+
+        const ateFood = head.x === snakeFood.x && head.y === snakeFood.y;
+        const nextSnake = ateFood ? [head, ...currentSnake] : [head, ...currentSnake.slice(0, -1)];
+
+        if (ateFood) {
+          setSnakeScore((score) => score + 1);
+          setSnakeFood(randomFood(nextSnake));
+          setSnakeMessage("Focus dot collected. Keep the rhythm.");
+        }
+
+        return nextSnake;
+      });
+    }, 180);
+
+    return () => window.clearInterval(interval);
+  }, [snakeDirection, snakeFood.x, snakeFood.y, snakeRunning]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowUp") changeSnakeDirection("up");
+      if (event.key === "ArrowDown") changeSnakeDirection("down");
+      if (event.key === "ArrowLeft") changeSnakeDirection("left");
+      if (event.key === "ArrowRight") changeSnakeDirection("right");
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const pickCard = (index: number) => {
     if (selectedCards.includes(index) || matchedCards.includes(index) || selectedCards.length === 2) return;
@@ -138,6 +219,59 @@ export default function StudyBreakGames() {
         setLayoutMessage("Almost. Reset and arrange the flow like a real homepage.");
       }
     }
+  };
+
+  const setSudokuValue = (index: number, value: string) => {
+    if (sudokuPuzzle[index] !== "0") return;
+
+    const nextValue = value.replace(/\D/g, "").slice(-1);
+    setSudokuCells((cells) => cells.map((cell, cellIndex) => cellIndex === index ? nextValue || "0" : cell));
+    setSudokuMessage("Keep going. Check the grid when every box is filled.");
+  };
+
+  const checkSudoku = () => {
+    const answer = sudokuCells.join("");
+    if (answer.includes("0")) {
+      setSudokuMessage("There are still empty boxes. Fill them before checking.");
+      return;
+    }
+
+    if (answer === sudokuSolution) {
+      setSudokuScore((score) => score + 1);
+      setSudokuMessage("Excellent logic. Puzzle solved cleanly.");
+    } else {
+      setSudokuMessage("Something is off. Review each row, column, and 3x3 box.");
+    }
+  };
+
+  const resetSudoku = () => {
+    setSudokuCells(sudokuPuzzle.split(""));
+    setSudokuMessage("Fill the missing numbers without breaking the grid.");
+  };
+
+  const resetSnake = () => {
+    const initialSnake = [
+      { x: 5, y: 6 },
+      { x: 4, y: 6 },
+      { x: 3, y: 6 },
+    ];
+    setSnake(initialSnake);
+    setSnakeFood(randomFood(initialSnake));
+    setSnakeDirection("right");
+    setSnakeRunning(false);
+    setSnakeScore(0);
+    setSnakeMessage("Press start, then guide the learner line to collect focus dots.");
+  };
+
+  const changeSnakeDirection = (direction: Direction) => {
+    const opposite: Record<Direction, Direction> = {
+      up: "down",
+      down: "up",
+      left: "right",
+      right: "left",
+    };
+
+    setSnakeDirection((current) => opposite[current] === direction ? current : direction);
   };
 
   return (
@@ -328,6 +462,119 @@ export default function StudyBreakGames() {
         </div>
         <p className="mt-4 text-sm font-bold text-gray-500">{layoutMessage}</p>
         <p className="mt-1 text-sm font-bold text-gray-500">Score: {layoutScore}</p>
+      </section>
+
+      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+              <Brain className="h-4 w-4" aria-hidden="true" />
+              Sudoku Focus
+            </p>
+            <h2 className="text-xl font-extrabold text-dark">Solve the 9x9 logic grid</h2>
+          </div>
+          <button
+            type="button"
+            onClick={resetSudoku}
+            className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
+            aria-label="Reset sudoku game"
+          >
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="grid grid-cols-9 overflow-hidden rounded-2xl border-2 border-dark bg-dark">
+          {sudokuCells.map((cell, index) => {
+            const row = Math.floor(index / 9);
+            const col = index % 9;
+            const fixed = sudokuPuzzle[index] !== "0";
+            const borderClasses = [
+              col === 2 || col === 5 ? "border-r-2 border-r-dark" : "border-r border-r-gray-200",
+              row === 2 || row === 5 ? "border-b-2 border-b-dark" : "border-b border-b-gray-200",
+            ].join(" ");
+
+            return (
+              <input
+                key={`sudoku-${index}`}
+                value={cell === "0" ? "" : cell}
+                onChange={(event) => setSudokuValue(index, event.target.value)}
+                disabled={fixed}
+                inputMode="numeric"
+                aria-label={`Sudoku row ${row + 1} column ${col + 1}`}
+                className={`aspect-square min-w-0 bg-white text-center text-sm font-black outline-none transition focus:bg-primary/10 sm:text-base ${fixed ? "text-dark" : "text-primary"} ${borderClasses}`}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={checkSudoku}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-primary"
+          >
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            Check Puzzle
+          </button>
+        </div>
+        <p className="mt-4 text-sm font-bold text-gray-500">{sudokuMessage}</p>
+        <p className="mt-1 text-sm font-bold text-gray-500">Solved: {sudokuScore}</p>
+      </section>
+
+      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+              <Gamepad2 className="h-4 w-4" aria-hidden="true" />
+              Modern Snake
+            </p>
+            <h2 className="text-xl font-extrabold text-dark">Collect focus dots</h2>
+          </div>
+          <button
+            type="button"
+            onClick={resetSnake}
+            className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
+            aria-label="Reset snake game"
+          >
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="grid aspect-square grid-cols-12 gap-1 rounded-2xl bg-dark p-3 shadow-inner">
+          {Array.from({ length: snakeBoardSize * snakeBoardSize }).map((_, index) => {
+            const x = index % snakeBoardSize;
+            const y = Math.floor(index / snakeBoardSize);
+            const snakeIndex = snake.findIndex((part) => part.x === x && part.y === y);
+            const isFood = snakeFood.x === x && snakeFood.y === y;
+
+            return (
+              <div
+                key={`snake-${index}`}
+                className={`aspect-square rounded-md transition ${
+                  snakeIndex === 0
+                    ? "bg-primary shadow-lg shadow-primary/50"
+                    : snakeIndex > -1
+                    ? "bg-sky-300"
+                    : isFood
+                    ? "bg-yellow-400 shadow-lg shadow-yellow-400/40"
+                    : "bg-white/10"
+                }`}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <span />
+          <button type="button" onClick={() => changeSnakeDirection("up")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Up</button>
+          <span />
+          <button type="button" onClick={() => changeSnakeDirection("left")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Left</button>
+          <button type="button" onClick={() => setSnakeRunning((running) => !running)} className="rounded-xl bg-primary px-4 py-3 text-sm font-black text-white transition hover:bg-primary/90">
+            {snakeRunning ? "Pause" : "Start"}
+          </button>
+          <button type="button" onClick={() => changeSnakeDirection("right")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Right</button>
+          <span />
+          <button type="button" onClick={() => changeSnakeDirection("down")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Down</button>
+          <span />
+        </div>
+        <p className="mt-4 text-sm font-bold text-gray-500">{snakeMessage}</p>
+        <p className="mt-1 text-sm font-bold text-gray-500">Score: {snakeScore}</p>
       </section>
 
       <section className="rounded-2xl border border-primary/20 bg-primary/10 p-5 lg:col-span-3">

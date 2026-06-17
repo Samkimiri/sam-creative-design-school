@@ -6,7 +6,7 @@ import StudyBreakGames from "@/components/StudyBreakGames";
 export const metadata: Metadata = {
   title: "Study Break Games",
   description:
-    "Short offline-friendly games for Sam Creative Design School students to refresh before continuing class.",
+    "Short offline-friendly games including Sudoku, Snake, memory, and creative puzzles for Sam Creative Design School students.",
 };
 
 export default function GamesPage() {
@@ -22,7 +22,7 @@ export default function GamesPage() {
             Quick games to refresh your mind before continuing class.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-white/70">
-            Use these when you are tired, offline, or need a short reset. They are light, fast, and built into the SCDS app.
+            Use Sudoku, Snake, memory, and creative puzzles when you are tired, offline, or need a short reset. They are light, fast, and built into the SCDS app.
           </p>
           <Link
             href="/lms"

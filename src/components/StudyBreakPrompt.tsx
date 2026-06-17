@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Gamepad2, X } from "lucide-react";
 
-const ONE_HOUR_MS = 60 * 60 * 1000;
+const STUDY_BREAK_INTERVAL_MS = 30 * 60 * 1000;
 const DISMISS_KEY = "scds-study-break-dismissed-at";
 
 export default function StudyBreakPrompt() {
@@ -14,13 +14,13 @@ export default function StudyBreakPrompt() {
 
   useEffect(() => {
     const dismissedAt = Number(window.localStorage.getItem(DISMISS_KEY) || 0);
-    if (Date.now() - dismissedAt < ONE_HOUR_MS) return;
+    if (Date.now() - dismissedAt < STUDY_BREAK_INTERVAL_MS) return;
 
     const tick = () => {
       const now = Date.now();
       if (document.visibilityState === "visible") {
         if (lastTickRef.current) activeTimeRef.current += now - lastTickRef.current;
-        if (activeTimeRef.current >= ONE_HOUR_MS) {
+        if (activeTimeRef.current >= STUDY_BREAK_INTERVAL_MS) {
           setShowPrompt(true);
         }
       }
