@@ -7,19 +7,25 @@ import { getContentSettings, getManagedCourses } from "@/lib/contentSettings";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 import {
   ArrowRight,
+  Award,
   BadgeCheck,
   BookOpen,
+  Briefcase,
   CalendarDays,
   Clock,
   ClipboardCheck,
   CreditCard,
+  FolderCheck,
   GraduationCap,
+  Hammer,
   HelpCircle,
   Image as ImageIcon,
+  Laptop,
   MessageCircle,
   PlayCircle,
   UsersRound,
   UserRound,
+  Wallet,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -64,6 +70,16 @@ export default async function Home() {
     { tier: "Portfolio", range: "Client-ready samples", note: "Package your best designs, videos, or CAD models for sharing." },
     { tier: "Freelance", range: "Small paid jobs", note: "Use posters, logos, reels, edits, and drawings to approach first clients." },
     { tier: "Professional", range: "Job and business growth", note: "Keep improving your workflow, speed, communication, and delivery." },
+  ];
+  const whyChooseItems = [
+    { title: "Practical Training", desc: "Learn by building real projects: posters, logos, videos, and 3D parts, not just theory.", Icon: Hammer },
+    { title: "Portfolio Projects", desc: "Every course produces portfolio-ready work you can show clients from day one.", Icon: FolderCheck },
+    { title: "Affordable Fees", desc: "Courses start at just Ksh 1,000. Premium education shouldn't cost a fortune.", Icon: Wallet },
+    { title: "Personal Mentorship", desc: "Get direct feedback from Samuel Kimiri via WhatsApp throughout your training.", Icon: MessageCircle },
+    { title: "LMS Access", desc: "Learn anytime on our online portal. Rewatch lessons, take quizzes, track your progress.", Icon: Laptop },
+    { title: "Certificates", desc: "Earn a verified certificate on completion and add it to your CV and LinkedIn.", Icon: Award },
+    { title: "Small Batches", desc: "We keep classes small to ensure every student gets individual attention.", Icon: UsersRound },
+    { title: "Career Support", desc: "Tips on freelancing, job applications, and building your client base after graduation.", Icon: Briefcase },
   ];
 
   return (
@@ -366,18 +382,16 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { title: "Practical Training", desc: "Learn by building real projects: posters, logos, videos, and 3D parts, not just theory." },
-              { title: "Portfolio Projects", desc: "Every course produces portfolio-ready work you can show clients from day one." },
-              { title: "Affordable Fees", desc: "Courses start at just Ksh 1,000. Premium education shouldn't cost a fortune." },
-              { title: "Personal Mentorship", desc: "Get direct feedback from Samuel Kimiri via WhatsApp throughout your training." },
-              { title: "LMS Access", desc: "Learn anytime on our online portal. Rewatch lessons, take quizzes, track your progress." },
-              { title: "Certificates", desc: "Earn a verified certificate on completion and add it to your CV and LinkedIn." },
-              { title: "Small Batches", desc: "We keep classes small to ensure every student gets individual attention." },
-              { title: "Career Support", desc: "Tips on freelancing, job applications, and building your client base after graduation." },
-            ].map((item, i) => (
-              <div key={i} className="group rounded-2xl border border-gray-100 bg-light-gray p-7 transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:bg-white hover:shadow-md">
-                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-sm font-black text-primary shadow-sm transition-transform duration-300 motion-safe:group-hover:scale-105">{String(i + 1).padStart(2, "0")}</div>
+            {whyChooseItems.map(({ Icon, ...item }, i) => (
+              <div key={item.title} className="group rounded-2xl border border-gray-100 bg-light-gray p-7 transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:bg-white hover:shadow-md">
+                <div className="mb-6 flex items-center justify-between gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-primary shadow-sm ring-1 ring-primary/10 transition-transform duration-300 motion-safe:group-hover:scale-105">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-primary shadow-sm ring-1 ring-primary/10">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                </div>
                 <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{item.desc}</p>
               </div>
