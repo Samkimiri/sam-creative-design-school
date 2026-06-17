@@ -1,29 +1,33 @@
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, MailCheck } from "lucide-react";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [resetUrl, setResetUrl] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (status === "loading") return;
 
     setStatus("loading");
     setMessage("");
-    
+    setResetUrl("");
+
     try {
-      const res = await fetch("/api/auth/reset-password", {
+      const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data = await res.json();
+      const data = await response.json();
       setStatus(data.success ? "success" : "error");
       setMessage(data.message || "Could not send reset instructions.");
+      setResetUrl(data.resetUrl || "");
     } catch {
       setStatus("error");
       setMessage("Could not send reset instructions. Please try again.");
@@ -31,60 +35,66 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-dark flex flex-col items-center justify-center px-6 py-20 relative overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-dark px-6 py-20">
+      <div className="absolute right-[-10%] top-[-10%] h-[40%] w-[40%] rounded-full bg-primary/20 blur-[120px]" />
+      <div className="absolute bottom-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full bg-blue-500/10 blur-[120px]" />
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="animate-fade-in text-center mb-10">
-          <Link href="/" className="inline-flex flex-col items-center gap-3 group">
-            <div className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg group-hover:scale-105 transition-transform duration-300">
-              <img src="/images/scds-monogram.svg" alt="Sam Creative" className="w-full h-full object-contain rounded-xl" />
+      <div className="relative z-10 w-full max-w-md">
+        <div className="mb-10 text-center animate-fade-in">
+          <Link href="/" className="inline-flex flex-col items-center gap-3 transition hover:opacity-90">
+            <div className="h-16 w-16 rounded-2xl bg-white p-1 shadow-lg transition-transform duration-300 hover:scale-105">
+              <img src="/images/scds-monogram.svg" alt="Sam Creative" className="h-full w-full rounded-xl object-contain" />
             </div>
-            <span className="text-white font-extrabold text-2xl tracking-tight">Sam Creative <span className="text-primary">Graphics</span></span>
+            <span className="text-2xl font-extrabold tracking-tight text-white">Sam Creative <span className="text-primary">Graphics</span></span>
           </Link>
-          <h1 className="text-3xl font-extrabold text-white mt-8 mb-2">Reset Password</h1>
-          <p className="text-gray-400">Enter your email to receive a reset link</p>
+          <h1 className="mb-2 mt-8 text-3xl font-extrabold text-white">Reset Password</h1>
+          <p className="text-gray-400">Enter your email and we will send a secure reset link</p>
         </div>
 
-        <div className="animate-fade-in bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 transition duration-300 hover:border-white/20 hover:bg-white/[0.07]" style={{ animationDelay: "120ms" }}>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md transition duration-300 hover:border-white/20 hover:bg-white/[0.07] animate-fade-in">
           {status === "success" ? (
-            <div className="animate-fade-in text-center py-6">
-              <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center text-2xl mx-auto mb-6 animate-pulse">📧</div>
-              <h3 className="text-xl font-bold text-white mb-2">Check Your Email</h3>
-              <p className="text-gray-400 mb-8">
+            <div className="py-6 text-center animate-fade-in">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 text-green-400">
+                <MailCheck className="h-8 w-8" aria-hidden="true" />
+              </div>
+              <h3 className="mb-2 text-xl font-bold text-white">Check Your Email</h3>
+              <p className="mb-8 text-gray-400">
                 {message || "If this email is registered, password reset instructions will be sent."}
               </p>
-              <Link href="/auth/login" className="block w-full bg-primary text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary/90 transition-all duration-300 active:translate-y-0">
+              {resetUrl && (
+                <Link href={resetUrl} className="mb-4 block w-full rounded-xl border border-primary/40 bg-primary/10 py-4 font-bold text-primary-light transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/20">
+                  Open Local Reset Link
+                </Link>
+              )}
+              <Link href="/auth/login" className="block w-full rounded-xl bg-primary py-4 font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0">
                 Back to Login
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               {status === "error" && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-300 px-4 py-3 rounded-xl text-sm font-medium" role="alert">
+                <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-300" role="alert">
                   {message}
                 </div>
               )}
               <div>
-                <label htmlFor="reset-email" className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">Email Address</label>
+                <label htmlFor="reset-email" className="mb-2 block text-sm font-bold uppercase tracking-wider text-gray-400">Email Address</label>
                 <input
                   id="reset-email"
                   type="email"
                   required
                   autoComplete="email"
                   placeholder="name@example.com"
-                  className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-4 outline-none focus:border-primary transition-all duration-300 focus:-translate-y-0.5 focus:shadow-lg focus:shadow-primary/10 placeholder:text-gray-600"
+                  className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-4 text-white outline-none transition-all duration-300 placeholder:text-gray-600 focus:-translate-y-0.5 focus:border-primary focus:shadow-lg focus:shadow-primary/10"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(event) => setEmail(event.target.value)}
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={status === "loading"}
-                className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:hover:translate-y-0 active:translate-y-0"
+                className="w-full rounded-xl bg-primary py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 disabled:opacity-50 disabled:hover:translate-y-0 active:translate-y-0"
               >
                 {status === "loading" ? (
                   <span className="flex items-center justify-center gap-2">
@@ -94,8 +104,8 @@ export default function ForgotPassword() {
                 ) : "Send Reset Link"}
               </button>
 
-              <div className="text-center pt-4">
-                <Link href="/auth/login" className="text-gray-500 hover:text-white transition-colors text-sm font-bold">
+              <div className="pt-4 text-center">
+                <Link href="/auth/login" className="text-sm font-bold text-gray-500 transition-colors hover:text-white">
                   Remember your password? <span className="text-primary">Sign In</span>
                 </Link>
               </div>

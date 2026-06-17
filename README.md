@@ -75,6 +75,19 @@ The service role key must stay server-only. Do not expose it with a `NEXT_PUBLIC
 
 When these variables are present, `src/lib/db.ts` reads and writes app collections through Supabase. If Supabase is not configured or a read fails, the app falls back to MongoDB and then local JSON files.
 
+## Password Reset Email Setup
+
+Forgot password is handled from the site. A student enters their email, the app creates a one-time reset link, and the link is emailed automatically when Resend is configured.
+
+Add these server-side variables locally and in Vercel:
+
+```env
+RESEND_API_KEY=your_resend_api_key
+SCDS_EMAIL_FROM="Sam Creative Design School <support@your-domain.com>"
+```
+
+Use a verified Resend sender/domain in production. Reset links expire after 30 minutes and can only be used once.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

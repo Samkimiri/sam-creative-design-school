@@ -25,6 +25,7 @@ const HIGH_WRITE_FILES = new Set([
   "analytics-sessions.json",
   "enrollments.json",
   "messages.json",
+  "password-resets.json",
   "site-settings.json",
 ]);
 const legacyLookupTimeoutMs = Number(process.env.SCDS_LEGACY_DB_TIMEOUT_MS || 1800);
