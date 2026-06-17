@@ -36,6 +36,7 @@ export default async function Footer() {
     { href: "/auth/login", label: "Student Login" },
     { href: "/auth/register", label: "Create Account" },
     { href: "/lms", label: "My Dashboard" },
+    { href: "/install", label: "Install App" },
   ];
 
   return (

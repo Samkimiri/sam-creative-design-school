@@ -14,6 +14,7 @@ const routes = [
   "/faq",
   "/gallery",
   "/games",
+  "/install",
   "/portfolio-builder",
   "/resources",
   "/reviews",
