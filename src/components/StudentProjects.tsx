@@ -102,6 +102,9 @@ export default function StudentProjects() {
                   by {project.studentName}
                 </Link>
                 <p className="mt-3 text-sm leading-6 text-gray-500">{project.description}</p>
+                <Link href={`/gallery/${project.id}`} className="mt-4 inline-flex rounded-full bg-light-gray px-4 py-2 text-xs font-black uppercase tracking-widest text-primary transition hover:bg-primary hover:text-white">
+                  View project
+                </Link>
               </div>
             </article>
           ))}
