@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 import { getSession } from "@/lib/auth";
 import { getDB } from "@/lib/db";
 import { courses, lessons } from "@/data/courses";
 import type { ProgressRecord, Student } from "@/types";
 
 export const runtime = "nodejs";
+const schoolLogoPath = path.join(process.cwd(), "public", "images", "logo.jpg");
 
 function cleanText(value: string): string {
   return value
@@ -86,6 +89,48 @@ function circlePath(cx: number, cy: number, r: number): string {
   ].join(" ");
 }
 
+type JpegImage = {
+  data: Buffer;
+  height: number;
+  width: number;
+};
+
+function readJpegImage(filePath: string): JpegImage | null {
+  try {
+    const data = fs.readFileSync(filePath);
+    let index = 2;
+
+    while (index < data.length) {
+      if (data[index] !== 0xff) {
+        index += 1;
+        continue;
+      }
+
+      const marker = data[index + 1];
+      const length = data.readUInt16BE(index + 2);
+      const isStartOfFrame =
+        (marker >= 0xc0 && marker <= 0xc3) ||
+        (marker >= 0xc5 && marker <= 0xc7) ||
+        (marker >= 0xc9 && marker <= 0xcb) ||
+        (marker >= 0xcd && marker <= 0xcf);
+
+      if (isStartOfFrame) {
+        return {
+          data,
+          height: data.readUInt16BE(index + 5),
+          width: data.readUInt16BE(index + 7),
+        };
+      }
+
+      index += 2 + length;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 function buildCompletionCertificatePdf(studentName: string, courseTitle: string, certificateId: string): Buffer {
   const issuedOn = new Intl.DateTimeFormat("en-KE", {
     dateStyle: "long",
@@ -118,6 +163,28 @@ function buildCompletionCertificatePdf(studentName: string, courseTitle: string,
       return `0.92 0.94 0.96 rg ${x} ${y} m ${x + 4} ${y + 4} l ${x} ${y + 8} l ${x - 4} ${y + 4} l f`;
     }).join("\n")
   ).join("\n");
+  const schoolLogo = readJpegImage(schoolLogoPath);
+  const schoolLogoDraw = schoolLogo
+    ? "q 78 0 0 78 433 515 cm /SchoolLogo Do Q"
+    : [
+        `1 1 1 rg ${circlePath(502, 546, 43)} f`,
+        `0.12 0.60 0.90 RG 2.4 w ${circlePath(502, 546, 37)} S`,
+        "0.12 0.60 0.90 RG 2.4 w 462 546 m 477 576 524 579 544 548 c S",
+        "0.12 0.60 0.90 RG 2.4 w 462 566 m 486 535 519 535 544 566 c S",
+        "0.96 0.38 0.08 RG 2.2 w 475 552 m 492 545 511 555 531 548 c S",
+        "0.98 0.72 0.18 RG 2.2 w 475 558 m 492 551 510 562 531 555 c S",
+        "0.10 0.10 0.10 rg 492 523 20 13 re f",
+        "0.12 0.60 0.90 RG 1.3 w 489 523 m 502 515 516 523 529 515 c S",
+        textLine("Sam Creative Graphics", 504, 552, 9.5, {
+          font: "F2",
+          color: "0.12 0.60 0.90",
+          align: "center",
+        }),
+        textLine("Exceptional  Strategic  Realistic", 504, 541, 3.8, {
+          color: "0.10 0.10 0.10",
+          align: "center",
+        }),
+      ].join("\n");
 
   const content = [
     "0.99 0.995 1 rg 0 0 792 612 re f",
@@ -153,23 +220,7 @@ function buildCompletionCertificatePdf(studentName: string, courseTitle: string,
     "0.20 0.28 0.34 RG 2 w 704 425 m 722 492 l S",
     "0.03 0.05 0.08 rg 656 552 m 738 572 l 762 530 l 676 510 l f",
     "0.86 0.05 0.08 rg 674 553 m 677 515 l 682 511 l 687 517 l 682 554 l f",
-    `1 1 1 rg ${circlePath(502, 546, 43)} f`,
-    `0.12 0.60 0.90 RG 2.4 w ${circlePath(502, 546, 37)} S`,
-    "0.12 0.60 0.90 RG 2.4 w 462 546 m 477 576 524 579 544 548 c S",
-    "0.12 0.60 0.90 RG 2.4 w 462 566 m 486 535 519 535 544 566 c S",
-    "0.96 0.38 0.08 RG 2.2 w 475 552 m 492 545 511 555 531 548 c S",
-    "0.98 0.72 0.18 RG 2.2 w 475 558 m 492 551 510 562 531 555 c S",
-    "0.10 0.10 0.10 rg 492 523 20 13 re f",
-    "0.12 0.60 0.90 RG 1.3 w 489 523 m 502 515 516 523 529 515 c S",
-    textLine("Sam Creative Graphics", 504, 552, 9.5, {
-      font: "F2",
-      color: "0.12 0.60 0.90",
-      align: "center",
-    }),
-    textLine("Exceptional  Strategic  Realistic", 504, 541, 3.8, {
-      color: "0.10 0.10 0.10",
-      align: "center",
-    }),
+    schoolLogoDraw,
     "0.12 0.60 0.90 rg 364 483 216 34 re f",
     "0.08 0.43 0.72 rg 364 483 216 6 re f",
     "0.98 0.72 0.18 rg 382 477 180 3 re f",
@@ -232,14 +283,21 @@ function buildCompletionCertificatePdf(studentName: string, courseTitle: string,
       align: "right",
     }),
   ].join("\n");
+  const schoolLogoObjectNumber = schoolLogo ? 7 : 0;
+  const contentObjectNumber = schoolLogo ? 8 : 7;
+  const schoolLogoResource = schoolLogo ? `/XObject << /SchoolLogo ${schoolLogoObjectNumber} 0 R >>` : "";
+  const schoolLogoObject = schoolLogo
+    ? `<< /Type /XObject /Subtype /Image /Width ${schoolLogo.width} /Height ${schoolLogo.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${schoolLogo.data.length} >>\nstream\n${schoolLogo.data.toString("latin1")}\nendstream`
+    : "";
 
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 7 0 R >>",
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 4 0 R /F2 5 0 R /F3 6 0 R >> ${schoolLogoResource} >> /Contents ${contentObjectNumber} 0 R >>`,
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>",
+    ...(schoolLogo ? [schoolLogoObject] : []),
     `<< /Length ${Buffer.byteLength(content, "latin1")} >>\nstream\n${content}\nendstream`,
   ];
 
