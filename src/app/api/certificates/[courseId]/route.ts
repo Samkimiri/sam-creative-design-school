@@ -7,7 +7,7 @@ import { courses, lessons } from "@/data/courses";
 import type { ProgressRecord, Student } from "@/types";
 
 export const runtime = "nodejs";
-const schoolLogoPath = path.join(process.cwd(), "public", "images", "logo.jpg");
+const schoolLogoPath = path.join(process.cwd(), "public", "images", "scds-logo.jpeg");
 
 function cleanText(value: string): string {
   return value
