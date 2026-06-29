@@ -167,7 +167,7 @@ interface AdminDashboardPayload {
   };
 }
 
-type AdminTab = "analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "discounts" | "settings" | "content";
+type AdminTab = "analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "certificates" | "discounts" | "settings" | "content";
 
 type AdminResponse<T> = {
   success?: boolean;
@@ -179,7 +179,7 @@ type AdminResponse<T> = {
   events?: AnalyticsEvent[];
 };
 
-const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "reviews", "projects", "assignments", "discounts", "settings", "content"];
+const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "reviews", "projects", "assignments", "certificates", "discounts", "settings", "content"];
 const defaultIntakeSettings: UpcomingIntakeSettings = {
   id: "upcoming-intake",
   title: "Join the Next SCDS Class",
@@ -377,6 +377,8 @@ export default function AdminDashboard() {
   const [discountSettings, setDiscountSettings] = useState<DiscountSettings>(defaultDiscountSettings);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [certificateCourseId, setCertificateCourseId] = useState(courses[0]?.id || "");
+  const [certificateStudentName, setCertificateStudentName] = useState("Robert Rangoma");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -839,6 +841,9 @@ export default function AdminDashboard() {
       maxLength: 60,
     },
   ] as const;
+  const certificatePreviewUrl = certificateCourseId
+    ? `/api/certificates/${certificateCourseId}?preview=1&studentName=${encodeURIComponent(certificateStudentName)}`
+    : "";
 
   return (
     <div className="pt-24 pb-24 bg-[#F8F8F8] min-h-screen">
@@ -1330,6 +1335,90 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {tab === "certificates" && (
+          <div className="space-y-6">
+            <section className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h3 className="text-2xl font-extrabold text-dark">Certificate Preview</h3>
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-gray-500">
+                    Preview the exact designed PDF certificate students receive after completing any course. This admin preview does not require lesson completion.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {certificatePreviewUrl && (
+                    <>
+                      <a
+                        href={certificatePreviewUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`rounded-xl bg-dark px-5 py-3 text-sm font-bold text-white ${adminActionMotion}`}
+                      >
+                        Open Full Preview
+                      </a>
+                      <a
+                        href={`${certificatePreviewUrl}&download=1`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`rounded-xl border border-primary/20 bg-primary/10 px-5 py-3 text-sm font-bold text-primary ${adminActionMotion}`}
+                      >
+                        Download Sample PDF
+                      </a>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-[1fr_1fr]">
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-400">
+                  Course
+                  <select
+                    value={certificateCourseId}
+                    onChange={(event) => setCertificateCourseId(event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-dark outline-none focus:border-primary"
+                  >
+                    {courses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-400">
+                  Preview Student Name
+                  <input
+                    value={certificateStudentName}
+                    onChange={(event) => setCertificateStudentName(event.target.value)}
+                    maxLength={60}
+                    className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold text-dark outline-none focus:border-primary"
+                    placeholder="Student name on certificate"
+                  />
+                </label>
+              </div>
+            </section>
+
+            <section className={`overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`}>
+              <div className="flex flex-col gap-2 border-b border-gray-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h4 className="font-extrabold text-dark">Issued Certificate Structure</h4>
+                  <p className="text-xs text-gray-500">Landscape PDF with logo, seal, graphics, course completion copy, signature, certificate ID, and verification URL.</p>
+                </div>
+                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-black uppercase tracking-widest text-green-700">PDF Preview</span>
+              </div>
+              {certificatePreviewUrl ? (
+                <iframe
+                  key={certificatePreviewUrl}
+                  title="Certificate PDF preview"
+                  src={certificatePreviewUrl}
+                  className="h-[560px] w-full bg-gray-50"
+                />
+              ) : (
+                <p className="p-6 text-sm text-gray-400">Select a course to preview its certificate.</p>
+              )}
+            </section>
           </div>
         )}
 

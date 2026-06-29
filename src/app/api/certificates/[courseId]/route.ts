@@ -261,7 +261,7 @@ function buildCompletionCertificatePdf(studentName: string, courseTitle: string,
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   const session = await getSession();
@@ -275,6 +275,10 @@ export async function GET(
     return NextResponse.json({ error: "Course not found" }, { status: 404 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const isAdminPreview = session.user.role === "admin" && searchParams.get("preview") === "1";
+  const shouldDownload = !isAdminPreview || searchParams.get("download") === "1";
+
   const courseLessons = lessons.filter((lesson) => lesson.courseId === courseId);
   const progress = (await getDB<ProgressRecord>("progress.json")).find(
     (record) => record.studentId === session.user.id && record.courseId === courseId
@@ -283,7 +287,7 @@ export async function GET(
   const completedAllLessons =
     courseLessons.length > 0 && courseLessons.every((lesson) => completed.has(lesson.id));
 
-  if (!completedAllLessons) {
+  if (!isAdminPreview && !completedAllLessons) {
     return NextResponse.json(
       { error: "Certificate unlocks after completing all lessons." },
       { status: 403 }
@@ -292,15 +296,20 @@ export async function GET(
 
   const students = await getDB<Student>("students.json");
   const student = students.find((item) => item.id === session.user.id);
-  const studentName = student?.name || session.user.name || "Student";
-  const certificateId = `SCDS-${session.user.id}-${course.id}`;
+  const previewName = cleanText(searchParams.get("studentName") || "").trim().slice(0, 60);
+  const studentName = isAdminPreview
+    ? previewName || "Robert Rangoma"
+    : student?.name || session.user.name || "Student";
+  const certificateId = isAdminPreview
+    ? `SCDS-PREVIEW-${course.id}`
+    : `SCDS-${session.user.id}-${course.id}`;
   const pdf = buildCompletionCertificatePdf(studentName, course.title, certificateId);
   const body = new Uint8Array(pdf).buffer;
 
   return new NextResponse(body, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${course.id}-certificate.pdf"`,
+      "Content-Disposition": `${shouldDownload ? "attachment" : "inline"}; filename="${course.id}-certificate.pdf"`,
       "Cache-Control": "no-store",
     },
   });
