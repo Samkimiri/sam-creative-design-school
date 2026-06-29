@@ -136,6 +136,7 @@ function buildCompletionCertificatePdf(studentName: string, courseTitle: string,
     dateStyle: "long",
     timeZone: "Africa/Nairobi",
   }).format(new Date());
+  const batchLabel = "BATCH 010";
   const verifyUrl = `https://sam-creative-design-school.vercel.app/verify-certificate?id=${certificateId}`;
   const nameSize = cleanText(studentName).length > 24 ? 35 : 43;
   const completionLines = wrapText(
@@ -212,21 +213,29 @@ function buildCompletionCertificatePdf(studentName: string, courseTitle: string,
       color: "1 1 1",
       align: "center",
     }),
-    "0.91 0.96 1 rg 590 454 m 760 454 l 736 418 l 612 418 l f",
-    "0.12 0.60 0.90 rg 600 464 90 8 re f",
-    "0.98 0.72 0.18 rg 610 448 100 8 re f",
-    "0.91 0.20 0.15 rg 620 432 94 8 re f",
-    "0.20 0.28 0.34 RG 2 w 650 426 m 664 493 l S",
-    "0.20 0.28 0.34 RG 2 w 704 425 m 722 492 l S",
-    "0.03 0.05 0.08 rg 656 552 m 738 572 l 762 530 l 676 510 l f",
-    "0.86 0.05 0.08 rg 674 553 m 677 515 l 682 511 l 687 517 l 682 554 l f",
+    "0.96 0.99 1 rg 614 486 112 46 re f",
+    "0.12 0.60 0.90 RG 1.2 w 614 486 112 46 re S",
+    "0.98 0.72 0.18 rg 614 526 112 6 re f",
+    textLine("CERTIFIED", 670, 511, 9, {
+      font: "F2",
+      color: "0.12 0.60 0.90",
+      align: "center",
+    }),
+    textLine("SCDS ACADEMIC OFFICE", 670, 498, 5.8, {
+      color: "0.28 0.32 0.38",
+      align: "center",
+    }),
     schoolLogoDraw,
-    "0.12 0.60 0.90 rg 364 483 216 34 re f",
-    "0.08 0.43 0.72 rg 364 483 216 6 re f",
-    "0.98 0.72 0.18 rg 382 477 180 3 re f",
-    textLine("BATCH 005", 472, 493, 21, {
+    "0.12 0.60 0.90 rg 350 482 244 36 re f",
+    "0.08 0.43 0.72 rg 350 482 244 7 re f",
+    "0.98 0.72 0.18 rg 372 476 200 3 re f",
+    textLine(batchLabel, 472, 496, 22, {
       font: "F2",
       color: "1 1 1",
+      align: "center",
+    }),
+    textLine("CURRENT COHORT", 472, 486, 5.8, {
+      color: "0.93 0.97 1.00",
       align: "center",
     }),
     textLine("SAM CREATIVE DESIGN SCHOOL", 472, 449, 18,
