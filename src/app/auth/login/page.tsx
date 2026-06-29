@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, MessageCircle } from "lucide-react";
@@ -9,11 +9,6 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
-
-  useEffect(() => {
-    router.prefetch("/lms");
-    router.prefetch("/admin");
-  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +23,11 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+        }),
+        cache: "no-store",
         signal: controller.signal,
       });
       
@@ -37,7 +36,9 @@ export default function LoginPage() {
       if (data.success) {
         const nextPath = getSafeNextPath();
         const canOpenAdmin = data.redirectTo === "/admin";
-        router.replace(nextPath.startsWith("/admin") && !canOpenAdmin ? "/lms" : nextPath || data.redirectTo || "/lms");
+        const destination = nextPath.startsWith("/admin") && !canOpenAdmin ? "/lms" : nextPath || data.redirectTo || "/lms";
+        router.replace(destination);
+        router.refresh();
       } else {
         setStatus("error");
         setErrorMsg(data.message || data.error || "Login failed. Please try again.");

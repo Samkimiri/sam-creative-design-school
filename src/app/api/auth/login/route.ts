@@ -69,17 +69,11 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       user: userSession,
-      student: {
-        id: student.id,
-        name: student.name,
-        email: student.email,
-        phone: student.phone || "",
-        role: student.role || "student",
-        profileImage: student.profileImage || student.avatar || "",
-        avatar: student.avatar || student.profileImage || "",
-        interest: student.interest || "",
-      },
       redirectTo: userSession.role === "admin" ? "/admin" : "/lms",
+    }, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
     });
   } catch (error: unknown) {
     console.error("Login API Error:", error);
