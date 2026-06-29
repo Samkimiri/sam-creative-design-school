@@ -5,37 +5,53 @@ interface SendPasswordResetEmailInput {
   expiresInMinutes: number;
 }
 
+type PasswordResetEmailResult =
+  | { sent: true; reason: "sent" }
+  | { sent: false; reason: "missing-provider" | "send-failed" | "timeout" };
+
 export async function sendPasswordResetEmail(input: SendPasswordResetEmailInput) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn("Password reset email skipped: RESEND_API_KEY is not configured.");
-    return { sent: false, reason: "missing-provider" as const };
+    return { sent: false, reason: "missing-provider" } satisfies PasswordResetEmailResult;
   }
 
   const from = process.env.SCDS_EMAIL_FROM || "Sam Creative Design School <onboarding@resend.dev>";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: input.to,
-      subject: "Reset your SCDS password",
-      html: passwordResetHtml(input),
-      text: passwordResetText(input),
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: input.to,
+        subject: "Reset your SCDS password",
+        html: passwordResetHtml(input),
+        text: passwordResetText(input),
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    const reason = error instanceof DOMException && error.name === "AbortError" ? "timeout" : "send-failed";
+    console.error("Password reset email request failed:", reason);
+    return { sent: false, reason } satisfies PasswordResetEmailResult;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     console.error("Password reset email failed:", response.status, body);
-    return { sent: false, reason: "send-failed" as const };
+    return { sent: false, reason: "send-failed" } satisfies PasswordResetEmailResult;
   }
 
-  return { sent: true, reason: "sent" as const };
+  return { sent: true, reason: "sent" } satisfies PasswordResetEmailResult;
 }
 
 function passwordResetText(input: SendPasswordResetEmailInput) {

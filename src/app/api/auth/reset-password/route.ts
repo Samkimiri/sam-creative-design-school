@@ -10,6 +10,13 @@ import type { Student } from "@/types";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const genericMessage = "If this email is registered, password reset instructions will be sent.";
+const emailUnavailableMessage = "Password reset email is not configured yet. Please contact SCDS support for help resetting your password.";
+
+function getResetBaseUrl(request: Request) {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
+  return new URL(request.url).origin;
+}
 
 export async function POST(request: Request) {
   try {
@@ -38,10 +45,9 @@ export async function POST(request: Request) {
         createdAt: now.toISOString(),
         expiresAt: expiresAt.toISOString(),
       };
-      const resetUrl = new URL("/auth/reset-password", request.url);
+      const resetUrl = new URL("/auth/reset-password", getResetBaseUrl(request));
       resetUrl.searchParams.set("token", token);
-
-      await saveDB("password-resets.json", [
+      const nextResets = [
         resetRecord,
         ...existingResets
           .map((record) => record.studentId === student.id && !record.usedAt
@@ -49,7 +55,7 @@ export async function POST(request: Request) {
             : record
           )
           .filter((record) => new Date(record.expiresAt).getTime() > now.getTime() - 24 * 60 * 60 * 1000),
-      ].slice(0, 100));
+      ].slice(0, 100);
 
       const emailResult = await sendPasswordResetEmail({
         to: student.email,
@@ -58,13 +64,28 @@ export async function POST(request: Request) {
         expiresInMinutes: Math.round(passwordResetTokenTtlMs / 60000),
       });
 
-      if (!emailResult.sent && process.env.NODE_ENV !== "production") {
+      if (!emailResult.sent) {
+        if (process.env.NODE_ENV === "production") {
+          return NextResponse.json(
+            {
+              success: false,
+              message: emailResult.reason === "missing-provider"
+                ? emailUnavailableMessage
+                : "Could not send reset instructions right now. Please try again or contact SCDS support.",
+            },
+            { status: 503 }
+          );
+        }
+
+        await saveDB("password-resets.json", nextResets);
         return NextResponse.json({
           success: true,
-          message: genericMessage,
+          message: `${genericMessage} Email delivery is not configured locally, so use the test link below.`,
           resetUrl: resetUrl.toString(),
         });
       }
+
+      await saveDB("password-resets.json", nextResets);
     }
 
     return NextResponse.json({ success: true, message: genericMessage });
