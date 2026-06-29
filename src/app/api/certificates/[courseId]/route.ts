@@ -75,6 +75,17 @@ function wrapText(value: string, maxCharacters: number): string[] {
   return lines;
 }
 
+function circlePath(cx: number, cy: number, r: number): string {
+  const c = 0.5522847498 * r;
+  return [
+    `${cx + r} ${cy} m`,
+    `${cx + r} ${cy + c} ${cx + c} ${cy + r} ${cx} ${cy + r} c`,
+    `${cx - c} ${cy + r} ${cx - r} ${cy + c} ${cx - r} ${cy} c`,
+    `${cx - r} ${cy - c} ${cx - c} ${cy - r} ${cx} ${cy - r} c`,
+    `${cx + c} ${cy - r} ${cx + r} ${cy - c} ${cx + r} ${cy} c`,
+  ].join(" ");
+}
+
 function buildCompletionCertificatePdf(studentName: string, courseTitle: string, certificateId: string): Buffer {
   const issuedOn = new Intl.DateTimeFormat("en-KE", {
     dateStyle: "long",
@@ -109,23 +120,47 @@ function buildCompletionCertificatePdf(studentName: string, courseTitle: string,
   ).join("\n");
 
   const content = [
-    "1 1 1 rg 0 0 792 612 re f",
+    "0.99 0.995 1 rg 0 0 792 612 re f",
     dotPattern,
     leftDiamondPattern,
     rightDiamondPattern,
-    "1 1 1 rg 205 0 m 792 0 l 792 612 l 182 612 l f",
-    "0.12 0.60 0.90 rg 32 0 m 210 0 l 184 612 l 32 612 l f",
-    "0.10 0.55 0.84 rg 184 612 m 210 612 l 178 0 l 154 0 l f",
-    "0.96 0.98 1.00 rg 84 430 m 104 430 l 112 404 l 92 414 l 72 404 l 80 430 l f",
-    "1 1 1 rg 72 440 78 78 re f",
-    "0.12 0.60 0.90 RG 6 w 91 478 m 108 458 l 132 494 l S",
-    "0.12 0.60 0.90 RG 5 w 84 450 56 56 re S",
-    "1 1 1 rg 448 531 112 52 re f",
-    "0.72 0.74 0.76 RG 1.2 w 448 531 112 52 re S",
-    "0.12 0.60 0.90 RG 2 w 456 538 m 472 571 528 572 546 539 c S",
-    "0.12 0.60 0.90 RG 2 w 456 576 m 488 548 521 548 546 576 c S",
-    "0.96 0.38 0.08 RG 2 w 474 557 m 491 551 511 560 531 553 c S",
-    "0.96 0.75 0.12 RG 2 w 475 562 m 492 556 510 566 530 558 c S",
+    "0.12 0.60 0.90 RG 6 w 14 14 764 584 re S",
+    "0.98 0.72 0.18 RG 1.8 w 27 27 738 558 re S",
+    "0.94 0.98 1 rg 210 45 535 500 re f",
+    "1 1 1 rg 226 64 503 462 re f",
+    "0.82 0.90 0.97 RG 1.2 w 226 64 503 462 re S",
+    "0.12 0.60 0.90 rg 28 0 m 215 0 l 184 612 l 28 612 l f",
+    "0.08 0.43 0.72 rg 176 612 m 218 612 l 188 0 l 148 0 l f",
+    "0.72 0.88 0.98 rg 184 612 m 224 612 l 202 174 l 162 154 l f",
+    "0.08 0.43 0.72 rg 28 58 m 206 28 l 215 0 l 28 0 l f",
+    "0.98 0.72 0.18 rg 55 560 105 8 re f",
+    "0.98 0.72 0.18 rg 55 43 105 8 re f",
+    "0.96 0.98 1.00 rg 83 422 m 107 422 l 118 382 l 95 396 l 72 382 l 83 422 l f",
+    `1 1 1 rg ${circlePath(95, 480, 45)} f`,
+    `0.12 0.60 0.90 RG 6 w ${circlePath(95, 480, 35)} S`,
+    `0.93 0.97 1 RG 2 w ${circlePath(95, 480, 44)} S`,
+    "0.12 0.60 0.90 RG 8 w 73 480 m 89 463 l 121 500 l S",
+    textLine("VERIFIED", 95, 436, 10, {
+      font: "F2",
+      color: "1 1 1",
+      align: "center",
+    }),
+    "0.91 0.96 1 rg 590 454 m 760 454 l 736 418 l 612 418 l f",
+    "0.12 0.60 0.90 rg 600 464 90 8 re f",
+    "0.98 0.72 0.18 rg 610 448 100 8 re f",
+    "0.91 0.20 0.15 rg 620 432 94 8 re f",
+    "0.20 0.28 0.34 RG 2 w 650 426 m 664 493 l S",
+    "0.20 0.28 0.34 RG 2 w 704 425 m 722 492 l S",
+    "0.03 0.05 0.08 rg 656 552 m 738 572 l 762 530 l 676 510 l f",
+    "0.86 0.05 0.08 rg 674 553 m 677 515 l 682 511 l 687 517 l 682 554 l f",
+    `1 1 1 rg ${circlePath(502, 546, 43)} f`,
+    `0.12 0.60 0.90 RG 2.4 w ${circlePath(502, 546, 37)} S`,
+    "0.12 0.60 0.90 RG 2.4 w 462 546 m 477 576 524 579 544 548 c S",
+    "0.12 0.60 0.90 RG 2.4 w 462 566 m 486 535 519 535 544 566 c S",
+    "0.96 0.38 0.08 RG 2.2 w 475 552 m 492 545 511 555 531 548 c S",
+    "0.98 0.72 0.18 RG 2.2 w 475 558 m 492 551 510 562 531 555 c S",
+    "0.10 0.10 0.10 rg 492 523 20 13 re f",
+    "0.12 0.60 0.90 RG 1.3 w 489 523 m 502 515 516 523 529 515 c S",
     textLine("Sam Creative Graphics", 504, 552, 9.5, {
       font: "F2",
       color: "0.12 0.60 0.90",
@@ -135,57 +170,57 @@ function buildCompletionCertificatePdf(studentName: string, courseTitle: string,
       color: "0.10 0.10 0.10",
       align: "center",
     }),
-    "0.03 0.05 0.08 rg 698 572 m 774 588 l 782 548 l 704 532 l f",
-    "0.96 0.75 0.12 rg 684 505 78 8 re f",
-    "0.91 0.20 0.15 rg 690 518 78 8 re f",
-    "0.12 0.60 0.90 rg 680 492 78 8 re f",
-    "0.20 0.28 0.34 RG 1.5 w 716 498 m 718 548 l S",
-    "0.20 0.28 0.34 RG 1.5 w 742 502 m 752 545 l S",
-    "0.86 0.05 0.08 rg 707 569 m 709 540 l 713 537 l 716 542 l 712 570 l f",
-    "0.12 0.60 0.90 rg 374 482 198 30 re f",
-    textLine("BATCH 005", 473, 490, 20, {
+    "0.12 0.60 0.90 rg 364 483 216 34 re f",
+    "0.08 0.43 0.72 rg 364 483 216 6 re f",
+    "0.98 0.72 0.18 rg 382 477 180 3 re f",
+    textLine("BATCH 005", 472, 493, 21, {
       font: "F2",
       color: "1 1 1",
       align: "center",
     }),
-    textLine("SAM CREATIVE DESIGN SCHOOL", 473, 446, 17, {
+    textLine("SAM CREATIVE DESIGN SCHOOL", 472, 449, 18,
+    {
       color: "0.00 0.34 1.00",
       align: "center",
     }),
-    textLine("CERTIFICATE OF COMPLETION", 473, 392, 31, {
+    textLine("CERTIFICATE OF COMPLETION", 472, 397, 32, {
       font: "F2",
       color: "0.12 0.60 0.90",
       align: "center",
     }),
-    textLine("This certifies that :", 473, 350, 19, {
+    "0.98 0.72 0.18 RG 1.4 w 285 383 m 660 383 l S",
+    textLine("This certifies that :", 472, 348, 19, {
       color: "0.30 0.30 0.32",
       align: "center",
     }),
-    textLine(studentName, 473, 300, nameSize, {
+    textLine(studentName, 472, 301, nameSize, {
       font: "F3",
       color: "0.24 0.24 0.25",
       align: "center",
     }),
-    "0.25 0.25 0.26 RG 2 w 260 276 m 688 276 l S",
+    "0.25 0.25 0.26 RG 2.5 w 260 276 m 688 276 l S",
     ...completionLines.map((line, index) =>
-      textLine(line, 473, 250 - index * 17, 13.5, {
+      textLine(line, 472, 249 - index * 17, 13.7, {
         color: "0.28 0.28 0.30",
         align: "center",
       })
     ),
-    textLine("Congratulations", 473, 130, 23, {
+    "0.92 0.97 1.00 rg 342 142 260 38 re f",
+    "0.12 0.60 0.90 RG 1.2 w 342 142 260 38 re S",
+    textLine("Congratulations", 472, 154, 24, {
       font: "F2",
       color: "0.12 0.60 0.90",
       align: "center",
     }),
-    "0.24 0.24 0.25 RG 1.4 w 395 105 m 422 116 446 99 473 111 c 500 124 526 99 555 112 c S",
-    "0.25 0.25 0.26 RG 1.4 w 342 91 m 604 91 l S",
-    textLine("SAMUEL NDUNG'U  |  TRAINER SCDS", 473, 69, 13.5, {
+    "0.24 0.24 0.25 RG 1.6 w 392 112 m 422 126 446 104 472 116 c 502 131 527 104 557 119 c S",
+    "0.25 0.25 0.26 RG 1.8 w 342 96 m 604 96 l S",
+    textLine("SAMUEL NDUNG'U  |  TRAINER SCDS", 472, 73, 13.8, {
       color: "0.26 0.26 0.28",
       align: "center",
     }),
-    "0.12 0.60 0.90 rg 300 18 346 27 re f",
-    textLine('"Equipping Creatives for Excellence"', 473, 26, 15, {
+    "0.12 0.60 0.90 rg 282 18 380 31 re f",
+    "0.08 0.43 0.72 rg 282 18 380 5 re f",
+    textLine('"Equipping Creatives for Excellence"', 472, 28, 16, {
       color: "1 1 1",
       align: "center",
     }),
