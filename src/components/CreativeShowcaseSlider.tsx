@@ -59,6 +59,7 @@ const slides = [
     alt: "Blank Sam Creative Design School certificate preview",
     href: "/certificate-preview",
     cta: "View Blank Certificate",
+    fit: "contain",
   },
 ];
 
@@ -141,8 +142,12 @@ export default function CreativeShowcaseSlider() {
                   src={slide.image}
                   alt={slide.alt}
                   loading={index === 0 ? "eager" : "lazy"}
-                  className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-1000 ease-out ${
-                    index === active ? "opacity-100 scale-105" : "opacity-0 scale-100"
+                  className={`absolute inset-0 h-full w-full transition-[opacity,transform] duration-1000 ease-out ${
+                    "fit" in slide && slide.fit === "contain" ? "object-contain p-4 md:p-6" : "object-cover"
+                  } ${
+                    index === active
+                      ? `opacity-100 ${"fit" in slide && slide.fit === "contain" ? "scale-100" : "scale-105"}`
+                      : "opacity-0 scale-100"
                   }`}
                 />
               ))}
