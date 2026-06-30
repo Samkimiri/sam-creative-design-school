@@ -6,9 +6,11 @@ import {
   CheckCircle2,
   Gamepad2,
   LayoutTemplate,
+  Medal,
   Palette,
   RotateCcw,
   Sparkles,
+  Target,
   Trophy,
   Zap,
 } from "lucide-react";
@@ -91,6 +93,14 @@ export default function StudyBreakGames() {
   const [snakeMessage, setSnakeMessage] = useState("Press start, then guide the learner line to collect focus dots.");
 
   const scrambledWord = useMemo(() => scramble(designWords[wordIndex]), [wordIndex]);
+  const totalScore = reflexScore + wordScore + sequenceScore + layoutScore + sudokuScore + snakeScore + Math.floor(matchedCards.length / 2);
+  const gameCardClass = "group relative overflow-hidden rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_18px_55px_rgba(10,15,30,0.08)] ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_26px_70px_rgba(26,143,227,0.16)]";
+  const gameStats = [
+    { label: "Total Arcade Points", value: totalScore, Icon: Trophy },
+    { label: "Memory Pairs", value: `${matchedCards.length / 2}/${memoryIcons.length}`, Icon: Brain },
+    { label: "Snake Streak", value: snakeScore, Icon: Gamepad2 },
+    { label: "Logic Solves", value: sudokuScore, Icon: Medal },
+  ];
 
   useEffect(() => {
     if (!snakeRunning) return;
@@ -275,8 +285,38 @@ export default function StudyBreakGames() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <div className="space-y-8">
+      <section className="overflow-hidden rounded-[32px] border border-white bg-white p-5 shadow-[0_24px_70px_rgba(10,15,30,0.08)] md:p-6">
+        <div className="grid gap-5 lg:grid-cols-[1fr_1.15fr] lg:items-center">
+          <div className="rounded-[26px] bg-slate-950 p-6 text-white">
+            <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary-light">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              Modern Arcade Dashboard
+            </p>
+            <h2 className="text-3xl font-extrabold leading-tight md:text-4xl">Choose a game, build a streak, then jump back into class.</h2>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-white/70">
+              Scores reset per visit, so every break feels fresh. The games are designed for quick focus, speed, logic, and creative thinking.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {gameStats.map(({ Icon, ...stat }) => (
+              <div key={stat.label} className="rounded-2xl border border-gray-100 bg-light-gray p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-primary shadow-sm">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <Target className="h-5 w-5 text-primary/50" aria-hidden="true" />
+                </div>
+                <p className="text-3xl font-black text-dark">{stat.value}</p>
+                <p className="mt-1 text-xs font-black uppercase tracking-widest text-gray-500">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+      <section className={gameCardClass}>
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
@@ -302,10 +342,10 @@ export default function StudyBreakGames() {
                 key={`${card}-${index}`}
                 type="button"
                 onClick={() => pickCard(index)}
-                className={`aspect-square rounded-xl border text-lg font-black transition-all duration-300 ${
+                className={`aspect-square rounded-2xl border text-lg font-black transition-all duration-300 ${
                   revealed
-                    ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
-                    : "border-gray-100 bg-light-gray text-transparent hover:-translate-y-0.5 hover:border-primary/30"
+                    ? "border-primary bg-gradient-to-br from-primary to-primary-light text-white shadow-lg shadow-primary/20"
+                    : "border-gray-100 bg-slate-950 text-transparent shadow-inner hover:-translate-y-0.5 hover:border-primary/30"
                 }`}
               >
                 {revealed ? card : "S"}
@@ -318,13 +358,13 @@ export default function StudyBreakGames() {
         </p>
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <section className={gameCardClass}>
         <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
           <Zap className="h-4 w-4" aria-hidden="true" />
           Color Reflex
         </p>
         <h2 className="text-xl font-extrabold text-dark">Tap the matching color</h2>
-        <div className="my-6 rounded-2xl p-6 text-center text-white shadow-inner" style={{ backgroundColor: targetColor.value }}>
+        <div className="my-6 rounded-[26px] p-6 text-center text-white shadow-2xl shadow-slate-900/10 ring-1 ring-white/20" style={{ backgroundColor: targetColor.value }}>
           <p className="text-sm font-bold uppercase tracking-widest">Find</p>
           <p className="text-3xl font-black">{targetColor.name}</p>
         </div>
@@ -334,7 +374,7 @@ export default function StudyBreakGames() {
               key={color.name}
               type="button"
               onClick={() => chooseReflexColor(color.name)}
-              className="rounded-xl px-4 py-4 text-sm font-black text-white transition hover:-translate-y-0.5"
+              className="rounded-2xl px-4 py-4 text-sm font-black text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5"
               style={{ backgroundColor: color.value }}
             >
               {color.name}
@@ -344,13 +384,13 @@ export default function StudyBreakGames() {
         <p className="mt-4 text-sm font-bold text-gray-500">Score: {reflexScore}</p>
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <section className={gameCardClass}>
         <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
           <Palette className="h-4 w-4" aria-hidden="true" />
           Design Word
         </p>
         <h2 className="text-xl font-extrabold text-dark">Unscramble the design word</h2>
-        <div className="my-6 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
+        <div className="my-6 rounded-[26px] border border-dashed border-primary/30 bg-gradient-to-br from-primary/10 to-white p-6 text-center shadow-inner">
           <p className="text-4xl font-black tracking-[0.25em] text-primary">{scrambledWord.toUpperCase()}</p>
         </div>
         <div className="flex flex-col gap-3">
@@ -375,7 +415,7 @@ export default function StudyBreakGames() {
         <p className="mt-4 text-sm font-bold text-gray-500">Score: {wordScore}</p>
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <section className={gameCardClass}>
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
@@ -393,7 +433,7 @@ export default function StudyBreakGames() {
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <div className="mb-4 flex flex-wrap gap-2 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4">
+        <div className="mb-4 flex flex-wrap gap-2 rounded-[26px] border border-dashed border-primary/30 bg-primary/5 p-4">
           {sequence.map((item, index) => (
             <span key={`${item}-${index}`} className="rounded-xl bg-white px-4 py-3 text-sm font-black text-primary shadow-sm">
               {index + 1}. {item}
@@ -417,7 +457,7 @@ export default function StudyBreakGames() {
         <p className="mt-1 text-sm font-bold text-gray-500">Score: {sequenceScore}</p>
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <section className={gameCardClass}>
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
@@ -435,7 +475,7 @@ export default function StudyBreakGames() {
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <div className="mb-4 min-h-24 rounded-2xl border border-dashed border-gray-200 bg-light-gray p-3">
+        <div className="mb-4 min-h-24 rounded-[26px] border border-dashed border-gray-200 bg-light-gray p-3">
           <div className="grid gap-2">
             {layoutPlaced.length === 0 ? (
               <p className="py-6 text-center text-sm font-bold text-gray-400">Tap blocks below to build the page.</p>
@@ -464,7 +504,7 @@ export default function StudyBreakGames() {
         <p className="mt-1 text-sm font-bold text-gray-500">Score: {layoutScore}</p>
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <section className={gameCardClass}>
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
@@ -482,7 +522,7 @@ export default function StudyBreakGames() {
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <div className="grid grid-cols-9 overflow-hidden rounded-2xl border-2 border-dark bg-dark">
+        <div className="grid grid-cols-9 overflow-hidden rounded-[26px] border-2 border-dark bg-dark shadow-2xl shadow-slate-900/10">
           {sudokuCells.map((cell, index) => {
             const row = Math.floor(index / 9);
             const col = index % 9;
@@ -519,7 +559,7 @@ export default function StudyBreakGames() {
         <p className="mt-1 text-sm font-bold text-gray-500">Solved: {sudokuScore}</p>
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <section className={gameCardClass}>
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
@@ -537,7 +577,7 @@ export default function StudyBreakGames() {
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <div className="grid aspect-square grid-cols-12 gap-1 rounded-2xl bg-dark p-3 shadow-inner">
+        <div className="grid aspect-square grid-cols-12 gap-1 rounded-[26px] bg-slate-950 p-3 shadow-inner">
           {Array.from({ length: snakeBoardSize * snakeBoardSize }).map((_, index) => {
             const x = index % snakeBoardSize;
             const y = Math.floor(index / snakeBoardSize);
@@ -549,12 +589,12 @@ export default function StudyBreakGames() {
                 key={`snake-${index}`}
                 className={`aspect-square rounded-md transition ${
                   snakeIndex === 0
-                    ? "bg-primary shadow-lg shadow-primary/50"
+                    ? "bg-primary shadow-lg shadow-primary/50 ring-2 ring-white/40"
                     : snakeIndex > -1
                     ? "bg-sky-300"
                     : isFood
                     ? "bg-yellow-400 shadow-lg shadow-yellow-400/40"
-                    : "bg-white/10"
+                    : "bg-white/8"
                 }`}
               />
             );
@@ -577,7 +617,7 @@ export default function StudyBreakGames() {
         <p className="mt-1 text-sm font-bold text-gray-500">Score: {snakeScore}</p>
       </section>
 
-      <section className="rounded-2xl border border-primary/20 bg-primary/10 p-5 lg:col-span-3">
+      <section className="overflow-hidden rounded-[28px] border border-primary/20 bg-primary/10 p-5 lg:col-span-3">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
@@ -592,6 +632,7 @@ export default function StudyBreakGames() {
           <Sparkles className="h-10 w-10 text-primary" aria-hidden="true" />
         </div>
       </section>
+      </div>
     </div>
   );
 }
