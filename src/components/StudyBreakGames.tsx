@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Brain,
   CheckCircle2,
@@ -38,6 +38,15 @@ const trendCards = [
   { label: "Visual", value: "Low Quality", good: false },
 ];
 const snakeBoardSize = 12;
+const progressStorageKey = "scds-games-player-progress-v1";
+
+type PlayerProgress = {
+  xp: number;
+  bestScore: number;
+  totalPlays: number;
+  lastGame: string;
+  lastPlayed: string;
+};
 
 type Direction = "up" | "down" | "left" | "right";
 type SnakePoint = { x: number; y: number };
@@ -65,8 +74,49 @@ function nextSnakeHead(head: SnakePoint, direction: Direction) {
   return { x: head.x + 1, y: head.y };
 }
 
+function getLevelFromXp(xp: number) {
+  return Math.min(12, Math.floor(Math.max(0, xp) / 60) + 1);
+}
+
+function getLevelConfig(level: number) {
+  return {
+    memoryPairs: Math.min(glowTiles.length, 3 + Math.floor(level / 2)),
+    rhythmLength: Math.min(6, 3 + Math.floor(level / 2)),
+    snakeSpeed: Math.max(80, 175 - level * 8),
+    tapGridSize: level >= 7 ? 16 : 9,
+    tapTime: Math.max(8, 16 - Math.floor(level / 2)),
+    trendOptions: Math.min(4, 2 + Math.floor(level / 3)),
+    xpGoal: getLevelFromXp(level * 60) >= 12 ? 60 : 60,
+  };
+}
+
+function formatLastPlayed(value: string) {
+  if (!value) return "New player";
+
+  try {
+    return new Intl.DateTimeFormat("en", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
+  } catch {
+    return "Saved";
+  }
+}
+
 export default function StudyBreakGames() {
-  const [memoryDeck, setMemoryDeck] = useState(() => shuffle([...glowTiles, ...glowTiles]));
+  const [playerProgress, setPlayerProgress] = useState<PlayerProgress>({
+    xp: 0,
+    bestScore: 0,
+    totalPlays: 0,
+    lastGame: "New player",
+    lastPlayed: "",
+  });
+  const playerLevel = getLevelFromXp(playerProgress.xp);
+  const levelConfig = useMemo(() => getLevelConfig(playerLevel), [playerLevel]);
+  const activeGlowTiles = useMemo(() => glowTiles.slice(0, levelConfig.memoryPairs), [levelConfig.memoryPairs]);
+  const [memoryDeck, setMemoryDeck] = useState(() => shuffle([...glowTiles.slice(0, 3), ...glowTiles.slice(0, 3)]));
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
   const [matchedCards, setMatchedCards] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
@@ -75,9 +125,9 @@ export default function StudyBreakGames() {
   const [tapTarget, setTapTarget] = useState(() => Math.floor(Math.random() * 9));
   const [tapScore, setTapScore] = useState(0);
   const [tapCombo, setTapCombo] = useState(0);
-  const [tapTime, setTapTime] = useState(15);
+  const [tapTime, setTapTime] = useState(16);
   const [tapRunning, setTapRunning] = useState(false);
-  const [rhythmSequence, setRhythmSequence] = useState(() => shuffle(rhythmPads.map((pad) => pad.key)).slice(0, 4));
+  const [rhythmSequence, setRhythmSequence] = useState(() => shuffle(rhythmPads.map((pad) => pad.key)).slice(0, 3));
   const [rhythmInput, setRhythmInput] = useState<string[]>([]);
   const [rhythmScore, setRhythmScore] = useState(0);
   const [rhythmMessage, setRhythmMessage] = useState("Tap the pads in the glowing order.");
@@ -97,14 +147,62 @@ export default function StudyBreakGames() {
 
   const memoryPairs = matchedCards.length / 2;
   const totalScore = tapScore + reflexScore + rhythmScore + trendScore + snakeScore + memoryPairs;
+  const xpInLevel = playerProgress.xp % 60;
+  const levelProgressPercent = Math.min(100, Math.round((xpInLevel / levelConfig.xpGoal) * 100));
   const gameCardClass = "group relative overflow-hidden rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_18px_55px_rgba(10,15,30,0.08)] ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_26px_70px_rgba(26,143,227,0.16)]";
   const rhythmProgress = rhythmInput.length;
   const gameStats = [
-    { label: "Arcade Points", value: totalScore, Icon: Trophy },
-    { label: "Tap Combo", value: `${tapCombo}x`, Icon: MousePointerClick },
-    { label: "Rhythm Wins", value: rhythmScore, Icon: Music2 },
-    { label: "Snake Streak", value: snakeScore, Icon: Gamepad2 },
+    { label: "Level", value: playerLevel, Icon: Trophy },
+    { label: "Saved XP", value: playerProgress.xp, Icon: Sparkles },
+    { label: "Best Score", value: playerProgress.bestScore, Icon: Target },
+    { label: "Last Game", value: playerProgress.lastGame, Icon: Gamepad2 },
   ];
+
+  const recordProgress = useCallback((game: string, xpEarned: number) => {
+    setPlayerProgress((current) => ({
+      xp: current.xp + xpEarned,
+      bestScore: Math.max(current.bestScore, totalScore + xpEarned),
+      totalPlays: current.totalPlays + 1,
+      lastGame: game,
+      lastPlayed: new Date().toISOString(),
+    }));
+  }, [totalScore]);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(progressStorageKey);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as Partial<PlayerProgress>;
+      setPlayerProgress({
+        xp: Number(parsed.xp) || 0,
+        bestScore: Number(parsed.bestScore) || 0,
+        totalPlays: Number(parsed.totalPlays) || 0,
+        lastGame: typeof parsed.lastGame === "string" ? parsed.lastGame : "New player",
+        lastPlayed: typeof parsed.lastPlayed === "string" ? parsed.lastPlayed : "",
+      });
+    } catch {
+      // Local storage may be unavailable in private browsing. The games still work without saved records.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(progressStorageKey, JSON.stringify(playerProgress));
+    } catch {
+      // Saving progress is a convenience feature, not required for gameplay.
+    }
+  }, [playerProgress]);
+
+  useEffect(() => {
+    setMemoryDeck(shuffle([...activeGlowTiles, ...activeGlowTiles]));
+    setSelectedCards([]);
+    setMatchedCards([]);
+    setMoves(0);
+    setRhythmSequence(shuffle(rhythmPads.map((pad) => pad.key)).slice(0, levelConfig.rhythmLength));
+    setRhythmInput([]);
+    setTapTime(levelConfig.tapTime);
+    setTapTarget(Math.floor(Math.random() * levelConfig.tapGridSize));
+  }, [activeGlowTiles, levelConfig.rhythmLength, levelConfig.tapGridSize, levelConfig.tapTime, playerLevel]);
 
   useEffect(() => {
     if (!tapRunning) return;
@@ -142,16 +240,17 @@ export default function StudyBreakGames() {
 
         if (ateFood) {
           setSnakeScore((score) => score + 1);
+          recordProgress("Glow Snake", 7);
           setSnakeFood(randomFood(nextSnake));
           setSnakeMessage("Glow dot collected.");
         }
 
         return nextSnake;
       });
-    }, 160);
+    }, levelConfig.snakeSpeed);
 
     return () => window.clearInterval(interval);
-  }, [snakeDirection, snakeFood.x, snakeFood.y, snakeRunning]);
+  }, [levelConfig.snakeSpeed, recordProgress, snakeDirection, snakeFood.x, snakeFood.y, snakeRunning]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -165,10 +264,10 @@ export default function StudyBreakGames() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const activeTrendCards = useMemo(() => trendDeck.slice(0, 3), [trendDeck]);
+  const activeTrendCards = useMemo(() => trendDeck.slice(0, levelConfig.trendOptions), [levelConfig.trendOptions, trendDeck]);
 
   const resetMemory = () => {
-    setMemoryDeck(shuffle([...glowTiles, ...glowTiles]));
+    setMemoryDeck(shuffle([...activeGlowTiles, ...activeGlowTiles]));
     setSelectedCards([]);
     setMatchedCards([]);
     setMoves(0);
@@ -185,6 +284,7 @@ export default function StudyBreakGames() {
       const [first, second] = nextSelected;
       if (memoryDeck[first] === memoryDeck[second]) {
         setMatchedCards((current) => [...current, first, second]);
+        recordProgress("Glow Match", 6);
         setSelectedCards([]);
       } else {
         window.setTimeout(() => setSelectedCards([]), 550);
@@ -193,16 +293,20 @@ export default function StudyBreakGames() {
   };
 
   const chooseReflexColor = (name: string) => {
-    if (name === targetColor.name) setReflexScore((score) => score + 1);
-    else setReflexScore((score) => Math.max(0, score - 1));
+    if (name === targetColor.name) {
+      setReflexScore((score) => score + 1);
+      recordProgress("Color Reflex", 4);
+    } else {
+      setReflexScore((score) => Math.max(0, score - 1));
+    }
     setTargetColor(shuffle(reflexColors)[0]);
   };
 
   const resetTapRush = () => {
     setTapScore(0);
     setTapCombo(0);
-    setTapTime(15);
-    setTapTarget(Math.floor(Math.random() * 9));
+    setTapTime(levelConfig.tapTime);
+    setTapTarget(Math.floor(Math.random() * levelConfig.tapGridSize));
     setTapRunning(true);
   };
 
@@ -211,7 +315,8 @@ export default function StudyBreakGames() {
     if (index === tapTarget) {
       setTapCombo((combo) => combo + 1);
       setTapScore((score) => score + 1 + Math.min(tapCombo, 5));
-      setTapTarget(Math.floor(Math.random() * 9));
+      recordProgress("Neon Tap Rush", 3 + Math.min(tapCombo, 4));
+      setTapTarget(Math.floor(Math.random() * levelConfig.tapGridSize));
     } else {
       setTapCombo(0);
       setTapScore((score) => Math.max(0, score - 1));
@@ -219,7 +324,7 @@ export default function StudyBreakGames() {
   };
 
   const resetRhythm = () => {
-    setRhythmSequence(shuffle(rhythmPads.map((pad) => pad.key)).slice(0, 4));
+    setRhythmSequence(shuffle(rhythmPads.map((pad) => pad.key)).slice(0, levelConfig.rhythmLength));
     setRhythmInput([]);
     setRhythmMessage("Tap the pads in the glowing order.");
   };
@@ -236,6 +341,7 @@ export default function StudyBreakGames() {
 
     if (nextInput.length === rhythmSequence.length) {
       setRhythmScore((score) => score + 1);
+      recordProgress("Beat Match", 12 + playerLevel);
       setRhythmMessage("Clean beat. New combo loaded.");
       window.setTimeout(resetRhythm, 550);
       return;
@@ -247,6 +353,7 @@ export default function StudyBreakGames() {
   const pickTrendCard = (good: boolean) => {
     if (good) {
       setTrendScore((score) => score + 1);
+      recordProgress("Trend Picker", 8);
       setTrendMessage("Good pick. That idea has stronger attention.");
     } else {
       setTrendScore((score) => Math.max(0, score - 1));
@@ -297,8 +404,20 @@ export default function StudyBreakGames() {
             </p>
             <h2 className="text-3xl font-extrabold leading-tight md:text-4xl">Fast games, bright visuals, instant scores.</h2>
             <p className="mt-4 max-w-xl text-sm leading-6 text-white/70">
-              Quick tap, rhythm, glow, and trend games made for short breaks that still feel fun on mobile.
+              Your level, XP, best score, and last game are saved on this device so you can continue where you stopped.
             </p>
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span className="text-xs font-black uppercase tracking-widest text-white/50">Level {playerLevel} Progress</span>
+                <span className="text-xs font-black text-primary-light">{xpInLevel}/{levelConfig.xpGoal} XP</span>
+              </div>
+              <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${levelProgressPercent}%` }} />
+              </div>
+              <p className="mt-3 text-xs font-bold text-white/55">
+                Last saved: {formatLastPlayed(playerProgress.lastPlayed)} - {playerProgress.totalPlays} scored play{playerProgress.totalPlays === 1 ? "" : "s"}
+              </p>
+            </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {gameStats.map(({ Icon, ...stat }) => (
@@ -336,8 +455,8 @@ export default function StudyBreakGames() {
               <RotateCcw className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
-          <div className="mb-5 grid grid-cols-3 gap-3 rounded-[26px] bg-white/5 p-3">
-            {Array.from({ length: 9 }).map((_, index) => (
+          <div className={`mb-5 grid gap-3 rounded-[26px] bg-white/5 p-3 ${levelConfig.tapGridSize > 9 ? "grid-cols-4" : "grid-cols-3"}`}>
+            {Array.from({ length: levelConfig.tapGridSize }).map((_, index) => (
               <button
                 key={`tap-${index}`}
                 type="button"
@@ -365,7 +484,7 @@ export default function StudyBreakGames() {
               onClick={() => setTapRunning((running) => !running)}
               className="rounded-2xl bg-primary px-4 py-4 text-sm font-black text-white transition hover:bg-primary-light"
             >
-              {tapRunning ? `${tapTime}s Left` : tapTime === 0 ? "Play Again" : "Start"}
+              {tapRunning ? `${tapTime}s Left` : tapTime === 0 ? "Play Again" : `Level ${playerLevel}`}
             </button>
           </div>
         </section>
@@ -408,7 +527,7 @@ export default function StudyBreakGames() {
             ))}
           </div>
           <p className="mt-4 text-sm font-bold text-gray-500">{rhythmMessage}</p>
-          <p className="mt-1 text-sm font-bold text-gray-500">Score: {rhythmScore}</p>
+          <p className="mt-1 text-sm font-bold text-gray-500">Score: {rhythmScore} - Level length: {levelConfig.rhythmLength}</p>
         </section>
 
         <section className={gameCardClass}>
@@ -449,7 +568,7 @@ export default function StudyBreakGames() {
             })}
           </div>
           <p className="mt-4 text-sm font-bold text-gray-500">
-            {memoryPairs}/{glowTiles.length} pairs found - {moves} moves
+            {memoryPairs}/{activeGlowTiles.length} pairs found - {moves} moves
           </p>
         </section>
 
@@ -511,7 +630,7 @@ export default function StudyBreakGames() {
             ))}
           </div>
           <p className="mt-4 text-sm font-bold text-gray-500">{trendMessage}</p>
-          <p className="mt-1 text-sm font-bold text-gray-500">Score: {trendScore}</p>
+          <p className="mt-1 text-sm font-bold text-gray-500">Score: {trendScore} - Choices: {levelConfig.trendOptions}</p>
         </section>
 
         <section className={gameCardClass}>
@@ -569,7 +688,7 @@ export default function StudyBreakGames() {
             <span />
           </div>
           <p className="mt-4 text-sm font-bold text-gray-500">{snakeMessage}</p>
-          <p className="mt-1 text-sm font-bold text-gray-500">Score: {snakeScore}</p>
+          <p className="mt-1 text-sm font-bold text-gray-500">Score: {snakeScore} - Speed: level {playerLevel}</p>
         </section>
 
         <section className="overflow-hidden rounded-[28px] border border-primary/20 bg-primary/10 p-5 lg:col-span-3">
@@ -579,9 +698,9 @@ export default function StudyBreakGames() {
                 <Layers3 className="h-4 w-4" aria-hidden="true" />
                 Fresh Game Mix
               </p>
-              <h2 className="mt-2 text-xl font-extrabold text-dark">Short, bright, mobile-friendly games for quick attention.</h2>
+              <h2 className="mt-2 text-xl font-extrabold text-dark">Levels get harder automatically and your progress is saved.</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
-                Slower puzzles were removed so the centre feels faster, more visual, and easier to replay.
+                Higher levels add more memory pairs, longer beat patterns, tighter tap time, extra trend choices, and faster snake movement.
               </p>
             </div>
             <CheckCircle2 className="h-10 w-10 text-primary" aria-hidden="true" />
