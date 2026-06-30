@@ -4,6 +4,7 @@ import ReviewsSection from "@/components/ReviewsSection";
 import FeaturedCoursesCarousel from "@/components/FeaturedCoursesCarousel";
 import IntakeCountdown from "@/components/IntakeCountdown";
 import { getContentSettings, getManagedCourses } from "@/lib/contentSettings";
+import { getCourseVisual } from "@/lib/courseVisuals";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 import {
   ArrowRight,
@@ -22,7 +23,9 @@ import {
   Image as ImageIcon,
   Laptop,
   MessageCircle,
+  Palette,
   PlayCircle,
+  Sparkles,
   UsersRound,
   UserRound,
   Wallet,
@@ -80,6 +83,12 @@ export default async function Home() {
     { title: "Certificates", desc: "Earn a verified certificate on completion and add it to your CV and LinkedIn.", Icon: Award },
     { title: "Small Batches", desc: "We keep classes small to ensure every student gets individual attention.", Icon: UsersRound },
     { title: "Career Support", desc: "Tips on freelancing, job applications, and building your client base after graduation.", Icon: Briefcase },
+  ];
+  const learningPath = [
+    { label: "Pick a Track", detail: "Choose the course colour that matches your next skill goal.", Icon: Palette },
+    { label: "Practice Weekly", detail: "Complete guided lessons, quizzes, assignments, and project tasks.", Icon: ClipboardCheck },
+    { label: "Build Proof", detail: "Package designs, videos, sites, prompts, or CAD models for your portfolio.", Icon: FolderCheck },
+    { label: "Get Certified", detail: "Finish all lessons and download your verified SCDS certificate.", Icon: Award },
   ];
 
   return (
@@ -235,6 +244,72 @@ export default async function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-20">
+        <div className="container mx-auto px-6">
+          <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+            <div className="animate-fade-in">
+              <span className="mb-3 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary">
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                Colour-Coded Learning
+              </span>
+              <h2 className="max-w-2xl text-3xl font-extrabold text-dark md:text-4xl">
+                Every course has its own creative identity, badges, and project direction.
+              </h2>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-gray-600">
+                The website now uses a visual learning system that makes each program easier to scan while keeping the official SCDS blue, navy, gold, and white foundation.
+              </p>
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                {learningPath.map(({ Icon, ...item }, index) => (
+                  <div key={item.label} className="rounded-2xl border border-gray-100 bg-light-gray p-5 transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-md">
+                    <div className="mb-4 flex items-center gap-3">
+                      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-primary shadow-sm">
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-primary shadow-sm">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <h3 className="font-extrabold text-dark">{item.label}</h3>
+                    <p className="mt-2 text-sm leading-6 text-gray-600">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {courses.slice(0, 6).map((course, index) => {
+                const visual = getCourseVisual(course.id);
+                return (
+                  <Link
+                    key={course.id}
+                    href={`/courses/${course.id}`}
+                    className={`group animate-fade-in overflow-hidden rounded-2xl border ${visual.border} bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}
+                    style={{ animationDelay: `${index * 70}ms` }}
+                  >
+                    <div className={`relative mb-4 overflow-hidden rounded-2xl bg-gradient-to-br ${visual.gradient} p-4 text-white`}>
+                      <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full border border-white/25 bg-white/10" />
+                      <div className="absolute -bottom-8 left-8 h-24 w-24 rounded-full border border-white/15" />
+                      <div className="relative flex items-center justify-between gap-4">
+                        <span className="grid h-14 w-14 place-items-center rounded-2xl border border-white/25 bg-white/18 text-lg font-black shadow-lg backdrop-blur">
+                          {visual.icon}
+                        </span>
+                        <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-widest backdrop-blur">
+                          {course.duration}
+                        </span>
+                      </div>
+                    </div>
+                    <h3 className="text-base font-extrabold leading-snug text-dark transition-colors group-hover:text-primary">
+                      {course.shortTitle}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-gray-600 line-clamp-2">{course.description}</p>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -491,26 +566,47 @@ export default async function Home() {
 
           <FeaturedCoursesCarousel courses={courses} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {courses.map((course) => (
-              <div key={course.id} className="group bg-gray-900 rounded-2xl overflow-hidden border border-gray-800 card-hover transition-all duration-300">
-                <div className="h-48 relative overflow-hidden flex items-center justify-center">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${course.color} opacity-40`} />
-                  <img 
-                    src={course.image} 
-                    alt={course.title} 
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {courses.map((course) => {
+              const visual = getCourseVisual(course.id);
+              return (
+              <div key={course.id} className={`group overflow-hidden rounded-2xl border border-white/10 bg-gray-900 shadow-2xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-primary/10`}>
+                <div className="relative flex h-52 items-center justify-center overflow-hidden">
+                  <img
+                    src={course.image}
+                    alt={course.title}
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
+                  <div className={`absolute inset-0 bg-gradient-to-br ${visual.gradient} opacity-75 mix-blend-multiply`} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  <div className="absolute left-4 top-4 grid h-14 w-14 place-items-center rounded-2xl border border-white/25 bg-white/15 text-lg font-black text-white shadow-xl backdrop-blur">
+                    {visual.icon}
+                  </div>
+                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3">
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-widest text-white backdrop-blur">
+                      {course.shortTitle}
+                    </span>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-dark">
+                      {course.priceRange}
+                    </span>
+                  </div>
                 </div>
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-primary font-bold uppercase tracking-wider">{course.duration}</span>
-                    <span className="text-xs text-gray-500">{course.level}</span>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${visual.text}`}>{course.duration}</span>
+                    <span className="text-xs text-gray-400">{course.level}</span>
                   </div>
                   <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{course.title}</h3>
                   <p className="text-gray-400 text-sm mb-5 line-clamp-2">{course.description}</p>
+                  <div className="mb-5 flex flex-wrap gap-2">
+                    {course.skills.slice(0, 2).map((skill) => (
+                      <span key={skill} className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-bold text-white/75">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                   <div className="flex justify-between items-center pt-4 border-t border-gray-800">
-                    <span className="font-extrabold text-primary">{course.priceRange}</span>
+                    <span className={`h-2.5 w-14 rounded-full bg-gradient-to-r ${visual.gradient}`} aria-hidden="true" />
                     <Link href={`/enroll?course=${course.id}`} className="inline-flex items-center gap-1.5 text-xs font-bold bg-white text-dark px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition-all duration-300 motion-safe:hover:-translate-y-0.5">
                       Enroll
                       <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -518,7 +614,8 @@ export default async function Home() {
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </section>

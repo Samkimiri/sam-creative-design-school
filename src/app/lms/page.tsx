@@ -4,7 +4,9 @@ import { lessons } from "@/data/courses";
 import { getSession } from "@/lib/auth";
 import { getDB, getDBRecord } from "@/lib/db";
 import { getManagedCourses } from "@/lib/contentSettings";
+import { getCourseVisual } from "@/lib/courseVisuals";
 import { createReferralCode } from "@/lib/referrals";
+import { Award, BadgeCheck, Flame, Medal, Sparkles, Trophy } from "lucide-react";
 
 interface ProgressRecord {
   studentId: string;
@@ -33,12 +35,14 @@ function getProgressMeta(progress: number) {
   return { label: "Unlocked", tone: "bg-primary/10 text-primary border-primary/20", action: "Start Course" };
 }
 
+const achievementIcons = [Sparkles, Flame, Medal, Trophy, Award];
+
 function getBadges(progress: number) {
-  const badges = [{ label: "Starter", detail: "Portal opened" }];
-  if (progress >= 25) badges.push({ label: "Beginner", detail: "25% complete" });
-  if (progress >= 50) badges.push({ label: "Layer Master", detail: "Halfway there" });
-  if (progress >= 75) badges.push({ label: "Quiz Champion", detail: "Strong progress" });
-  if (progress === 100) badges.push({ label: "Course Completed", detail: "Certificate ready" });
+  const badges = [{ label: "Starter", detail: "Portal opened", threshold: 0 }];
+  if (progress >= 25) badges.push({ label: "Momentum", detail: "25% complete", threshold: 25 });
+  if (progress >= 50) badges.push({ label: "Halfway Hero", detail: "50% complete", threshold: 50 });
+  if (progress >= 75) badges.push({ label: "Quiz Champion", detail: "75% complete", threshold: 75 });
+  if (progress === 100) badges.push({ label: "Certified", detail: "Certificate ready", threshold: 100 });
   return badges;
 }
 
@@ -287,10 +291,27 @@ export default async function LMSDashboard() {
             </Link>
           </div>
 
+          <div className="mb-7 grid gap-4 md:grid-cols-3">
+            {[
+              { title: "Achievement Badges", text: "Badges unlock as students complete course milestones.", Icon: BadgeCheck },
+              { title: "Colour Tracks", text: "Each course uses its own visual colour so progress is easy to identify.", Icon: Sparkles },
+              { title: "Certificate Goal", text: "The final badge appears when the certificate is ready.", Icon: Award },
+            ].map(({ Icon, ...item }) => (
+              <div key={item.title} className="rounded-2xl border border-white bg-white p-5 shadow-sm ring-1 ring-slate-900/5">
+                <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <h3 className="font-extrabold text-dark">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-gray-500">{item.text}</p>
+              </div>
+            ))}
+          </div>
+
           <div className="grid grid-cols-1 gap-5 md:gap-7 lg:grid-cols-2">
             {courseStats.map(({ course, courseLessons, progress, completedLessons, nextLesson }, index) => {
               const meta = getProgressMeta(progress);
               const previewLessons = courseLessons.slice(0, 3);
+              const visual = getCourseVisual(course.id);
               return (
                 <article
                   key={course.id}
@@ -299,14 +320,14 @@ export default async function LMSDashboard() {
                 >
                   <div className="relative min-h-40 overflow-hidden p-5 text-white sm:min-h-48 sm:p-6">
                     <img src={course.image} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-                    <div className={`absolute inset-0 bg-gradient-to-br ${course.color} opacity-80 mix-blend-multiply`} />
+                    <div className={`absolute inset-0 bg-gradient-to-br ${visual.gradient} opacity-80 mix-blend-multiply`} />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/72 via-black/38 to-black/10" />
                     <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full border border-white/20 bg-white/10 blur-[1px]" />
                     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/45 to-transparent" />
                     <div className="relative flex items-start justify-between gap-5">
                       <div className="min-w-0">
                         <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/18 text-lg font-black shadow-lg ring-1 ring-white/20 backdrop-blur">
-                          {course.shortTitle.slice(0, 1)}
+                          {visual.icon}
                         </span>
                         <span className={`ml-3 inline-flex rounded-full border bg-white/90 px-3 py-1 text-xs font-black uppercase tracking-widest shadow-sm ${meta.tone}`}>
                           {meta.label}
@@ -362,16 +383,20 @@ export default async function LMSDashboard() {
                     </div>
 
                     <div className="mb-5 flex flex-wrap gap-2">
-                      {getBadges(progress).map((badge, badgeIndex) => (
+                      {getBadges(progress).map((badge, badgeIndex) => {
+                        const Icon = achievementIcons[badgeIndex] || BadgeCheck;
+                        return (
                         <span
                           key={badge.label}
                           title={badge.detail}
-                          className="animate-lms-badge rounded-full border border-primary/10 bg-primary/10 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-primary shadow-sm"
+                          className={`animate-lms-badge inline-flex items-center gap-2 rounded-2xl border ${visual.border} ${visual.soft} px-3 py-2 text-xs font-black uppercase tracking-wider ${visual.text} shadow-sm ring-1 ${visual.ring}`}
                           style={{ animationDelay: `${badgeIndex * 120}ms` }}
                         >
+                          <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                           {badge.label}
                         </span>
-                      ))}
+                      );
+                      })}
                     </div>
 
                     {nextLesson && (
