@@ -40,7 +40,7 @@ export default function CourseReviewForm({ courseId, courseName }: CourseReviewF
   };
 
   return (
-    <form onSubmit={submitReview} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <form onSubmit={submitReview} className="premium-card rounded-2xl border border-gray-100 bg-white p-5 shadow-sm" data-reveal>
       <div className="mb-4">
         <p className="text-xs font-black uppercase tracking-widest text-primary">Course Review</p>
         <h3 className="mt-1 font-extrabold text-dark">Review {courseName}</h3>
@@ -51,13 +51,13 @@ export default function CourseReviewForm({ courseId, courseName }: CourseReviewF
       </div>
       <div className="mt-3 flex gap-1" aria-label="Rating">
         {[1, 2, 3, 4, 5].map((rating) => (
-          <button key={rating} type="button" onClick={() => setForm({ ...form, rating })} className="rounded-lg p-1 text-primary transition hover:bg-primary/10" aria-label={`${rating} stars`}>
+          <button key={rating} type="button" onClick={() => setForm({ ...form, rating })} className="premium-button rounded-lg p-1 text-primary transition hover:bg-primary/10" aria-label={`${rating} stars`}>
             <Star className={`h-5 w-5 ${rating <= form.rating ? "fill-primary" : ""}`} aria-hidden="true" />
           </button>
         ))}
       </div>
       <textarea required value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} rows={3} maxLength={280} className="mt-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary" placeholder="What changed after taking this course?" />
-      <button disabled={submitting} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary/90 disabled:opacity-50">
+      <button disabled={submitting} className="premium-button mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary/90 disabled:opacity-50">
         <Send className="h-4 w-4" aria-hidden="true" />
         {submitting ? "Submitting..." : "Submit Review"}
       </button>
@@ -65,4 +65,3 @@ export default function CourseReviewForm({ courseId, courseName }: CourseReviewF
     </form>
   );
 }
-

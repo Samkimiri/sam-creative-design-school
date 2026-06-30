@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import AppInstallPanel from "@/components/AppInstallPanel";
 
 export const metadata: Metadata = {
@@ -9,9 +10,9 @@ export const metadata: Metadata = {
 export default function InstallPage() {
   return (
     <div className="pt-32 pb-24">
-      <section className="bg-dark py-16 text-white">
+      <section className="bg-dark py-16 text-white" data-reveal>
         <div className="container mx-auto px-6">
-          <div className="max-w-3xl">
+          <div className="motion-rise max-w-3xl">
             <p className="mb-4 text-sm font-black uppercase tracking-widest text-primary">SCDS App</p>
             <h1 className="text-4xl font-black leading-tight md:text-5xl">
               Install the school app for faster learning access.
@@ -23,7 +24,7 @@ export default function InstallPage() {
         </div>
       </section>
 
-      <main className="container mx-auto px-6 py-14">
+      <main className="container mx-auto px-6 py-14" data-reveal style={{ "--reveal-delay": "120ms" } as CSSProperties}>
         <AppInstallPanel />
       </main>
     </div>

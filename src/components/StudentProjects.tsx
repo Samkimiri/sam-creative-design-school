@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { courses } from "@/data/courses";
 import { slugifyName } from "@/lib/slugs";
@@ -74,7 +74,7 @@ export default function StudentProjects() {
 
   return (
     <section id="submit-project" className="mt-16">
-      <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between animate-fade-in">
+      <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between" data-reveal>
         <div>
           <p className="text-sm font-black uppercase tracking-widest text-primary">Student Projects</p>
           <h2 className="text-3xl font-extrabold text-dark">Submitted work</h2>
@@ -86,11 +86,11 @@ export default function StudentProjects() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {approvedProjects.map((project) => {
+          {approvedProjects.map((project, index) => {
             const projectHref = `/gallery/${project.id}`;
 
             return (
-              <article key={project.id} className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-lg motion-safe:hover:-translate-y-1">
+              <article key={project.id} className="premium-card group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-lg motion-safe:hover:-translate-y-1" data-reveal style={{ "--reveal-delay": `${index * 55}ms` } as CSSProperties}>
                 <Link href={projectHref} className="block h-48 bg-primary/10 overflow-hidden" aria-label={`View ${project.title}`}>
                   {project.imageUrl ? (
                     <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" />
@@ -109,7 +109,7 @@ export default function StudentProjects() {
                     by {project.studentName}
                   </Link>
                   <p className="mt-3 text-sm leading-6 text-gray-500">{project.description}</p>
-                  <Link href={projectHref} className="mt-4 inline-flex rounded-full bg-light-gray px-4 py-2 text-xs font-black uppercase tracking-widest text-primary transition hover:bg-primary hover:text-white">
+                  <Link href={projectHref} className="premium-button mt-4 inline-flex rounded-full bg-light-gray px-4 py-2 text-xs font-black uppercase tracking-widest text-primary transition hover:bg-primary hover:text-white">
                     View project
                   </Link>
                 </div>
@@ -118,7 +118,7 @@ export default function StudentProjects() {
           })}
         </div>
 
-        <form onSubmit={submitProject} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
+        <form onSubmit={submitProject} className="premium-card rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg" data-reveal>
           <h3 className="mb-5 text-xl font-extrabold text-dark">Submit your project</h3>
           <div className="space-y-4">
             <div>
@@ -154,7 +154,7 @@ export default function StudentProjects() {
               <textarea id="project-description" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe what you created" rows={4} className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-colors duration-300 focus:border-primary" />
             </div>
           </div>
-          <button disabled={status === "Submitting..."} className="mt-5 w-full rounded-xl bg-primary px-5 py-3 font-bold text-white transition-all duration-300 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 motion-safe:hover:-translate-y-0.5">
+          <button disabled={status === "Submitting..."} className="premium-button mt-5 w-full rounded-xl bg-primary px-5 py-3 font-bold text-white transition-all duration-300 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 motion-safe:hover:-translate-y-0.5">
             {status === "Submitting..." ? "Submitting..." : "Submit for Review"}
           </button>
           {status && <p className="mt-4 text-sm font-medium text-gray-600" role="status" aria-live="polite">{status}</p>}

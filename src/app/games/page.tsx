@@ -24,27 +24,27 @@ export default function GamesPage() {
         <div className="container mx-auto px-6">
           <div className="grid gap-10 lg:grid-cols-[1fr_420px] lg:items-center">
             <div>
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-black uppercase tracking-widest text-primary-light backdrop-blur">
+              <p className="motion-rise mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-black uppercase tracking-widest text-primary-light backdrop-blur">
                 <Gamepad2 className="h-5 w-5" aria-hidden="true" />
                 SCDS Games Centre
               </p>
-              <h1 className="max-w-4xl text-4xl font-extrabold leading-tight md:text-6xl">
+              <h1 className="motion-rise motion-delay-1 max-w-4xl text-4xl font-extrabold leading-tight md:text-6xl">
                 Fast arcade games built for quick attention.
               </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-white/75">
+              <p className="motion-rise motion-delay-2 mt-5 max-w-2xl text-base leading-7 text-white/75">
                 Play neon tap rush, rhythm pads, glow memory, color reflex, trend picker, and glow snake. Short, bright, replayable games for quick study breaks.
               </p>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <div className="motion-rise motion-delay-3 mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="#play"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary/90"
+                  className="premium-button inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary/90"
                 >
                   <Sparkles className="h-4 w-4" aria-hidden="true" />
                   Start Playing
                 </Link>
                 <Link
                   href="/lms"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/15"
+                  className="premium-button inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/15"
                 >
                   <BookOpen className="h-4 w-4" aria-hidden="true" />
                   Return to LMS
@@ -52,10 +52,10 @@ export default function GamesPage() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/20 backdrop-blur">
+            <div className="premium-card rounded-[28px] border border-white/10 bg-white/10 p-5 shadow-2xl shadow-black/20 backdrop-blur" data-reveal>
               <div className="grid gap-3">
                 {highlights.map(({ Icon, ...item }) => (
-                  <div key={item.label} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 p-4">
+                  <div key={item.label} className="interactive-lift flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 p-4">
                     <div className="flex items-center gap-3">
                       <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
                         <Icon className="h-5 w-5" aria-hidden="true" />

@@ -90,9 +90,9 @@ export default function AppInstallPanel() {
 
   return (
     <section className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
-      <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+      <div className="premium-card motion-rise rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
         <div className="mb-6 flex items-center gap-4">
-          <img src="/images/app-icon-192.png" alt="SCDS app icon" className="h-20 w-20 rounded-3xl shadow-xl shadow-primary/20" />
+          <img src="/images/app-icon-192.png" alt="SCDS app icon" className="motion-scale h-20 w-20 rounded-3xl shadow-xl shadow-primary/20" />
           <div>
             <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Install SCDS</p>
             <h2 className="mt-2 text-2xl font-black text-dark md:text-3xl">Add the school app to this device</h2>
@@ -107,7 +107,7 @@ export default function AppInstallPanel() {
           type="button"
           onClick={installApp}
           disabled={isInstalled}
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-black text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-green-600 md:w-auto"
+          className="premium-button mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-black text-white shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-green-600 md:w-auto"
         >
           {isInstalled ? <CheckCircle2 className="h-5 w-5" aria-hidden="true" /> : <Download className="h-5 w-5" aria-hidden="true" />}
           {isInstalled ? "App Installed" : installPrompt ? "Install App" : "Show Install Help"}
@@ -116,8 +116,8 @@ export default function AppInstallPanel() {
         {status && <p className="mt-4 rounded-2xl bg-light-gray px-4 py-3 text-sm font-semibold text-gray-600" role="status" aria-live="polite">{status}</p>}
 
         <div className="mt-7 grid gap-3 sm:grid-cols-3">
-          {["Fast LMS access", "Works like an app", "Cleaner student portal"].map((item) => (
-            <div key={item} className="rounded-2xl bg-light-gray p-4 text-sm font-bold text-dark">
+          {["Fast LMS access", "Works like an app", "Cleaner student portal"].map((item, index) => (
+            <div key={item} className={`interactive-lift motion-soft motion-delay-${index + 1} rounded-2xl bg-light-gray p-4 text-sm font-bold text-dark`}>
               {item}
             </div>
           ))}
@@ -129,7 +129,7 @@ export default function AppInstallPanel() {
           const Icon = item.icon;
 
           return (
-            <article key={item.title} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <article key={item.title} className="premium-card motion-rise rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Icon className="h-5 w-5" aria-hidden="true" />
@@ -148,7 +148,7 @@ export default function AppInstallPanel() {
           );
         })}
 
-        <div className="rounded-2xl bg-dark p-6 text-white">
+        <div className="motion-soft rounded-2xl bg-dark p-6 text-white">
           <div className="mb-3 flex items-center gap-3">
             <MonitorDown className="h-5 w-5 text-primary-light" aria-hidden="true" />
             <h3 className="font-black">Best after login</h3>

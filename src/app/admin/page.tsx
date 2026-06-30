@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
 import type { ContentSettings, CourseContentOverride, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, PromoCode } from "@/types";
@@ -848,7 +848,7 @@ export default function AdminDashboard() {
   return (
     <div className="pt-24 pb-24 bg-[#F8F8F8] min-h-screen">
       <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-start mb-10 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start mb-10 gap-4" data-reveal>
           <div>
             <p className="text-primary font-bold uppercase tracking-widest text-sm mb-1">Admin Panel</p>
             <h1 className="text-3xl font-extrabold text-dark">School Dashboard</h1>
@@ -876,7 +876,7 @@ export default function AdminDashboard() {
             { label: "Today's Visitors", value: analyticsSummary?.todayVisitors ?? 0, icon: "TD", color: "bg-blue-50 text-blue-600" },
             { label: "Engagements", value: analyticsSummary?.engagements ?? 0, icon: "EG", color: "bg-orange-50 text-orange-600" },
           ].map((stat, i) => (
-            <div key={i} className={`rounded-2xl p-5 ${stat.color} ${adminCardMotion}`}>
+            <div key={i} className={`rounded-2xl p-5 ${stat.color} ${adminCardMotion}`} data-reveal style={{ "--reveal-delay": `${i * 45}ms` } as CSSProperties}>
               <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 text-xs font-black">{stat.icon}</div>
               <div className="text-2xl font-extrabold">{stat.value}</div>
               <div className="text-xs font-medium opacity-70">{stat.label}</div>
@@ -896,7 +896,7 @@ export default function AdminDashboard() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`shrink-0 px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm ${adminTabMotion} ${tab === t ? "bg-dark text-white shadow-sm" : "bg-white text-gray-500 hover:text-dark border border-gray-200 hover:border-gray-300"}`}
+              className={`shrink-0 px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm ${adminTabMotion} ${tab === t ? "admin-tab-active bg-dark text-white shadow-sm" : "bg-white text-gray-500 hover:text-dark border border-gray-200 hover:border-gray-300"}`}
             >
               {t === "analytics" ? "Visitors" : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
@@ -904,7 +904,7 @@ export default function AdminDashboard() {
         </div>
 
         {tab === "analytics" && (
-          <div className="space-y-8">
+          <div key="analytics-panel" className="admin-tab-panel space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className={`bg-white rounded-2xl border border-gray-100 p-6 shadow-sm ${adminPanelMotion}`}>
                 <h3 className="font-bold text-dark mb-4">Top Pages</h3>
@@ -1040,7 +1040,7 @@ export default function AdminDashboard() {
 
         {/* Enrollments Table */}
         {tab === "enrollments" && (
-          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+          <div key="enrollments-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
@@ -1142,7 +1142,7 @@ export default function AdminDashboard() {
 
         {/* Students Table */}
         {tab === "students" && (
-          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+          <div key="students-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
@@ -1188,7 +1188,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === "reviews" && (
-          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+          <div key="reviews-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-dark">Review Moderation</h3>
               <p className="text-xs text-gray-500 mt-1">Approve, hide, or permanently delete submitted reviews. Deleted reviews are removed from public review lists too.</p>
@@ -1215,7 +1215,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === "projects" && (
-          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+          <div key="projects-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-dark">Student Project Gallery Moderation</h3>
               <p className="text-xs text-gray-500 mt-1">Approve finished work, reject drafts, or delete records from the shared gallery feed.</p>
@@ -1255,7 +1255,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === "assignments" && (
-          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+          <div key="assignments-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-dark">Course Assignment Uploads</h3>
               <p className="text-xs text-gray-500 mt-1">Review submissions, request revisions, leave feedback, or delete invalid assignment records.</p>
@@ -1339,8 +1339,8 @@ export default function AdminDashboard() {
         )}
 
         {tab === "certificates" && (
-          <div className="space-y-6">
-            <section className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+          <div key="certificates-panel" className="admin-tab-panel space-y-6">
+            <section className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`} data-reveal>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                   <h3 className="text-2xl font-extrabold text-dark">Certificate Preview</h3>
@@ -1355,7 +1355,7 @@ export default function AdminDashboard() {
                         href={certificatePreviewUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className={`rounded-xl bg-dark px-5 py-3 text-sm font-bold text-white ${adminActionMotion}`}
+                        className={`premium-button rounded-xl bg-dark px-5 py-3 text-sm font-bold text-white ${adminActionMotion}`}
                       >
                         Open Full Preview
                       </a>
@@ -1363,7 +1363,7 @@ export default function AdminDashboard() {
                         href={`${certificatePreviewUrl}&download=1`}
                         target="_blank"
                         rel="noreferrer"
-                        className={`rounded-xl border border-primary/20 bg-primary/10 px-5 py-3 text-sm font-bold text-primary ${adminActionMotion}`}
+                        className={`premium-button rounded-xl border border-primary/20 bg-primary/10 px-5 py-3 text-sm font-bold text-primary ${adminActionMotion}`}
                       >
                         Download Sample PDF
                       </a>
@@ -1400,7 +1400,7 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            <section className={`overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`}>
+            <section className={`overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`} data-reveal>
               <div className="flex flex-col gap-2 border-b border-gray-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h4 className="font-extrabold text-dark">Issued Certificate Structure</h4>
@@ -1413,7 +1413,7 @@ export default function AdminDashboard() {
                   key={certificatePreviewUrl}
                   title="Certificate PDF preview"
                   src={certificatePreviewUrl}
-                  className="h-[560px] w-full bg-gray-50"
+                  className="admin-preview-frame h-[560px] w-full bg-gray-50"
                 />
               ) : (
                 <p className="p-6 text-sm text-gray-400">Select a course to preview its certificate.</p>
@@ -1423,7 +1423,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === "discounts" && (
-          <div className="space-y-8">
+          <div key="discounts-panel" className="admin-tab-panel space-y-8">
             <div className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -1532,7 +1532,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === "settings" && (
-          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+          <div key="settings-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-dark">Homepage Upcoming Intake</h3>
               <p className="text-xs text-gray-500 mt-1">Update the intake section shown on the homepage. Changes are saved to the backend and appear after the homepage is refreshed.</p>
@@ -1685,7 +1685,7 @@ export default function AdminDashboard() {
 
         {/* Content View */}
         {tab === "content" && (
-          <div className="space-y-8">
+          <div key="content-panel" className="admin-tab-panel space-y-8">
             <div className="flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
               <div>
                 <h3 className="text-2xl font-extrabold text-dark">Content Manager</h3>

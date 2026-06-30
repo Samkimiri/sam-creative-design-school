@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { courses as fallbackCourses, type Course } from "@/data/courses";
@@ -200,7 +200,7 @@ function EnrollForm() {
 
   if (status === "failed") {
     return (
-      <div className="bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-red-200 animate-fade-in">
+      <div className="motion-scale bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-red-200">
         <div className="text-center py-4 sm:py-6">
           <div className="text-4xl sm:text-5xl mb-4 animate-pulse text-red-500">!</div>
           <h2 className="text-2xl font-black text-dark mb-3">Till Payment Not Started</h2>
@@ -216,7 +216,7 @@ function EnrollForm() {
               setStatus("idle");
               setErrorMessage("");
             }}
-            className="w-full bg-primary text-white font-bold py-4 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0"
+            className="premium-button w-full bg-primary text-white font-bold py-4 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0"
           >
             Try Again
           </button>
@@ -227,7 +227,7 @@ function EnrollForm() {
 
   if (status === "stk") {
     return (
-      <div className="bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-4 border-primary relative overflow-hidden animate-fade-in">
+      <div className="motion-scale bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-4 border-primary relative overflow-hidden">
         <div className="text-center py-5 sm:py-10">
           <div className="text-4xl sm:text-5xl mb-5 sm:mb-6 animate-pulse font-black text-primary">M-PESA</div>
           <h2 className="text-2xl sm:text-3xl font-black text-dark mb-4">Check Your Phone</h2>
@@ -256,7 +256,7 @@ function EnrollForm() {
             </p>
           )}
 
-          <div className="bg-primary/5 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-primary/10">
+          <div className="progress-sheen bg-primary/5 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-primary/10">
             <div className="flex items-center justify-center gap-3 text-primary font-bold mb-2">
               <span className="w-2 h-2 bg-primary rounded-full animate-ping" />
               Waiting for Safaricom confirmation...
@@ -271,7 +271,7 @@ function EnrollForm() {
             onClick={() => {
               void checkPaymentStatus();
             }}
-            className="w-full bg-dark text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary transition-all duration-300 shadow-lg mb-4 active:translate-y-0"
+            className="premium-button w-full bg-dark text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary transition-all duration-300 shadow-lg mb-4 active:translate-y-0"
           >
             I have entered my PIN - check status
           </button>
@@ -290,7 +290,7 @@ function EnrollForm() {
 
   if (status === "success") {
     return (
-      <div className="bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-primary animate-fade-in">
+      <div className="motion-scale bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-primary">
         <div className="text-center">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6 text-xl font-black animate-fade-in">
             OK
@@ -340,7 +340,7 @@ function EnrollForm() {
               const message = `Hi, my name is ${formData.name || "a student"}. I have paid${amountText}${courseText} via ${activePaymentLabel}.${mpesaCodeText}${payerText}${phoneText} Enrollment reference: ${ref}. Please confirm my payment in the admin portal and activate my LMS access.`;
               window.open(`https://wa.me/254743475247?text=${encodeURIComponent(message)}`, "_blank");
             }}
-            className="inline-block w-full bg-[#25D366] text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:opacity-90 transition-all duration-300 text-center shadow-lg active:translate-y-0"
+            className="premium-button inline-block w-full bg-[#25D366] text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:opacity-90 transition-all duration-300 text-center shadow-lg active:translate-y-0"
           >
             Send WhatsApp Payment Details
           </button>
@@ -350,10 +350,10 @@ function EnrollForm() {
   }
 
   return (
-    <div className="animate-fade-in bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border border-gray-100 transition duration-300 hover:shadow-primary/10">
+    <div className="premium-card bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border border-gray-100 transition duration-300 hover:shadow-primary/10" data-reveal>
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 tracking-tight">Course Enrollment</h2>
       <form className="space-y-6 md:space-y-8" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className="motion-soft motion-delay-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>
             <label htmlFor="enroll-name" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Full Name</label>
             <input
@@ -383,7 +383,7 @@ function EnrollForm() {
           </div>
         </div>
 
-        <div>
+        <div className="motion-soft motion-delay-2">
           <label htmlFor="enroll-email" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Email Address</label>
           <input
             id="enroll-email"
@@ -396,7 +396,7 @@ function EnrollForm() {
           />
         </div>
 
-        <div>
+        <div className="motion-soft motion-delay-3">
           <label htmlFor="enroll-referral" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Referral Code</label>
           <input
             id="enroll-referral"
@@ -411,7 +411,7 @@ function EnrollForm() {
           <p className="mt-2 text-xs font-semibold text-gray-500">Valid student referral codes apply a 10% enrollment discount and are tracked for admin review.</p>
         </div>
 
-        <div>
+        <div className="motion-soft motion-delay-4">
           <label htmlFor="enroll-promo" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Promo Code</label>
           <input
             id="enroll-promo"
@@ -426,7 +426,7 @@ function EnrollForm() {
           <p className="mt-2 text-xs font-semibold text-gray-500">Promo codes are checked before payment and may apply to selected courses only.</p>
         </div>
 
-        <div>
+        <div className="motion-soft motion-delay-5">
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Payment Method</p>
           <div className="rounded-2xl border-2 border-primary bg-primary/5 p-4 text-left shadow-md shadow-primary/10">
             <span className="block font-black text-dark text-sm">Manual M-Pesa Confirmation</span>
@@ -434,7 +434,7 @@ function EnrollForm() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
+        <div className="motion-soft rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">M-Pesa Payment Details</p>
@@ -501,7 +501,7 @@ function EnrollForm() {
             </div>
           </div>
 
-        <div>
+        <div className="motion-soft">
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Select Courses to Join</p>
           <div className="grid grid-cols-1 gap-3">
             {courses.map((course) => {
@@ -512,7 +512,7 @@ function EnrollForm() {
                   key={course.id}
                   onClick={() => toggleCourse(course.id)}
                   aria-pressed={isSelected}
-                  className={`flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                  className={`interactive-lift flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border-2 transition-all duration-300 text-left ${
                     isSelected ? "scale-[1.01] border-primary bg-primary/5 shadow-md shadow-primary/10" : "border-gray-100 hover:-translate-y-0.5 hover:border-gray-200 hover:shadow-sm"
                   }`}
                 >
@@ -534,7 +534,7 @@ function EnrollForm() {
           </div>
         </div>
 
-        <div className="sticky bottom-3 z-20 rounded-2xl border border-primary/10 bg-white/95 p-3 shadow-2xl shadow-slate-900/15 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0 md:pt-4 md:shadow-none">
+        <div className="motion-soft sticky bottom-3 z-20 rounded-2xl border border-primary/10 bg-white/95 p-3 shadow-2xl shadow-slate-900/15 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0 md:pt-4 md:shadow-none">
           <div className="flex justify-between items-end gap-4 mb-4 sm:mb-6">
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total to Pay</p>
@@ -553,7 +553,7 @@ function EnrollForm() {
 
           <button
             disabled={status === "submitting" || formData.selectedCourses.length === 0}
-            className="w-full bg-primary text-white font-black py-3.5 sm:py-4 rounded-xl shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-primary/40 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 text-base sm:text-lg flex items-center justify-center gap-3"
+            className="premium-button w-full bg-primary text-white font-black py-3.5 sm:py-4 rounded-xl shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-primary/40 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 text-base sm:text-lg flex items-center justify-center gap-3"
           >
             {status === "submitting" ? (
               <>
@@ -575,7 +575,7 @@ export default function Enroll() {
   return (
     <div className="pt-24 pb-28 md:pt-32 md:pb-24 min-h-screen bg-light-gray">
       <div className="container mx-auto px-4 sm:px-6 max-w-2xl">
-        <header className="mb-6 sm:mb-8 text-center">
+        <header className="mb-6 sm:mb-8 text-center" data-reveal style={{ "--reveal-delay": "80ms" } as CSSProperties}>
           <p className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-primary">Enrollment</p>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-dark">Join Sam Creative Design School</h1>
         </header>
@@ -583,7 +583,7 @@ export default function Enroll() {
           <EnrollForm />
         </Suspense>
 
-        <div className="mt-6 sm:mt-8 animate-fade-in p-5 sm:p-6 bg-white/70 rounded-2xl border border-dashed border-gray-300 text-center transition duration-300 hover:border-primary/40 hover:bg-white" style={{ animationDelay: "120ms" }}>
+        <div className="premium-card mt-6 sm:mt-8 p-5 sm:p-6 bg-white/70 rounded-2xl border border-dashed border-gray-300 text-center transition duration-300 hover:border-primary/40 hover:bg-white" data-reveal style={{ "--reveal-delay": "120ms" } as CSSProperties}>
           <h2 className="font-bold mb-2 text-base">Need Help?</h2>
           <p className="text-gray-600 mb-3">If you encounter any issues during enrollment, contact our support team immediately.</p>
           <span className="font-bold text-primary">WhatsApp: 0748201131</span>

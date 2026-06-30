@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
@@ -129,7 +130,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
             Back to courses
           </Link>
           <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-            <div>
+            <div data-reveal>
               <p className="mb-3 text-xs font-black uppercase tracking-[0.25em] text-primary-light">{course.level}</p>
               <h1 className="text-4xl font-extrabold leading-tight md:text-6xl">{course.title}</h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-white/75">{course.longDescription || course.description}</p>
@@ -150,13 +151,13 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                 )}
               </div>
             </div>
-            <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
+            <div className="premium-card overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl" data-reveal>
               <img src={course.image} alt={course.title} className="h-72 w-full object-cover md:h-96" />
               <div className="p-6">
                 <p className="text-sm font-bold text-white/60">Course Fee</p>
                 <p className="mt-1 text-4xl font-extrabold text-primary-light">Ksh {course.price.toLocaleString()}</p>
                 <p className="mt-1 text-sm text-white/60">{course.priceRange}</p>
-                <Link href={`/enroll?course=${course.id}`} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-base font-extrabold text-white shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:bg-primary-dark">
+                <Link href={`/enroll?course=${course.id}`} className="premium-button mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-base font-extrabold text-white shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:bg-primary-dark">
                   <UserPlus className="h-5 w-5" aria-hidden="true" />
                   Enroll in this course
                 </Link>
@@ -168,14 +169,14 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
 
       <section className="py-16">
         <div className="container mx-auto grid gap-8 px-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div>
+          <div data-reveal>
             <p className="text-xs font-black uppercase tracking-widest text-primary">Full Curriculum</p>
             <h2 className="mt-3 text-3xl font-extrabold text-dark">What you will learn week by week</h2>
             <p className="mt-4 text-gray-600">Lessons include notes, resources, assignments, and quizzes where available.</p>
           </div>
           <div className="space-y-3">
-            {courseLessons.map((lesson) => (
-              <div key={lesson.id} className="rounded-2xl border border-gray-100 bg-light-gray p-5">
+            {courseLessons.map((lesson, index) => (
+              <div key={lesson.id} className="premium-card rounded-2xl border border-gray-100 bg-light-gray p-5" data-reveal style={{ "--reveal-delay": `${index * 45}ms` } as CSSProperties}>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h3 className="font-extrabold text-dark">{lesson.order}. {lesson.title}</h3>
                   <span className="text-xs font-black uppercase tracking-widest text-primary">{lesson.duration}</span>
@@ -189,7 +190,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
 
       <section className="bg-light-gray py-16">
         <div className="container mx-auto grid gap-6 px-6 lg:grid-cols-3">
-          <div className="rounded-3xl bg-white p-7 shadow-sm">
+          <div className="premium-card rounded-3xl bg-white p-7 shadow-sm" data-reveal>
             <Wrench className="mb-4 h-8 w-8 text-primary" aria-hidden="true" />
             <h2 className="text-2xl font-extrabold text-dark">Software and tools</h2>
             <div className="mt-5 flex flex-wrap gap-2">
@@ -198,12 +199,12 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
               ))}
             </div>
           </div>
-          <div className="rounded-3xl bg-white p-7 shadow-sm lg:col-span-2">
+          <div className="premium-card rounded-3xl bg-white p-7 shadow-sm lg:col-span-2" data-reveal>
             <Layers3 className="mb-4 h-8 w-8 text-primary" aria-hidden="true" />
             <h2 className="text-2xl font-extrabold text-dark">Projects you will build</h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {projects.map((project) => (
-                <div key={project} className="flex items-start gap-3 rounded-2xl border border-gray-100 p-4">
+              {projects.map((project, index) => (
+                <div key={project} className="premium-card flex items-start gap-3 rounded-2xl border border-gray-100 p-4" data-reveal style={{ "--reveal-delay": `${index * 45}ms` } as CSSProperties}>
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
                   <span className="text-sm font-bold text-gray-700">{project}</span>
                 </div>
@@ -215,14 +216,14 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
 
       <section className="py-16">
         <div className="container mx-auto grid gap-8 px-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-3xl border border-gray-100 p-7">
+          <div className="premium-card rounded-3xl border border-gray-100 p-7" data-reveal>
             <div className="mb-5 flex items-center gap-3">
               <MessageCircle className="h-7 w-7 text-primary" aria-hidden="true" />
               <h2 className="text-2xl font-extrabold text-dark">Student testimonials</h2>
             </div>
             <div className="space-y-4">
-              {courseReviews.length ? courseReviews.slice(0, 3).map((review) => (
-                <blockquote key={review.id} className="rounded-2xl bg-light-gray p-5">
+              {courseReviews.length ? courseReviews.slice(0, 3).map((review, index) => (
+                <blockquote key={review.id} className="rounded-2xl bg-light-gray p-5" data-reveal style={{ "--reveal-delay": `${index * 55}ms` } as CSSProperties}>
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <span className="font-bold text-dark">{review.name}</span>
                     <span className="text-xs font-black text-primary">{review.rating}/5</span>
@@ -237,14 +238,14 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
               <CourseReviewForm courseId={course.id} courseName={course.title} />
             </div>
           </div>
-          <div className="rounded-3xl border border-gray-100 p-7">
+          <div className="premium-card rounded-3xl border border-gray-100 p-7" data-reveal>
             <div className="mb-5 flex items-center gap-3">
               <HelpCircle className="h-7 w-7 text-primary" aria-hidden="true" />
               <h2 className="text-2xl font-extrabold text-dark">Course FAQ</h2>
             </div>
             <div className="space-y-4">
-              {faqs.map((faq) => (
-                <div key={faq.q} className="rounded-2xl bg-light-gray p-5">
+              {faqs.map((faq, index) => (
+                <div key={faq.q} className="premium-card rounded-2xl bg-light-gray p-5" data-reveal style={{ "--reveal-delay": `${index * 45}ms` } as CSSProperties}>
                   <h3 className="font-extrabold text-dark">{faq.q}</h3>
                   <p className="mt-2 text-sm leading-6 text-gray-600">{faq.a}</p>
                 </div>
@@ -255,11 +256,11 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
       </section>
 
       <section className="bg-primary py-16 text-white">
-        <div className="container mx-auto px-6 text-center">
+        <div className="container mx-auto px-6 text-center" data-reveal>
           <FileText className="mx-auto mb-4 h-10 w-10" aria-hidden="true" />
           <h2 className="text-3xl font-extrabold md:text-4xl">Ready to start {course.shortTitle}?</h2>
           <p className="mx-auto mt-4 max-w-2xl text-white/80">Enroll today, complete the lessons, submit your projects, and build work you can show with confidence.</p>
-          <Link href={`/enroll?course=${course.id}`} className="mt-7 inline-flex items-center justify-center gap-2 rounded-2xl bg-dark px-8 py-4 text-base font-extrabold text-white transition-all hover:-translate-y-0.5">
+          <Link href={`/enroll?course=${course.id}`} className="premium-button mt-7 inline-flex items-center justify-center gap-2 rounded-2xl bg-dark px-8 py-4 text-base font-extrabold text-white transition-all hover:-translate-y-0.5">
             <BookOpen className="h-5 w-5" aria-hidden="true" />
             Enroll in this course
           </Link>

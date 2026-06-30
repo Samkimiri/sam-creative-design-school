@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Brain,
   CheckCircle2,
@@ -105,6 +105,20 @@ function formatLastPlayed(value: string) {
   }
 }
 
+function LevelUpCelebration({ active, level }: { active: boolean; level: number }) {
+  if (!active) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-4 z-20 grid place-items-center rounded-[28px] bg-slate-950/75 backdrop-blur-sm">
+      <div className="game-level-burst relative rounded-[28px] border border-primary-light/40 bg-white px-8 py-6 text-center shadow-2xl shadow-primary/30">
+        <span className="game-level-burst-ring absolute inset-0 rounded-[28px] border-2 border-primary" aria-hidden="true" />
+        <p className="text-xs font-black uppercase tracking-widest text-primary">Level Up</p>
+        <p className="mt-2 text-4xl font-black text-dark">Level {level}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function StudyBreakGames() {
   const [playerProgress, setPlayerProgress] = useState<PlayerProgress>({
     xp: 0,
@@ -144,6 +158,10 @@ export default function StudyBreakGames() {
   const [snakeRunning, setSnakeRunning] = useState(false);
   const [snakeScore, setSnakeScore] = useState(0);
   const [snakeMessage, setSnakeMessage] = useState("Press start and collect glow dots.");
+  const [levelUpLevel, setLevelUpLevel] = useState<number | null>(null);
+  const [resumeReady, setResumeReady] = useState(false);
+  const levelUpTimer = useRef<number | null>(null);
+  const resumeTimer = useRef<number | null>(null);
 
   const memoryPairs = matchedCards.length / 2;
   const totalScore = tapScore + reflexScore + rhythmScore + trendScore + snakeScore + memoryPairs;
@@ -159,13 +177,25 @@ export default function StudyBreakGames() {
   ];
 
   const recordProgress = useCallback((game: string, xpEarned: number) => {
-    setPlayerProgress((current) => ({
-      xp: current.xp + xpEarned,
-      bestScore: Math.max(current.bestScore, totalScore + xpEarned),
-      totalPlays: current.totalPlays + 1,
-      lastGame: game,
-      lastPlayed: new Date().toISOString(),
-    }));
+    setPlayerProgress((current) => {
+      const nextXp = current.xp + xpEarned;
+      const nextLevel = getLevelFromXp(nextXp);
+      const currentLevel = getLevelFromXp(current.xp);
+
+      if (nextLevel > currentLevel) {
+        setLevelUpLevel(nextLevel);
+        if (levelUpTimer.current) window.clearTimeout(levelUpTimer.current);
+        levelUpTimer.current = window.setTimeout(() => setLevelUpLevel(null), 1700);
+      }
+
+      return {
+        xp: nextXp,
+        bestScore: Math.max(current.bestScore, totalScore + xpEarned),
+        totalPlays: current.totalPlays + 1,
+        lastGame: game,
+        lastPlayed: new Date().toISOString(),
+      };
+    });
   }, [totalScore]);
 
   useEffect(() => {
@@ -180,9 +210,20 @@ export default function StudyBreakGames() {
         lastGame: typeof parsed.lastGame === "string" ? parsed.lastGame : "New player",
         lastPlayed: typeof parsed.lastPlayed === "string" ? parsed.lastPlayed : "",
       });
+      if (Number(parsed.xp) || Number(parsed.totalPlays) || parsed.lastPlayed) {
+        setResumeReady(true);
+        resumeTimer.current = window.setTimeout(() => setResumeReady(false), 2400);
+      }
     } catch {
       // Local storage may be unavailable in private browsing. The games still work without saved records.
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (levelUpTimer.current) window.clearTimeout(levelUpTimer.current);
+      if (resumeTimer.current) window.clearTimeout(resumeTimer.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -395,9 +436,10 @@ export default function StudyBreakGames() {
 
   return (
     <div className="space-y-8">
-      <section className="overflow-hidden rounded-[32px] border border-white bg-white p-5 shadow-[0_24px_70px_rgba(10,15,30,0.08)] md:p-6">
+      <section className="relative overflow-hidden rounded-[32px] border border-white bg-white p-5 shadow-[0_24px_70px_rgba(10,15,30,0.08)] md:p-6">
+        <LevelUpCelebration active={levelUpLevel !== null} level={levelUpLevel || playerLevel} />
         <div className="grid gap-5 lg:grid-cols-[1fr_1.15fr] lg:items-center">
-          <div className="rounded-[26px] bg-slate-950 p-6 text-white">
+          <div className={`rounded-[26px] bg-slate-950 p-6 text-white ${resumeReady ? "game-resume-glow" : ""}`}>
             <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary-light">
               <Sparkles className="h-4 w-4" aria-hidden="true" />
               Gen Z Arcade
@@ -412,7 +454,7 @@ export default function StudyBreakGames() {
                 <span className="text-xs font-black text-primary-light">{xpInLevel}/{levelConfig.xpGoal} XP</span>
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${levelProgressPercent}%` }} />
+                <div key={playerProgress.xp} className="progress-sheen game-xp-fill h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${levelProgressPercent}%` }} />
               </div>
               <p className="mt-3 text-xs font-bold text-white/55">
                 Last saved: {formatLastPlayed(playerProgress.lastPlayed)} - {playerProgress.totalPlays} scored play{playerProgress.totalPlays === 1 ? "" : "s"}
@@ -476,13 +518,13 @@ export default function StudyBreakGames() {
               <p className="text-xs font-bold uppercase tracking-widest text-white/50">Score</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4">
-              <p className="text-2xl font-black">{tapCombo}x</p>
+              <p key={tapCombo} className={`text-2xl font-black ${tapCombo > 1 ? "game-streak-pop" : ""}`}>{tapCombo}x</p>
               <p className="text-xs font-bold uppercase tracking-widest text-white/50">Combo</p>
             </div>
             <button
               type="button"
               onClick={() => setTapRunning((running) => !running)}
-              className="rounded-2xl bg-primary px-4 py-4 text-sm font-black text-white transition hover:bg-primary-light"
+              className="premium-button rounded-2xl bg-primary px-4 py-4 text-sm font-black text-white transition hover:bg-primary-light"
             >
               {tapRunning ? `${tapTime}s Left` : tapTime === 0 ? "Play Again" : `Level ${playerLevel}`}
             </button>

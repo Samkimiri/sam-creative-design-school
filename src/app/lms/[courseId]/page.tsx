@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type CSSProperties } from "react";
 import Link from "next/link";
 import { courses as fallbackCourses, lessons as fallbackLessons, type Course, type Lesson } from "@/data/courses";
 import { useParams, useSearchParams } from "next/navigation";
@@ -236,7 +236,7 @@ export default function CoursePlayer() {
       />
       <div className="fixed inset-0 -z-10 bg-white/80" aria-hidden="true" />
       {/* Top Course Bar */}
-      <div className="mx-4 mb-4 mt-3 flex max-w-7xl flex-col gap-3 rounded-2xl border border-white/70 bg-slate-950 px-4 py-4 text-white shadow-2xl shadow-slate-900/10 sm:mx-auto sm:mb-6 sm:mt-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mx-4 mb-4 mt-3 flex max-w-7xl flex-col gap-3 rounded-2xl border border-white/70 bg-slate-950 px-4 py-4 text-white shadow-2xl shadow-slate-900/10 sm:mx-auto sm:mb-6 sm:mt-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between" data-reveal>
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Link href="/lms" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">
             Dashboard
@@ -280,7 +280,7 @@ export default function CoursePlayer() {
             {/* Video Player */}
             {!showQuiz ? (
               <>
-                <div className="mb-4 grid grid-cols-3 gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm sm:mb-6 sm:grid-cols-5">
+                <div className="mb-4 grid grid-cols-3 gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm sm:mb-6 sm:grid-cols-5" data-reveal style={{ "--reveal-delay": "80ms" } as CSSProperties}>
                   {(["video", "notes", "resources", "assignment", "quiz"] as LessonTab[]).map((tab) => (
                     <button
                       key={tab}
@@ -297,7 +297,7 @@ export default function CoursePlayer() {
 
                 {activeTab === "video" && (
                   isPreview ? (
-                    <div className="animate-fade-in mb-6 overflow-hidden rounded-[1.5rem] border border-white bg-slate-950 shadow-2xl shadow-slate-900/10">
+                    <div key={`${activeLesson.id}-preview`} className="lesson-panel-enter mb-6 overflow-hidden rounded-[1.5rem] border border-white bg-slate-950 shadow-2xl shadow-slate-900/10">
                       <div className="relative aspect-video">
                         <img
                           src={activeLesson.image || course.image}
@@ -313,7 +313,7 @@ export default function CoursePlayer() {
                           </p>
                           <Link
                             href={`/enroll?course=${course.id}`}
-                            className="mt-5 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/90"
+                            className="premium-button mt-5 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/90"
                           >
                             Enroll to watch
                           </Link>
@@ -321,7 +321,7 @@ export default function CoursePlayer() {
                       </div>
                     </div>
                   ) : (
-                    <div className="animate-fade-in mb-6 aspect-video overflow-hidden rounded-[1.5rem] bg-dark shadow-2xl shadow-slate-900/10">
+                    <div key={`${activeLesson.id}-video`} className="lesson-panel-enter mb-6 aspect-video overflow-hidden rounded-[1.5rem] bg-dark shadow-2xl shadow-slate-900/10">
                       <iframe
                         key={activeLesson.id}
                         className="h-full w-full"
@@ -335,7 +335,7 @@ export default function CoursePlayer() {
                 )}
 
                 {/* Lesson Details */}
-                <div className="animate-fade-in bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-gray-100 mb-5 sm:mb-6">
+                <div key={`${activeLesson.id}-${activeTab}-details`} className="lesson-panel-enter bg-white rounded-2xl p-5 md:p-8 shadow-sm border border-gray-100 mb-5 sm:mb-6">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-2">
@@ -352,7 +352,7 @@ export default function CoursePlayer() {
                       {!isPreview && !activeLesson.quiz && !completedLessons.includes(activeLesson.id) && (
                         <button
                           onClick={() => markComplete(activeLesson.id)}
-                          className="bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm hover:-translate-y-0.5 hover:bg-green-600 active:translate-y-0 transition-all duration-300"
+                          className="premium-button bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm hover:-translate-y-0.5 hover:bg-green-600 active:translate-y-0 transition-all duration-300"
                         >
                           Mark Complete
                         </button>
@@ -360,7 +360,7 @@ export default function CoursePlayer() {
                       {activeLesson.quiz && (
                         <button
                           onClick={() => openTab("quiz")}
-                          className="bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 transition-all duration-300"
+                          className="premium-button bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 transition-all duration-300"
                         >
                           Take Quiz
                         </button>
@@ -375,14 +375,14 @@ export default function CoursePlayer() {
                   )}
 
                   {progress === 100 && (
-                    <div className="mt-6 animate-fade-in rounded-2xl border border-green-200 bg-green-50 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="premium-card mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" data-reveal>
                       <div>
                         <p className="text-sm font-black uppercase tracking-widest text-green-700">Course Completed</p>
                         <h3 className="text-xl font-extrabold text-green-950">Your certificate is ready.</h3>
                       </div>
                       <a
                         href={`/api/certificates/${course.id}`}
-                        className="bg-green-600 text-white text-center font-bold px-5 py-3 rounded-xl hover:bg-green-700 transition-colors"
+                        className="premium-button bg-green-600 text-white text-center font-bold px-5 py-3 rounded-xl hover:bg-green-700 transition-colors"
                       >
                         Download Certificate
                       </a>
@@ -398,7 +398,7 @@ export default function CoursePlayer() {
                         <p className="text-sm font-bold text-primary uppercase tracking-widest">Student Notes</p>
                         <a
                           href={`/api/notes/${activeLesson.id}`}
-                          className="inline-flex items-center justify-center bg-white border border-blue-200 text-primary px-4 py-2 rounded-xl text-sm font-bold hover:border-primary hover:shadow-sm transition-all"
+                          className="premium-button inline-flex items-center justify-center bg-white border border-blue-200 text-primary px-4 py-2 rounded-xl text-sm font-bold hover:border-primary hover:shadow-sm transition-all"
                         >
                           Download PDF
                         </a>
@@ -632,9 +632,10 @@ export default function CoursePlayer() {
                       key={lesson.id}
                       onClick={() => selectLesson(lesson)}
                       disabled={isLocked}
-                      className={`w-full text-left p-3.5 rounded-xl flex items-center gap-3 transition-all duration-300 ${
+                      className={`lesson-row-motion w-full text-left p-3.5 rounded-xl flex items-center gap-3 transition-all duration-300 ${
                         isLocked ? "cursor-not-allowed opacity-50" : isActive ? "scale-[1.01] bg-primary/10 border border-primary/20 shadow-sm" : "hover:-translate-y-0.5 hover:bg-gray-50"
                       }`}
+                      style={{ "--reveal-delay": `${index * 35}ms` } as CSSProperties}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-xs ${
                         isDone ? "bg-green-500 text-white" : isLocked ? "bg-gray-100 text-gray-400" : isActive ? "bg-primary text-white" : "bg-gray-100 text-gray-400"

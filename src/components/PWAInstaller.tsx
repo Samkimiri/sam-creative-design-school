@@ -70,7 +70,7 @@ export default function PWAInstaller() {
   };
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto max-w-md rounded-2xl border border-white/15 bg-dark p-4 text-white shadow-2xl shadow-black/30 sm:left-auto sm:right-6">
+    <div className="motion-rise fixed bottom-24 left-4 right-4 z-50 mx-auto max-w-md rounded-2xl border border-white/15 bg-dark p-4 text-white shadow-2xl shadow-black/30 sm:left-auto sm:right-6">
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary-light">
           <Smartphone className="h-5 w-5" aria-hidden="true" />
@@ -83,7 +83,7 @@ export default function PWAInstaller() {
           <button
             type="button"
             onClick={installApp}
-            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
+            className="premium-button mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
             Install App
