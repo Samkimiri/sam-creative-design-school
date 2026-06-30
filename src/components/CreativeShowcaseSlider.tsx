@@ -5,10 +5,10 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const slides = [
   {
-    title: "Photoshop projects",
-    label: "Design Practice",
-    image: "/images/gallery-photoshop.png",
-    alt: "Photoshop student design work",
+    title: "Food product poster",
+    label: "Clean Ad Design",
+    image: "/images/showcase-food-poster.png",
+    alt: "Minimal food product advertising poster",
   },
   {
     title: "Illustrator branding",
