@@ -2,11 +2,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LoaderCircle, MessageCircle } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle, MessageCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -96,15 +97,26 @@ export default function LoginPage() {
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-300 mb-2">Password</label>
-              <input
-                required
-                type="password"
-                autoComplete="current-password"
-                className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 focus:-translate-y-0.5 focus:shadow-lg focus:shadow-primary/10 placeholder:text-gray-500"
-                placeholder="Password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
+              <div className="relative">
+                <input
+                  required
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 pr-14 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 focus:-translate-y-0.5 focus:shadow-lg focus:shadow-primary/10 placeholder:text-gray-500"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  className="absolute inset-y-0 right-3 my-auto grid h-9 w-9 place-items-center rounded-lg text-gray-400 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/70"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+                </button>
+              </div>
             </div>
 
             <button

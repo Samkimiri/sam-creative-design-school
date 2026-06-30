@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { BadgeCheck, Crown, LoaderCircle, Palette, Rocket, Sparkles, Trophy, Video, Wrench, Zap } from "lucide-react";
+import { BadgeCheck, Crown, Eye, EyeOff, LoaderCircle, Palette, Rocket, Sparkles, Trophy, Video, Wrench, Zap } from "lucide-react";
 
 type Step = "start" | "login" | "identity" | "contact" | "security" | "ambition" | "success";
 
@@ -84,6 +84,8 @@ export default function GamifiedRegistration() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [loginStatus, setLoginStatus] = useState<"idle" | "loading" | "error">("idle");
   const [loginError, setLoginError] = useState("");
   const [formError, setFormError] = useState("");
@@ -315,15 +317,26 @@ export default function GamifiedRegistration() {
                 value={loginEmail}
                 onChange={(event) => setLoginEmail(event.target.value)}
               />
-              <input
-                required
-                type="password"
-                aria-label="Password"
-                placeholder="Password"
-                className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg transition-all"
-                value={loginPassword}
-                onChange={(event) => setLoginPassword(event.target.value)}
-              />
+              <div className="relative">
+                <input
+                  required
+                  type={showLoginPassword ? "text" : "password"}
+                  aria-label="Password"
+                  placeholder="Password"
+                  className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 pr-16 outline-none focus:border-primary text-white font-bold text-lg transition-all"
+                  value={loginPassword}
+                  onChange={(event) => setLoginPassword(event.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword((current) => !current)}
+                  className="absolute inset-y-0 right-4 my-auto grid h-11 w-11 place-items-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/70"
+                  aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                  title={showLoginPassword ? "Hide password" : "Show password"}
+                >
+                  {showLoginPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -477,15 +490,26 @@ export default function GamifiedRegistration() {
               {isLoggedIn ? "You are logged in. Your account is already secure." : "Create a strong master key for your portal."}
             </p>
             {!isLoggedIn ? (
-              <input
-                required
-                type="password"
-                aria-label="Password"
-                placeholder="Strong Password"
-                className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 outline-none focus:border-primary text-white font-bold text-lg mb-6 transition-all"
-                value={formData.password}
-                onChange={(event) => setFormData({ ...formData, password: event.target.value })}
-              />
+              <div className="relative mb-6">
+                <input
+                  required
+                  type={showSignupPassword ? "text" : "password"}
+                  aria-label="Password"
+                  placeholder="Strong Password"
+                  className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-5 pr-16 outline-none focus:border-primary text-white font-bold text-lg transition-all"
+                  value={formData.password}
+                  onChange={(event) => setFormData({ ...formData, password: event.target.value })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSignupPassword((current) => !current)}
+                  className="absolute inset-y-0 right-4 my-auto grid h-11 w-11 place-items-center rounded-xl text-gray-400 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/70"
+                  aria-label={showSignupPassword ? "Hide password" : "Show password"}
+                  title={showSignupPassword ? "Hide password" : "Show password"}
+                >
+                  {showSignupPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+                </button>
+              </div>
             ) : (
               <div className="w-full bg-green-500/10 border border-green-500/20 text-green-400 rounded-2xl p-5 font-bold mb-6">
                 Account Authenticated
