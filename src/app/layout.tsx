@@ -6,6 +6,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import PWAInstaller from "@/components/PWAInstaller";
 import StudyBreakPrompt from "@/components/StudyBreakPrompt";
+import PremiumMotion from "@/components/PremiumMotion";
 import { getContentSettings } from "@/lib/contentSettings";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://sam-creative-design-school.vercel.app";
@@ -86,6 +87,7 @@ export default async function RootLayout({
         <PWAInstaller />
         <StudyBreakPrompt />
         <AnalyticsTracker />
+        <PremiumMotion />
       </body>
     </html>
   );

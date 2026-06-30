@@ -23,6 +23,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-poppins);
   font-weight: 700;
@@ -36,6 +40,77 @@ h1, h2, h3, h4, h5, h6 {
 a,
 button {
   -webkit-tap-highlight-color: transparent;
+}
+
+[data-reveal] {
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(22px) scale(0.985);
+  transition:
+    opacity 720ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 720ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, filter, transform;
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0) scale(1);
+}
+
+.premium-card {
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms ease,
+    border-color 300ms ease,
+    background-color 300ms ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-5px) scale(1.015);
+  box-shadow: 0 20px 46px rgba(10, 15, 30, 0.09);
+}
+
+.premium-button {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 260ms ease,
+    border-color 260ms ease,
+    background-color 260ms ease,
+    color 260ms ease;
+}
+
+.premium-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(26, 143, 227, 0.18);
+}
+
+.premium-button:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.premium-button::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.24);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.premium-button:active::after {
+  width: 220%;
+  height: 220%;
+  opacity: 1;
+  transition: width 360ms ease, height 360ms ease, opacity 520ms ease;
 }
 
 .bg-blue-gradient {
@@ -180,6 +255,11 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes hero-image-in {
+  from { opacity: 0; transform: scale(1.025); }
+  to { opacity: 0.7; transform: scale(1); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.6s ease-out forwards;
 }
@@ -219,6 +299,32 @@ button {
 
 .animate-scale-up {
   animation: scale-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+
+  .premium-card:hover,
+  .premium-button:hover {
+    transform: none;
+  }
 }
 
 .lms-hero {

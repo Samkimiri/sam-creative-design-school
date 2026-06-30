@@ -53,9 +53,9 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled || isLmsPage
-          ? "bg-white/95 backdrop-blur-md shadow-md"
+          ? "bg-white/95 backdrop-blur-xl shadow-[0_18px_45px_rgba(10,15,30,0.08)]"
           : "bg-transparent"
       }`}
     >
@@ -87,7 +87,7 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+              className={`group relative px-4 py-2 rounded-lg font-bold text-sm transition-all ${
                 pathname === link.href
                   ? "text-primary"
                   : scrolled || isLmsPage
@@ -96,6 +96,12 @@ export default function Navbar() {
               }`}
             >
               {link.label}
+              <span
+                className={`absolute inset-x-4 -bottom-0.5 h-0.5 origin-left rounded-full bg-primary transition-transform duration-300 ${
+                  pathname === link.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                }`}
+                aria-hidden="true"
+              />
             </Link>
           ))}
         </div>
@@ -116,7 +122,7 @@ export default function Navbar() {
               )}
               <Link
                 href="/lms"
-                className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-primary/90 hover:-translate-y-0.5 transition-all shadow-lg shadow-primary/20"
+                className="premium-button flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-primary/90 hover:-translate-y-0.5 transition-all shadow-lg shadow-primary/20"
               >
                 <span className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-xs font-black">
                   {user.name.charAt(0)}
@@ -136,7 +142,7 @@ export default function Navbar() {
             <>
               <Link
                 href="/auth/login"
-                className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-primary/90 hover:-translate-y-0.5 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+                className="premium-button bg-primary text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-primary/90 hover:-translate-y-0.5 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
               >
                 <LogIn className="h-4 w-4" aria-hidden="true" />
                 Sign In
@@ -167,7 +173,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-100 shadow-xl overflow-y-auto max-h-[80vh]">
+        <div className="lg:hidden bg-white border-t border-gray-100 shadow-xl overflow-y-auto max-h-[80vh] motion-soft">
           <div className="container mx-auto px-6 py-4 space-y-1">
             {links.map((link) => (
               <Link

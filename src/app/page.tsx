@@ -1,4 +1,7 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import AnimatedCounter from "@/components/AnimatedCounter";
+import CreativeShowcaseSlider from "@/components/CreativeShowcaseSlider";
 import GamifiedRegistration from "@/components/GamifiedRegistration";
 import ReviewsSection from "@/components/ReviewsSection";
 import FeaturedCoursesCarousel from "@/components/FeaturedCoursesCarousel";
@@ -98,38 +101,38 @@ export default async function Home() {
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 z-10 bg-[linear-gradient(105deg,rgba(5,9,20,0.92)_0%,rgba(5,9,20,0.72)_45%,rgba(10,15,30,0.26)_100%)]" />
           <div
-            className="h-full w-full bg-cover bg-center opacity-70"
+            className="h-full w-full bg-cover bg-center opacity-70 motion-safe:animate-[hero-image-in_1200ms_ease-out_both]"
             style={{ backgroundImage: "url('/images/hero.png')" }}
           />
         </div>
 
         <div className="container relative z-20 mx-auto flex flex-col items-center px-6 py-20 text-center md:items-start md:text-left lg:py-28">
-          <div className="animate-fade-in mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-2xl shadow-black/20 backdrop-blur-md">
+          <div className="motion-rise mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-2xl shadow-black/20 backdrop-blur-md">
             <span className="h-2 w-2 rounded-full bg-primary" />
             {content.homepage.eyebrow}
           </div>
 
-          <h1 className="animate-fade-in mb-6 max-w-5xl text-5xl font-extrabold leading-[0.95] text-white md:text-7xl">
+          <h1 className="motion-rise motion-delay-1 mb-6 max-w-5xl text-5xl font-extrabold leading-[0.95] text-white md:text-7xl">
             {renderHeroTitle(content.homepage.title)}
           </h1>
-          <p className="animate-fade-in mb-10 max-w-2xl text-lg leading-8 text-white/80 md:text-xl" style={{ animationDelay: "0.2s" }}>
+          <p className="motion-rise motion-delay-2 mb-10 max-w-2xl text-lg leading-8 text-white/80 md:text-xl">
             {content.homepage.subtitle}
           </p>
-          <div className="animate-fade-in flex w-full flex-col gap-4 sm:w-auto sm:flex-row" style={{ animationDelay: "0.4s" }}>
-            <Link href="#start" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-base font-extrabold text-white shadow-2xl shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-primary-dark sm:px-10">
+          <div className="motion-rise motion-delay-3 flex w-full flex-col gap-4 sm:w-auto sm:flex-row">
+            <Link href="#start" className="premium-button inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-4 text-base font-extrabold text-white shadow-2xl shadow-primary/30 transition-all hover:-translate-y-0.5 hover:bg-primary-dark sm:px-10">
               {content.homepage.primaryCta}
               <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </Link>
-            <Link href="/courses" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-8 py-4 text-base font-extrabold text-white backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 sm:px-10">
+            <Link href="/courses" className="premium-button inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-8 py-4 text-base font-extrabold text-white backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 sm:px-10">
               <BookOpen className="h-5 w-5" aria-hidden="true" />
               {content.homepage.secondaryCta}
             </Link>
           </div>
 
           {/* Trust badges */}
-          <div className="animate-fade-in mt-12 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4" style={{ animationDelay: "0.6s" }}>
-            {trustBadges.map(({ label, Icon }) => (
-              <span key={label} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center text-xs font-bold text-white/80 backdrop-blur-md">
+          <div className="motion-rise motion-delay-4 mt-12 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
+            {trustBadges.map(({ label, Icon }, index) => (
+              <span key={label} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-center text-xs font-bold text-white/80 backdrop-blur-md transition-transform duration-300 hover:-translate-y-0.5" style={{ transitionDelay: `${index * 35}ms` }}>
                 <Icon className="h-4 w-4 text-primary-light" aria-hidden="true" />
                 {label}
               </span>
@@ -139,12 +142,12 @@ export default async function Home() {
       </section>
 
       {/* ── Stats ────────────────────────────────────────── */}
-      <section className="animate-fade-in border-b border-gray-100 bg-white py-10">
+      <section className="border-b border-gray-100 bg-white py-10" data-reveal>
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {stats.map((stat, i) => (
-              <div key={i} className="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm transition-transform duration-300 motion-safe:hover:-translate-y-1">
-                <div className="mb-1 text-4xl font-extrabold text-primary transition-colors duration-300 md:text-5xl">{stat.value}</div>
+              <div key={i} className="premium-card rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm" data-reveal style={{ "--reveal-delay": `${i * 70}ms` } as CSSProperties}>
+                <AnimatedCounter value={stat.value} className="mb-1 block text-4xl font-extrabold text-primary transition-colors duration-300 md:text-5xl" />
                 <div className="text-sm font-semibold text-gray-500">{stat.label}</div>
               </div>
             ))}
@@ -152,10 +155,12 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="bg-white py-20">
+      <CreativeShowcaseSlider />
+
+      <section className="bg-white py-20" data-reveal>
         <div className="container mx-auto px-6">
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <div className="animate-fade-in">
+            <div>
               <span className="mb-3 block text-sm font-bold uppercase tracking-widest text-primary">
                 What You Get
               </span>
@@ -187,8 +192,9 @@ export default async function Home() {
               {learningBundle.map((item, index) => (
                 <div
                   key={item.label}
-                  className="animate-fade-in rounded-2xl border border-gray-100 bg-light-gray p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:bg-white hover:shadow-md"
-                  style={{ animationDelay: `${index * 70}ms` }}
+                  className="premium-card rounded-2xl border border-gray-100 bg-light-gray p-6 hover:border-primary/30 hover:bg-white"
+                  data-reveal
+                  style={{ "--reveal-delay": `${index * 70}ms` } as CSSProperties}
                 >
                   <p className="text-4xl font-extrabold tracking-tight text-primary">
                     {item.value}
@@ -206,7 +212,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="bg-light-gray py-20">
+      <section className="bg-light-gray py-20" data-reveal>
         <div className="container mx-auto px-6">
           <div className="mb-12 max-w-3xl animate-fade-in">
             <span className="mb-3 block text-sm font-bold uppercase tracking-widest text-primary">
@@ -224,8 +230,9 @@ export default async function Home() {
             {toolStacks.map((stack, index) => (
               <div
                 key={stack.title}
-                className="animate-fade-in rounded-2xl border border-gray-100 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
-                style={{ animationDelay: `${index * 90}ms` }}
+                className="premium-card rounded-2xl border border-gray-100 bg-white p-7 shadow-sm hover:border-primary/30"
+                data-reveal
+                style={{ "--reveal-delay": `${index * 90}ms` } as CSSProperties}
               >
                 <p className="mb-3 text-xs font-black uppercase tracking-widest text-primary">
                   Category {String(index + 1).padStart(2, "0")}
@@ -248,7 +255,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="overflow-hidden bg-white py-20">
+      <section className="overflow-hidden bg-white py-20" data-reveal>
         <div className="container mx-auto px-6">
           <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
             <div className="animate-fade-in">
@@ -264,7 +271,7 @@ export default async function Home() {
               </p>
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
                 {learningPath.map(({ Icon, ...item }, index) => (
-                  <div key={item.label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg">
+                  <div key={item.label} className="premium-card rounded-2xl border border-gray-100 bg-white p-5 shadow-sm hover:border-primary/20">
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/10 text-primary">
                         <Icon className="h-5 w-5" aria-hidden="true" />
@@ -287,8 +294,9 @@ export default async function Home() {
                   <Link
                     key={course.id}
                     href={`/courses/${course.id}`}
-                    className="group animate-fade-in overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-xl"
-                    style={{ animationDelay: `${index * 70}ms` }}
+                    className="premium-card group overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm hover:border-primary/20"
+                    data-reveal
+                    style={{ "--reveal-delay": `${index * 70}ms` } as CSSProperties}
                   >
                     <div className="mb-5 flex items-center justify-between gap-4">
                       <span
@@ -327,10 +335,10 @@ export default async function Home() {
       </section>
 
       {/* Upcoming Intake */}
-      <section className="bg-white py-20">
+      <section className="bg-white py-20" data-reveal>
         <div className="container mx-auto px-6">
           <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-stretch">
-            <div className="animate-fade-in rounded-2xl bg-dark p-7 text-white shadow-xl shadow-dark/10 md:p-8">
+            <div className="rounded-2xl bg-dark p-7 text-white shadow-xl shadow-dark/10 md:p-8" data-reveal>
               <div className="mb-8 flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/25">
                   <CalendarDays className="h-5 w-5" aria-hidden="true" />
@@ -380,8 +388,9 @@ export default async function Home() {
               {intakeDetails.map(({ Icon, ...item }, index) => (
                 <div
                   key={item.label}
-                  className="animate-fade-in rounded-2xl border border-gray-100 bg-light-gray p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:bg-white hover:shadow-md"
-                  style={{ animationDelay: `${index * 80}ms` }}
+                  className="premium-card rounded-2xl border border-gray-100 bg-light-gray p-5 hover:border-primary/30 hover:bg-white"
+                  data-reveal
+                  style={{ "--reveal-delay": `${index * 80}ms` } as CSSProperties}
                 >
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
                     <Icon className="h-5 w-5" aria-hidden="true" />
@@ -390,7 +399,7 @@ export default async function Home() {
                   <p className="mt-2 text-xl font-extrabold leading-snug text-dark">{item.value}</p>
                 </div>
               ))}
-              <div className="animate-fade-in overflow-hidden rounded-2xl border border-primary/20 bg-primary/10 sm:col-span-2">
+              <div className="premium-card overflow-hidden rounded-2xl border border-primary/20 bg-primary/10 sm:col-span-2" data-reveal>
                 <div className="flex flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between">
                   <div className="flex gap-4">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
@@ -418,7 +427,7 @@ export default async function Home() {
 
       <GamifiedRegistration />
 
-      <section className="bg-dark py-20 text-white">
+      <section className="bg-dark py-20 text-white" data-reveal>
         <div className="container mx-auto px-6">
           <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
             <div className="animate-fade-in">
@@ -444,8 +453,9 @@ export default async function Home() {
               {outcomeTiers.map((item, index) => (
                 <div
                   key={item.tier}
-                  className="animate-fade-in rounded-2xl border border-white/10 bg-white/5 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-white/10"
-                  style={{ animationDelay: `${index * 80}ms` }}
+                  className="premium-card rounded-2xl border border-white/10 bg-white/5 p-6 hover:border-primary/40 hover:bg-white/10"
+                  data-reveal
+                  style={{ "--reveal-delay": `${index * 80}ms` } as CSSProperties}
                 >
                   <p className="text-xs font-black uppercase tracking-widest text-primary">
                     Step {String(index + 1).padStart(2, "0")} - {item.tier}
@@ -460,7 +470,7 @@ export default async function Home() {
       </section>
 
       {/* ── Why Choose Us ────────────────────────────────── */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-white" data-reveal>
         <div className="container mx-auto px-6">
           <div className="text-center mb-16 animate-fade-in">
             <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Why Us</span>
@@ -470,7 +480,7 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {whyChooseItems.map(({ Icon, ...item }, i) => (
-              <div key={item.title} className="group rounded-2xl border border-gray-100 bg-light-gray p-7 transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:bg-white hover:shadow-md">
+              <div key={item.title} className="premium-card group rounded-2xl border border-gray-100 bg-light-gray p-7 hover:border-primary/25 hover:bg-white" data-reveal style={{ "--reveal-delay": `${i * 45}ms` } as CSSProperties}>
                 <div className="mb-6 flex items-center justify-between gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-primary shadow-sm ring-1 ring-primary/10 transition-transform duration-300 motion-safe:group-hover:scale-105">
                     <Icon className="h-5 w-5" aria-hidden="true" />
@@ -488,11 +498,11 @@ export default async function Home() {
       </section>
 
       {/* Instructor Preview */}
-      <section className="bg-white py-20">
+      <section className="bg-white py-20" data-reveal>
         <div className="container mx-auto px-6">
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div className="animate-fade-in">
-              <div className="relative mx-auto aspect-[4/5] max-w-sm overflow-hidden rounded-3xl bg-light-gray shadow-2xl lg:mx-0">
+              <div className="relative mx-auto aspect-[4/5] max-w-sm overflow-hidden rounded-3xl bg-light-gray shadow-2xl lg:mx-0 image-zoom">
                 <img
                   src="/images/samuel.png"
                   alt="Samuel Kimiri, instructor at Sam Creative Design School"
@@ -562,7 +572,7 @@ export default async function Home() {
       </section>
 
       {/* ── Courses Preview ───────────────────────────────── */}
-      <section className="py-24 bg-dark text-white">
+      <section className="py-24 bg-dark text-white" data-reveal>
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 animate-fade-in">
             <div>
@@ -582,7 +592,7 @@ export default async function Home() {
             {courses.map((course) => {
               const visual = getCourseVisual(course.id);
               return (
-              <div key={course.id} className={`group overflow-hidden rounded-2xl border border-white/10 bg-gray-900 shadow-2xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:shadow-primary/10`}>
+              <div key={course.id} className={`premium-card group overflow-hidden rounded-2xl border border-white/10 bg-gray-900 shadow-2xl shadow-black/10 hover:border-white/25 hover:shadow-primary/10`} data-reveal>
                 <div className="relative flex h-52 items-center justify-center overflow-hidden">
                   <img
                     src={course.image}
@@ -633,7 +643,7 @@ export default async function Home() {
       </section>
 
       {/* ── Gallery Preview ───────────────────────────────── */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-white" data-reveal>
         <div className="container mx-auto px-6">
           <div className="text-center mb-16 animate-fade-in">
             <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Student Work</span>
@@ -649,7 +659,7 @@ export default async function Home() {
               { mark: "SM", color: "from-violet-500 to-fuchsia-700", label: "Social Media Kit - Photoshop" },
               { mark: "IC", color: "from-teal-500 to-cyan-700", label: "Icon Set - Illustrator" },
             ].map((item, i) => (
-              <div key={i} className={`bg-gradient-to-br ${item.color} rounded-2xl aspect-square flex flex-col items-center justify-center text-white group hover:scale-[1.02] transition-all duration-300 cursor-pointer motion-safe:hover:-translate-y-1`}>
+              <div key={i} className={`premium-card bg-gradient-to-br ${item.color} rounded-2xl aspect-square flex flex-col items-center justify-center text-white group cursor-pointer`} data-reveal style={{ "--reveal-delay": `${i * 55}ms` } as CSSProperties}>
                 <span className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/25 bg-white/15 text-2xl font-black tracking-tight backdrop-blur-sm transition-transform duration-300 group-hover:scale-105">{item.mark}</span>
                 <span className="text-xs font-bold text-white/80 text-center px-3">{item.label}</span>
               </div>
@@ -667,7 +677,7 @@ export default async function Home() {
       <ReviewsSection mode="preview" />
 
       {/* ── CTA ──────────────────────────────────────────── */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-white" data-reveal>
         <div className="container mx-auto px-6">
           <div className="relative overflow-hidden rounded-3xl bg-primary p-10 text-center text-white shadow-2xl shadow-primary/25 md:p-16 lg:p-20">
             <div className="absolute inset-x-0 top-0 h-1 bg-white/35" />

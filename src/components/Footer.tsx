@@ -45,7 +45,7 @@ export default async function Footer() {
   ];
 
   return (
-    <footer className="relative z-20 border-t border-primary/25 bg-[#050914] text-white shadow-[0_-18px_60px_rgba(5,9,20,0.35)] pt-16 pb-8">
+    <footer className="relative z-20 border-t border-primary/25 bg-[#050914] text-white shadow-[0_-18px_60px_rgba(5,9,20,0.35)] pt-16 pb-8" data-reveal>
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
@@ -73,7 +73,7 @@ export default async function Footer() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={s.name}
-                  className="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center text-white hover:bg-primary hover:text-white transition-all"
+                  className="premium-button w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center text-white hover:bg-primary hover:text-white transition-all"
                 >
                   {s.icon}
                 </a>
