@@ -8,6 +8,7 @@ const routes = [
   "",
   "/about",
   "/blog",
+  "/certificate-preview",
   "/contact",
   "/corporate-training",
   "/courses",

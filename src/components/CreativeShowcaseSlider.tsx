@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye } from "lucide-react";
 
 const slides = [
   {
@@ -9,6 +9,24 @@ const slides = [
     label: "Clean Ad Design",
     image: "/images/showcase-food-poster.png",
     alt: "Minimal food product advertising poster",
+  },
+  {
+    title: "Orange juice advert",
+    label: "Product Campaign",
+    image: "/images/showcase-orange-juice-poster.png",
+    alt: "Clean orange juice advertising poster",
+  },
+  {
+    title: "Cookie pack design",
+    label: "Bakery Branding",
+    image: "/images/showcase-cookie-poster.png",
+    alt: "Clean cookie packaging advertising poster",
+  },
+  {
+    title: "Berry smoothie poster",
+    label: "Fresh Food Ad",
+    image: "/images/showcase-berry-smoothie-poster.png",
+    alt: "Clean berry smoothie advertising poster",
   },
   {
     title: "Illustrator branding",
@@ -35,10 +53,12 @@ const slides = [
     alt: "Motion graphics and video editing preview",
   },
   {
-    title: "Student certificates",
-    label: "Completion",
-    image: "/images/scds-logo.jpeg",
-    alt: "Sam Creative Design School certificate identity",
+    title: "Blank certificate preview",
+    label: "Completion Design",
+    image: "/images/certificate-preview-blank.svg",
+    alt: "Blank Sam Creative Design School certificate preview",
+    href: "/certificate-preview",
+    cta: "View Blank Certificate",
   },
 ];
 
@@ -132,6 +152,15 @@ export default function CreativeShowcaseSlider() {
                   {activeSlide.label}
                 </p>
                 <h3 className="mt-2 text-2xl font-extrabold md:text-4xl">{activeSlide.title}</h3>
+                {"href" in activeSlide && activeSlide.href && (
+                  <a
+                    href={activeSlide.href}
+                    className="premium-button mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-dark shadow-lg hover:text-primary"
+                  >
+                    <Eye className="h-4 w-4" aria-hidden="true" />
+                    {activeSlide.cta}
+                  </a>
+                )}
               </div>
             </div>
             <div className="h-1.5 bg-white/80">

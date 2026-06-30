@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 
 const resources = [
   { title: "Install SCDS App", text: "Add the school app to your phone or computer for faster LMS access.", href: "/install" },
+  { title: "Certificate Preview", text: "View the blank SCDS certificate design before student details are added.", href: "/certificate-preview" },
   { title: "Verify Certificate", text: "Employers can confirm a student's certificate ID.", href: "/verify-certificate" },
   { title: "Portfolio Builder", text: "Follow guided briefs and package graduation-ready projects.", href: "/portfolio-builder" },
   { title: "Student Portfolios", text: "View approved public profiles with projects, skills, and certificates.", href: "/student-portfolios" },
