@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Brain,
   CheckCircle2,
+  Flame,
   Gamepad2,
-  LayoutTemplate,
-  Medal,
-  Palette,
+  Layers3,
+  MousePointerClick,
+  Music2,
   RotateCcw,
   Sparkles,
   Target,
@@ -15,18 +16,27 @@ import {
   Zap,
 } from "lucide-react";
 
-const memoryIcons = ["PS", "AI", "UX", "JS", "3D", "VE"];
+const glowTiles = ["PS", "AI", "UX", "JS", "3D", "CC"];
 const reflexColors = [
   { name: "Blue", value: "#0056FF" },
-  { name: "Gold", value: "#E7A005" },
-  { name: "Green", value: "#16A34A" },
-  { name: "Rose", value: "#E11D48" },
+  { name: "Gold", value: "#F59E0B" },
+  { name: "Mint", value: "#10B981" },
+  { name: "Pink", value: "#EC4899" },
 ];
-const designWords = ["poster", "vector", "layers", "motion", "caption", "export", "mockup", "sketch"];
-const sequenceItems = ["PS", "UX", "AI", "3D", "JS", "VE"];
-const layoutBlocks = ["Header", "Hero", "CTA", "Gallery", "Footer"];
-const sudokuPuzzle = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
-const sudokuSolution = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+const rhythmPads = [
+  { key: "A", color: "from-cyan-400 to-blue-600" },
+  { key: "S", color: "from-fuchsia-500 to-rose-500" },
+  { key: "D", color: "from-amber-400 to-orange-500" },
+  { key: "F", color: "from-emerald-400 to-teal-600" },
+];
+const trendCards = [
+  { label: "Hook", value: "Before / After", good: true },
+  { label: "Hook", value: "Plain Intro", good: false },
+  { label: "Caption", value: "Save this idea", good: true },
+  { label: "Caption", value: "Untitled file", good: false },
+  { label: "Visual", value: "Bold Contrast", good: true },
+  { label: "Visual", value: "Low Quality", good: false },
+];
 const snakeBoardSize = 12;
 
 type Direction = "up" | "down" | "left" | "right";
@@ -34,11 +44,6 @@ type SnakePoint = { x: number; y: number };
 
 function shuffle<T>(items: T[]) {
   return [...items].sort(() => Math.random() - 0.5);
-}
-
-function scramble(word: string) {
-  const shuffled = shuffle(word.split("")).join("");
-  return shuffled === word ? word.split("").reverse().join("") : shuffled;
 }
 
 function randomFood(snake: SnakePoint[]) {
@@ -61,26 +66,24 @@ function nextSnakeHead(head: SnakePoint, direction: Direction) {
 }
 
 export default function StudyBreakGames() {
-  const [memoryDeck, setMemoryDeck] = useState(() => shuffle([...memoryIcons, ...memoryIcons]));
+  const [memoryDeck, setMemoryDeck] = useState(() => shuffle([...glowTiles, ...glowTiles]));
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
   const [matchedCards, setMatchedCards] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [targetColor, setTargetColor] = useState(() => reflexColors[0]);
   const [reflexScore, setReflexScore] = useState(0);
-  const [wordIndex, setWordIndex] = useState(0);
-  const [wordAnswer, setWordAnswer] = useState("");
-  const [wordScore, setWordScore] = useState(0);
-  const [sequence, setSequence] = useState(() => shuffle(sequenceItems).slice(0, 4));
-  const [sequenceInput, setSequenceInput] = useState<string[]>([]);
-  const [sequenceScore, setSequenceScore] = useState(0);
-  const [sequenceMessage, setSequenceMessage] = useState("Repeat the creative stack in the same order.");
-  const [layoutOptions, setLayoutOptions] = useState(() => shuffle(layoutBlocks));
-  const [layoutPlaced, setLayoutPlaced] = useState<string[]>([]);
-  const [layoutScore, setLayoutScore] = useState(0);
-  const [layoutMessage, setLayoutMessage] = useState("Build the landing page from top to bottom.");
-  const [sudokuCells, setSudokuCells] = useState(() => sudokuPuzzle.split(""));
-  const [sudokuMessage, setSudokuMessage] = useState("Fill the missing numbers without breaking the grid.");
-  const [sudokuScore, setSudokuScore] = useState(0);
+  const [tapTarget, setTapTarget] = useState(() => Math.floor(Math.random() * 9));
+  const [tapScore, setTapScore] = useState(0);
+  const [tapCombo, setTapCombo] = useState(0);
+  const [tapTime, setTapTime] = useState(15);
+  const [tapRunning, setTapRunning] = useState(false);
+  const [rhythmSequence, setRhythmSequence] = useState(() => shuffle(rhythmPads.map((pad) => pad.key)).slice(0, 4));
+  const [rhythmInput, setRhythmInput] = useState<string[]>([]);
+  const [rhythmScore, setRhythmScore] = useState(0);
+  const [rhythmMessage, setRhythmMessage] = useState("Tap the pads in the glowing order.");
+  const [trendDeck, setTrendDeck] = useState(() => shuffle(trendCards));
+  const [trendScore, setTrendScore] = useState(0);
+  const [trendMessage, setTrendMessage] = useState("Pick the card that would perform best online.");
   const [snake, setSnake] = useState<SnakePoint[]>([
     { x: 5, y: 6 },
     { x: 4, y: 6 },
@@ -90,17 +93,34 @@ export default function StudyBreakGames() {
   const [snakeDirection, setSnakeDirection] = useState<Direction>("right");
   const [snakeRunning, setSnakeRunning] = useState(false);
   const [snakeScore, setSnakeScore] = useState(0);
-  const [snakeMessage, setSnakeMessage] = useState("Press start, then guide the learner line to collect focus dots.");
+  const [snakeMessage, setSnakeMessage] = useState("Press start and collect glow dots.");
 
-  const scrambledWord = useMemo(() => scramble(designWords[wordIndex]), [wordIndex]);
-  const totalScore = reflexScore + wordScore + sequenceScore + layoutScore + sudokuScore + snakeScore + Math.floor(matchedCards.length / 2);
+  const memoryPairs = matchedCards.length / 2;
+  const totalScore = tapScore + reflexScore + rhythmScore + trendScore + snakeScore + memoryPairs;
   const gameCardClass = "group relative overflow-hidden rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_18px_55px_rgba(10,15,30,0.08)] ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_26px_70px_rgba(26,143,227,0.16)]";
+  const rhythmProgress = rhythmInput.length;
   const gameStats = [
-    { label: "Total Arcade Points", value: totalScore, Icon: Trophy },
-    { label: "Memory Pairs", value: `${matchedCards.length / 2}/${memoryIcons.length}`, Icon: Brain },
+    { label: "Arcade Points", value: totalScore, Icon: Trophy },
+    { label: "Tap Combo", value: `${tapCombo}x`, Icon: MousePointerClick },
+    { label: "Rhythm Wins", value: rhythmScore, Icon: Music2 },
     { label: "Snake Streak", value: snakeScore, Icon: Gamepad2 },
-    { label: "Logic Solves", value: sudokuScore, Icon: Medal },
   ];
+
+  useEffect(() => {
+    if (!tapRunning) return;
+
+    const interval = window.setInterval(() => {
+      setTapTime((time) => {
+        if (time <= 1) {
+          setTapRunning(false);
+          return 0;
+        }
+        return time - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [tapRunning]);
 
   useEffect(() => {
     if (!snakeRunning) return;
@@ -113,7 +133,7 @@ export default function StudyBreakGames() {
 
         if (hitWall || hitSelf) {
           setSnakeRunning(false);
-          setSnakeMessage("Nice run. Reset and try for a longer focus streak.");
+          setSnakeMessage("Nice run. Reset and chase a longer streak.");
           return currentSnake;
         }
 
@@ -123,12 +143,12 @@ export default function StudyBreakGames() {
         if (ateFood) {
           setSnakeScore((score) => score + 1);
           setSnakeFood(randomFood(nextSnake));
-          setSnakeMessage("Focus dot collected. Keep the rhythm.");
+          setSnakeMessage("Glow dot collected.");
         }
 
         return nextSnake;
       });
-    }, 180);
+    }, 160);
 
     return () => window.clearInterval(interval);
   }, [snakeDirection, snakeFood.x, snakeFood.y, snakeRunning]);
@@ -145,6 +165,15 @@ export default function StudyBreakGames() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const activeTrendCards = useMemo(() => trendDeck.slice(0, 3), [trendDeck]);
+
+  const resetMemory = () => {
+    setMemoryDeck(shuffle([...glowTiles, ...glowTiles]));
+    setSelectedCards([]);
+    setMatchedCards([]);
+    setMoves(0);
+  };
+
   const pickCard = (index: number) => {
     if (selectedCards.includes(index) || matchedCards.includes(index) || selectedCards.length === 2) return;
 
@@ -158,16 +187,9 @@ export default function StudyBreakGames() {
         setMatchedCards((current) => [...current, first, second]);
         setSelectedCards([]);
       } else {
-        window.setTimeout(() => setSelectedCards([]), 650);
+        window.setTimeout(() => setSelectedCards([]), 550);
       }
     }
-  };
-
-  const resetMemory = () => {
-    setMemoryDeck(shuffle([...memoryIcons, ...memoryIcons]));
-    setSelectedCards([]);
-    setMatchedCards([]);
-    setMoves(0);
   };
 
   const chooseReflexColor = (name: string) => {
@@ -176,87 +198,67 @@ export default function StudyBreakGames() {
     setTargetColor(shuffle(reflexColors)[0]);
   };
 
-  const submitWord = () => {
-    if (wordAnswer.trim().toLowerCase() === designWords[wordIndex]) {
-      setWordScore((score) => score + 1);
-      setWordAnswer("");
-      setWordIndex((index) => (index + 1) % designWords.length);
+  const resetTapRush = () => {
+    setTapScore(0);
+    setTapCombo(0);
+    setTapTime(15);
+    setTapTarget(Math.floor(Math.random() * 9));
+    setTapRunning(true);
+  };
+
+  const hitTapTarget = (index: number) => {
+    if (!tapRunning || tapTime === 0) return;
+    if (index === tapTarget) {
+      setTapCombo((combo) => combo + 1);
+      setTapScore((score) => score + 1 + Math.min(tapCombo, 5));
+      setTapTarget(Math.floor(Math.random() * 9));
+    } else {
+      setTapCombo(0);
+      setTapScore((score) => Math.max(0, score - 1));
     }
   };
 
-  const resetSequence = () => {
-    setSequence(shuffle(sequenceItems).slice(0, 4));
-    setSequenceInput([]);
-    setSequenceMessage("Repeat the creative stack in the same order.");
+  const resetRhythm = () => {
+    setRhythmSequence(shuffle(rhythmPads.map((pad) => pad.key)).slice(0, 4));
+    setRhythmInput([]);
+    setRhythmMessage("Tap the pads in the glowing order.");
   };
 
-  const chooseSequenceItem = (item: string) => {
-    const nextInput = [...sequenceInput, item];
-    const isCorrectSoFar = nextInput.every((value, index) => value === sequence[index]);
-    setSequenceInput(nextInput);
+  const chooseRhythmPad = (key: string) => {
+    const nextInput = [...rhythmInput, key];
+    const isCorrectSoFar = nextInput.every((value, index) => value === rhythmSequence[index]);
+    setRhythmInput(nextInput);
 
     if (!isCorrectSoFar) {
-      setSequenceMessage("Close. Reset and try the order again.");
+      setRhythmMessage("Missed the beat. Reset and replay it.");
       return;
     }
 
-    if (nextInput.length === sequence.length) {
-      setSequenceScore((score) => score + 1);
-      setSequenceMessage("Nice focus. New sequence loaded.");
-      window.setTimeout(resetSequence, 500);
-    } else {
-      setSequenceMessage(`${sequence.length - nextInput.length} step${sequence.length - nextInput.length === 1 ? "" : "s"} remaining.`);
-    }
-  };
-
-  const resetLayout = () => {
-    setLayoutOptions(shuffle(layoutBlocks));
-    setLayoutPlaced([]);
-    setLayoutMessage("Build the landing page from top to bottom.");
-  };
-
-  const placeLayoutBlock = (block: string) => {
-    const nextPlaced = [...layoutPlaced, block];
-    setLayoutPlaced(nextPlaced);
-    setLayoutOptions((options) => options.filter((item) => item !== block));
-
-    if (nextPlaced.length === layoutBlocks.length) {
-      const isCorrect = nextPlaced.every((item, index) => item === layoutBlocks[index]);
-      if (isCorrect) {
-        setLayoutScore((score) => score + 1);
-        setLayoutMessage("Perfect structure. That page would scan beautifully.");
-      } else {
-        setLayoutMessage("Almost. Reset and arrange the flow like a real homepage.");
-      }
-    }
-  };
-
-  const setSudokuValue = (index: number, value: string) => {
-    if (sudokuPuzzle[index] !== "0") return;
-
-    const nextValue = value.replace(/\D/g, "").slice(-1);
-    setSudokuCells((cells) => cells.map((cell, cellIndex) => cellIndex === index ? nextValue || "0" : cell));
-    setSudokuMessage("Keep going. Check the grid when every box is filled.");
-  };
-
-  const checkSudoku = () => {
-    const answer = sudokuCells.join("");
-    if (answer.includes("0")) {
-      setSudokuMessage("There are still empty boxes. Fill them before checking.");
+    if (nextInput.length === rhythmSequence.length) {
+      setRhythmScore((score) => score + 1);
+      setRhythmMessage("Clean beat. New combo loaded.");
+      window.setTimeout(resetRhythm, 550);
       return;
     }
 
-    if (answer === sudokuSolution) {
-      setSudokuScore((score) => score + 1);
-      setSudokuMessage("Excellent logic. Puzzle solved cleanly.");
-    } else {
-      setSudokuMessage("Something is off. Review each row, column, and 3x3 box.");
-    }
+    setRhythmMessage(`${rhythmSequence.length - nextInput.length} tap${rhythmSequence.length - nextInput.length === 1 ? "" : "s"} left.`);
   };
 
-  const resetSudoku = () => {
-    setSudokuCells(sudokuPuzzle.split(""));
-    setSudokuMessage("Fill the missing numbers without breaking the grid.");
+  const pickTrendCard = (good: boolean) => {
+    if (good) {
+      setTrendScore((score) => score + 1);
+      setTrendMessage("Good pick. That idea has stronger attention.");
+    } else {
+      setTrendScore((score) => Math.max(0, score - 1));
+      setTrendMessage("Too flat. Pick the more scroll-stopping option.");
+    }
+    setTrendDeck(shuffle(trendCards));
+  };
+
+  const resetTrend = () => {
+    setTrendDeck(shuffle(trendCards));
+    setTrendScore(0);
+    setTrendMessage("Pick the card that would perform best online.");
   };
 
   const resetSnake = () => {
@@ -270,7 +272,7 @@ export default function StudyBreakGames() {
     setSnakeDirection("right");
     setSnakeRunning(false);
     setSnakeScore(0);
-    setSnakeMessage("Press start, then guide the learner line to collect focus dots.");
+    setSnakeMessage("Press start and collect glow dots.");
   };
 
   const changeSnakeDirection = (direction: Direction) => {
@@ -291,11 +293,11 @@ export default function StudyBreakGames() {
           <div className="rounded-[26px] bg-slate-950 p-6 text-white">
             <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary-light">
               <Sparkles className="h-4 w-4" aria-hidden="true" />
-              Modern Arcade Dashboard
+              Gen Z Arcade
             </p>
-            <h2 className="text-3xl font-extrabold leading-tight md:text-4xl">Choose a game, build a streak, then jump back into class.</h2>
+            <h2 className="text-3xl font-extrabold leading-tight md:text-4xl">Fast games, bright visuals, instant scores.</h2>
             <p className="mt-4 max-w-xl text-sm leading-6 text-white/70">
-              Scores reset per visit, so every break feels fresh. The games are designed for quick focus, speed, logic, and creative thinking.
+              Quick tap, rhythm, glow, and trend games made for short breaks that still feel fun on mobile.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -316,322 +318,275 @@ export default function StudyBreakGames() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
-      <section className={gameCardClass}>
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <div>
-            <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-              <Brain className="h-4 w-4" aria-hidden="true" />
-              Memory Match
-            </p>
-            <h2 className="text-xl font-extrabold text-dark">Match the creative skill cards</h2>
+        <section className={`${gameCardClass} bg-slate-950 text-white lg:col-span-2`}>
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary-light">
+                <MousePointerClick className="h-4 w-4" aria-hidden="true" />
+                Neon Tap Rush
+              </p>
+              <h2 className="text-2xl font-extrabold">Hit the glowing tile before time runs out</h2>
+            </div>
+            <button
+              type="button"
+              onClick={resetTapRush}
+              className="rounded-xl border border-white/15 p-2 text-white/70 transition hover:border-primary-light hover:text-primary-light"
+              aria-label="Reset tap rush game"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={resetMemory}
-            className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
-            aria-label="Reset memory game"
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {memoryDeck.map((card, index) => {
-            const revealed = selectedCards.includes(index) || matchedCards.includes(index);
-            return (
+          <div className="mb-5 grid grid-cols-3 gap-3 rounded-[26px] bg-white/5 p-3">
+            {Array.from({ length: 9 }).map((_, index) => (
               <button
-                key={`${card}-${index}`}
+                key={`tap-${index}`}
                 type="button"
-                onClick={() => pickCard(index)}
-                className={`aspect-square rounded-2xl border text-lg font-black transition-all duration-300 ${
-                  revealed
-                    ? "border-primary bg-gradient-to-br from-primary to-primary-light text-white shadow-lg shadow-primary/20"
-                    : "border-gray-100 bg-slate-950 text-transparent shadow-inner hover:-translate-y-0.5 hover:border-primary/30"
+                onClick={() => hitTapTarget(index)}
+                className={`aspect-square rounded-2xl border transition duration-200 ${
+                  index === tapTarget && tapRunning
+                    ? "border-cyan-200 bg-cyan-300 shadow-[0_0_34px_rgba(34,211,238,0.8)]"
+                    : "border-white/10 bg-white/10 hover:bg-white/15"
                 }`}
+                aria-label={index === tapTarget && tapRunning ? "Active glowing tile" : "Inactive tap tile"}
+              />
+            ))}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-white/10 p-4">
+              <p className="text-2xl font-black">{tapScore}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-white/50">Score</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-4">
+              <p className="text-2xl font-black">{tapCombo}x</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-white/50">Combo</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setTapRunning((running) => !running)}
+              className="rounded-2xl bg-primary px-4 py-4 text-sm font-black text-white transition hover:bg-primary-light"
+            >
+              {tapRunning ? `${tapTime}s Left` : tapTime === 0 ? "Play Again" : "Start"}
+            </button>
+          </div>
+        </section>
+
+        <section className={gameCardClass}>
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+                <Music2 className="h-4 w-4" aria-hidden="true" />
+                Beat Match
+              </p>
+              <h2 className="text-xl font-extrabold text-dark">Replay the pad combo</h2>
+            </div>
+            <button
+              type="button"
+              onClick={resetRhythm}
+              className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
+              aria-label="Reset beat match game"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+          <div className="mb-4 flex flex-wrap gap-2 rounded-[26px] border border-primary/10 bg-primary/5 p-4">
+            {rhythmSequence.map((item, index) => (
+              <span key={`${item}-${index}`} className={`rounded-xl px-4 py-3 text-sm font-black ${index < rhythmProgress ? "bg-primary text-white" : "bg-white text-primary shadow-sm"}`}>
+                {index + 1}. {item}
+              </span>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {rhythmPads.map((pad) => (
+              <button
+                key={pad.key}
+                type="button"
+                onClick={() => chooseRhythmPad(pad.key)}
+                className={`rounded-2xl bg-gradient-to-br ${pad.color} px-4 py-6 text-xl font-black text-white shadow-lg transition hover:-translate-y-0.5`}
               >
-                {revealed ? card : "S"}
+                {pad.key}
               </button>
-            );
-          })}
-        </div>
-        <p className="mt-4 text-sm font-bold text-gray-500">
-          {matchedCards.length / 2}/{memoryIcons.length} pairs found - {moves} moves
-        </p>
-      </section>
+            ))}
+          </div>
+          <p className="mt-4 text-sm font-bold text-gray-500">{rhythmMessage}</p>
+          <p className="mt-1 text-sm font-bold text-gray-500">Score: {rhythmScore}</p>
+        </section>
 
-      <section className={gameCardClass}>
-        <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-          <Zap className="h-4 w-4" aria-hidden="true" />
-          Color Reflex
-        </p>
-        <h2 className="text-xl font-extrabold text-dark">Tap the matching color</h2>
-        <div className="my-6 rounded-[26px] p-6 text-center text-white shadow-2xl shadow-slate-900/10 ring-1 ring-white/20" style={{ backgroundColor: targetColor.value }}>
-          <p className="text-sm font-bold uppercase tracking-widest">Find</p>
-          <p className="text-3xl font-black">{targetColor.name}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {reflexColors.map((color) => (
+        <section className={gameCardClass}>
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+                <Brain className="h-4 w-4" aria-hidden="true" />
+                Glow Match
+              </p>
+              <h2 className="text-xl font-extrabold text-dark">Match the creative tiles</h2>
+            </div>
             <button
-              key={color.name}
               type="button"
-              onClick={() => chooseReflexColor(color.name)}
-              className="rounded-2xl px-4 py-4 text-sm font-black text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5"
-              style={{ backgroundColor: color.value }}
+              onClick={resetMemory}
+              className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
+              aria-label="Reset glow match game"
             >
-              {color.name}
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
             </button>
-          ))}
-        </div>
-        <p className="mt-4 text-sm font-bold text-gray-500">Score: {reflexScore}</p>
-      </section>
-
-      <section className={gameCardClass}>
-        <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-          <Palette className="h-4 w-4" aria-hidden="true" />
-          Design Word
-        </p>
-        <h2 className="text-xl font-extrabold text-dark">Unscramble the design word</h2>
-        <div className="my-6 rounded-[26px] border border-dashed border-primary/30 bg-gradient-to-br from-primary/10 to-white p-6 text-center shadow-inner">
-          <p className="text-4xl font-black tracking-[0.25em] text-primary">{scrambledWord.toUpperCase()}</p>
-        </div>
-        <div className="flex flex-col gap-3">
-          <input
-            value={wordAnswer}
-            onChange={(event) => setWordAnswer(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") submitWord();
-            }}
-            className="rounded-xl border border-gray-200 px-4 py-3 font-bold outline-none transition focus:border-primary"
-            placeholder="Type the correct word"
-          />
-          <button
-            type="button"
-            onClick={submitWord}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-primary"
-          >
-            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-            Check Word
-          </button>
-        </div>
-        <p className="mt-4 text-sm font-bold text-gray-500">Score: {wordScore}</p>
-      </section>
-
-      <section className={gameCardClass}>
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <div>
-            <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-              <Trophy className="h-4 w-4" aria-hidden="true" />
-              Creative Sequence
-            </p>
-            <h2 className="text-xl font-extrabold text-dark">Repeat the tool stack</h2>
           </div>
-          <button
-            type="button"
-            onClick={resetSequence}
-            className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
-            aria-label="Reset sequence game"
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="mb-4 flex flex-wrap gap-2 rounded-[26px] border border-dashed border-primary/30 bg-primary/5 p-4">
-          {sequence.map((item, index) => (
-            <span key={`${item}-${index}`} className="rounded-xl bg-white px-4 py-3 text-sm font-black text-primary shadow-sm">
-              {index + 1}. {item}
-            </span>
-          ))}
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {sequenceItems.map((item) => (
+          <div className="grid grid-cols-3 gap-3">
+            {memoryDeck.map((card, index) => {
+              const revealed = selectedCards.includes(index) || matchedCards.includes(index);
+              return (
+                <button
+                  key={`${card}-${index}`}
+                  type="button"
+                  onClick={() => pickCard(index)}
+                  className={`aspect-square rounded-2xl border text-lg font-black transition-all duration-300 ${
+                    revealed
+                      ? "border-primary bg-gradient-to-br from-primary to-primary-light text-white shadow-lg shadow-primary/20"
+                      : "border-gray-100 bg-slate-950 text-transparent shadow-inner hover:-translate-y-0.5 hover:border-primary/30"
+                  }`}
+                >
+                  {revealed ? card : "S"}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-4 text-sm font-bold text-gray-500">
+            {memoryPairs}/{glowTiles.length} pairs found - {moves} moves
+          </p>
+        </section>
+
+        <section className={gameCardClass}>
+          <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+            <Zap className="h-4 w-4" aria-hidden="true" />
+            Color Reflex
+          </p>
+          <h2 className="text-xl font-extrabold text-dark">Tap the matching color</h2>
+          <div className="my-6 rounded-[26px] p-6 text-center text-white shadow-2xl shadow-slate-900/10 ring-1 ring-white/20" style={{ backgroundColor: targetColor.value }}>
+            <p className="text-sm font-bold uppercase tracking-widest">Find</p>
+            <p className="text-3xl font-black">{targetColor.name}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {reflexColors.map((color) => (
+              <button
+                key={color.name}
+                type="button"
+                onClick={() => chooseReflexColor(color.name)}
+                className="rounded-2xl px-4 py-4 text-sm font-black text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5"
+                style={{ backgroundColor: color.value }}
+              >
+                {color.name}
+              </button>
+            ))}
+          </div>
+          <p className="mt-4 text-sm font-bold text-gray-500">Score: {reflexScore}</p>
+        </section>
+
+        <section className={gameCardClass}>
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+                <Flame className="h-4 w-4" aria-hidden="true" />
+                Trend Picker
+              </p>
+              <h2 className="text-xl font-extrabold text-dark">Choose the strongest post idea</h2>
+            </div>
             <button
-              key={item}
               type="button"
-              onClick={() => chooseSequenceItem(item)}
-              disabled={sequenceInput.length === sequence.length}
-              className="rounded-xl border border-gray-100 bg-light-gray px-4 py-4 text-sm font-black text-dark transition hover:-translate-y-0.5 hover:border-primary hover:text-primary disabled:opacity-50"
+              onClick={resetTrend}
+              className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
+              aria-label="Reset trend picker game"
             >
-              {item}
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
             </button>
-          ))}
-        </div>
-        <p className="mt-4 text-sm font-bold text-gray-500">{sequenceMessage}</p>
-        <p className="mt-1 text-sm font-bold text-gray-500">Score: {sequenceScore}</p>
-      </section>
+          </div>
+          <div className="grid gap-3">
+            {activeTrendCards.map((card) => (
+              <button
+                key={`${card.label}-${card.value}`}
+                type="button"
+                onClick={() => pickTrendCard(card.good)}
+                className="rounded-2xl border border-gray-100 bg-light-gray p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white hover:shadow-md"
+              >
+                <p className="text-xs font-black uppercase tracking-widest text-primary">{card.label}</p>
+                <p className="mt-1 text-lg font-black text-dark">{card.value}</p>
+              </button>
+            ))}
+          </div>
+          <p className="mt-4 text-sm font-bold text-gray-500">{trendMessage}</p>
+          <p className="mt-1 text-sm font-bold text-gray-500">Score: {trendScore}</p>
+        </section>
 
-      <section className={gameCardClass}>
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <div>
-            <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-              <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
-              Layout Builder
-            </p>
-            <h2 className="text-xl font-extrabold text-dark">Arrange the homepage flow</h2>
-          </div>
-          <button
-            type="button"
-            onClick={resetLayout}
-            className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
-            aria-label="Reset layout game"
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="mb-4 min-h-24 rounded-[26px] border border-dashed border-gray-200 bg-light-gray p-3">
-          <div className="grid gap-2">
-            {layoutPlaced.length === 0 ? (
-              <p className="py-6 text-center text-sm font-bold text-gray-400">Tap blocks below to build the page.</p>
-            ) : (
-              layoutPlaced.map((item, index) => (
-                <div key={`${item}-${index}`} className="rounded-xl bg-white px-4 py-3 text-sm font-black text-dark shadow-sm">
-                  {index + 1}. {item}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {layoutOptions.map((block) => (
+        <section className={gameCardClass}>
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div>
+              <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+                <Gamepad2 className="h-4 w-4" aria-hidden="true" />
+                Glow Snake
+              </p>
+              <h2 className="text-xl font-extrabold text-dark">Collect glow dots</h2>
+            </div>
             <button
-              key={block}
               type="button"
-              onClick={() => placeLayoutBlock(block)}
-              className="rounded-xl bg-dark px-4 py-3 text-xs font-black text-white transition hover:-translate-y-0.5 hover:bg-primary"
+              onClick={resetSnake}
+              className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
+              aria-label="Reset snake game"
             >
-              {block}
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
             </button>
-          ))}
-        </div>
-        <p className="mt-4 text-sm font-bold text-gray-500">{layoutMessage}</p>
-        <p className="mt-1 text-sm font-bold text-gray-500">Score: {layoutScore}</p>
-      </section>
-
-      <section className={gameCardClass}>
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <div>
-            <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-              <Brain className="h-4 w-4" aria-hidden="true" />
-              Sudoku Focus
-            </p>
-            <h2 className="text-xl font-extrabold text-dark">Solve the 9x9 logic grid</h2>
           </div>
-          <button
-            type="button"
-            onClick={resetSudoku}
-            className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
-            aria-label="Reset sudoku game"
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="grid grid-cols-9 overflow-hidden rounded-[26px] border-2 border-dark bg-dark shadow-2xl shadow-slate-900/10">
-          {sudokuCells.map((cell, index) => {
-            const row = Math.floor(index / 9);
-            const col = index % 9;
-            const fixed = sudokuPuzzle[index] !== "0";
-            const borderClasses = [
-              col === 2 || col === 5 ? "border-r-2 border-r-dark" : "border-r border-r-gray-200",
-              row === 2 || row === 5 ? "border-b-2 border-b-dark" : "border-b border-b-gray-200",
-            ].join(" ");
+          <div className="grid aspect-square grid-cols-12 gap-1 rounded-[26px] bg-slate-950 p-3 shadow-inner">
+            {Array.from({ length: snakeBoardSize * snakeBoardSize }).map((_, index) => {
+              const x = index % snakeBoardSize;
+              const y = Math.floor(index / snakeBoardSize);
+              const snakeIndex = snake.findIndex((part) => part.x === x && part.y === y);
+              const isFood = snakeFood.x === x && snakeFood.y === y;
 
-            return (
-              <input
-                key={`sudoku-${index}`}
-                value={cell === "0" ? "" : cell}
-                onChange={(event) => setSudokuValue(index, event.target.value)}
-                disabled={fixed}
-                inputMode="numeric"
-                aria-label={`Sudoku row ${row + 1} column ${col + 1}`}
-                className={`aspect-square min-w-0 bg-white text-center text-sm font-black outline-none transition focus:bg-primary/10 sm:text-base ${fixed ? "text-dark" : "text-primary"} ${borderClasses}`}
-              />
-            );
-          })}
-        </div>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={checkSudoku}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-primary"
-          >
-            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-            Check Puzzle
-          </button>
-        </div>
-        <p className="mt-4 text-sm font-bold text-gray-500">{sudokuMessage}</p>
-        <p className="mt-1 text-sm font-bold text-gray-500">Solved: {sudokuScore}</p>
-      </section>
-
-      <section className={gameCardClass}>
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <div>
-            <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-              <Gamepad2 className="h-4 w-4" aria-hidden="true" />
-              Modern Snake
-            </p>
-            <h2 className="text-xl font-extrabold text-dark">Collect focus dots</h2>
+              return (
+                <div
+                  key={`snake-${index}`}
+                  className={`aspect-square rounded-md transition ${
+                    snakeIndex === 0
+                      ? "bg-primary shadow-lg shadow-primary/50 ring-2 ring-white/40"
+                      : snakeIndex > -1
+                      ? "bg-sky-300"
+                      : isFood
+                      ? "bg-yellow-400 shadow-lg shadow-yellow-400/40"
+                      : "bg-white/8"
+                  }`}
+                />
+              );
+            })}
           </div>
-          <button
-            type="button"
-            onClick={resetSnake}
-            className="rounded-xl border border-gray-200 p-2 text-gray-500 transition hover:border-primary hover:text-primary"
-            aria-label="Reset snake game"
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="grid aspect-square grid-cols-12 gap-1 rounded-[26px] bg-slate-950 p-3 shadow-inner">
-          {Array.from({ length: snakeBoardSize * snakeBoardSize }).map((_, index) => {
-            const x = index % snakeBoardSize;
-            const y = Math.floor(index / snakeBoardSize);
-            const snakeIndex = snake.findIndex((part) => part.x === x && part.y === y);
-            const isFood = snakeFood.x === x && snakeFood.y === y;
-
-            return (
-              <div
-                key={`snake-${index}`}
-                className={`aspect-square rounded-md transition ${
-                  snakeIndex === 0
-                    ? "bg-primary shadow-lg shadow-primary/50 ring-2 ring-white/40"
-                    : snakeIndex > -1
-                    ? "bg-sky-300"
-                    : isFood
-                    ? "bg-yellow-400 shadow-lg shadow-yellow-400/40"
-                    : "bg-white/8"
-                }`}
-              />
-            );
-          })}
-        </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <span />
-          <button type="button" onClick={() => changeSnakeDirection("up")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Up</button>
-          <span />
-          <button type="button" onClick={() => changeSnakeDirection("left")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Left</button>
-          <button type="button" onClick={() => setSnakeRunning((running) => !running)} className="rounded-xl bg-primary px-4 py-3 text-sm font-black text-white transition hover:bg-primary/90">
-            {snakeRunning ? "Pause" : "Start"}
-          </button>
-          <button type="button" onClick={() => changeSnakeDirection("right")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Right</button>
-          <span />
-          <button type="button" onClick={() => changeSnakeDirection("down")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Down</button>
-          <span />
-        </div>
-        <p className="mt-4 text-sm font-bold text-gray-500">{snakeMessage}</p>
-        <p className="mt-1 text-sm font-bold text-gray-500">Score: {snakeScore}</p>
-      </section>
-
-      <section className="overflow-hidden rounded-[28px] border border-primary/20 bg-primary/10 p-5 lg:col-span-3">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-              <Gamepad2 className="h-4 w-4" aria-hidden="true" />
-              Refresh Rule
-            </p>
-            <h2 className="mt-2 text-xl font-extrabold text-dark">Play for 3 to 5 minutes, then return to class.</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
-              These quick games are designed to rest your eyes and reset focus without pulling you away from learning for too long.
-            </p>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <span />
+            <button type="button" onClick={() => changeSnakeDirection("up")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Up</button>
+            <span />
+            <button type="button" onClick={() => changeSnakeDirection("left")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Left</button>
+            <button type="button" onClick={() => setSnakeRunning((running) => !running)} className="rounded-xl bg-primary px-4 py-3 text-sm font-black text-white transition hover:bg-primary/90">
+              {snakeRunning ? "Pause" : "Start"}
+            </button>
+            <button type="button" onClick={() => changeSnakeDirection("right")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Right</button>
+            <span />
+            <button type="button" onClick={() => changeSnakeDirection("down")} className="rounded-xl bg-light-gray px-4 py-3 text-sm font-black text-dark transition hover:bg-primary hover:text-white">Down</button>
+            <span />
           </div>
-          <Sparkles className="h-10 w-10 text-primary" aria-hidden="true" />
-        </div>
-      </section>
+          <p className="mt-4 text-sm font-bold text-gray-500">{snakeMessage}</p>
+          <p className="mt-1 text-sm font-bold text-gray-500">Score: {snakeScore}</p>
+        </section>
+
+        <section className="overflow-hidden rounded-[28px] border border-primary/20 bg-primary/10 p-5 lg:col-span-3">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+                <Layers3 className="h-4 w-4" aria-hidden="true" />
+                Fresh Game Mix
+              </p>
+              <h2 className="mt-2 text-xl font-extrabold text-dark">Short, bright, mobile-friendly games for quick attention.</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+                Slower puzzles were removed so the centre feels faster, more visual, and easier to replay.
+              </p>
+            </div>
+            <CheckCircle2 className="h-10 w-10 text-primary" aria-hidden="true" />
+          </div>
+        </section>
       </div>
     </div>
   );

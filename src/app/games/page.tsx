@@ -1,19 +1,19 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { BookOpen, Brain, Gamepad2, Sparkles, Timer, Trophy } from "lucide-react";
+import { BookOpen, Flame, Gamepad2, MousePointerClick, Music2, Sparkles, Timer } from "lucide-react";
 import StudyBreakGames from "@/components/StudyBreakGames";
 
 export const metadata: Metadata = {
   title: "Study Break Games",
   description:
-    "Short offline-friendly games including Sudoku, Snake, memory, and creative puzzles for Sam Creative Design School students.",
+    "Fast, colorful arcade-style study break games for Sam Creative Design School students.",
 };
 
 export default function GamesPage() {
   const highlights = [
-    { label: "Logic", value: "Sudoku", Icon: Brain },
-    { label: "Speed", value: "Snake", Icon: Gamepad2 },
-    { label: "Focus", value: "Memory", Icon: Trophy },
+    { label: "Tap", value: "Neon Rush", Icon: MousePointerClick },
+    { label: "Beat", value: "Rhythm Pads", Icon: Music2 },
+    { label: "Trend", value: "Post Picker", Icon: Flame },
   ];
 
   return (
@@ -29,10 +29,10 @@ export default function GamesPage() {
                 SCDS Games Centre
               </p>
               <h1 className="max-w-4xl text-4xl font-extrabold leading-tight md:text-6xl">
-                Modern focus games for short, useful study breaks.
+                Fast arcade games built for quick attention.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-white/75">
-                Play sharper versions of Snake, Sudoku, memory, reflex, word, sequence, and layout games. They are built to feel more interactive while keeping breaks short and productive.
+                Play neon tap rush, rhythm pads, glow memory, color reflex, trend picker, and glow snake. Short, bright, replayable games for quick study breaks.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link
