@@ -85,10 +85,10 @@ export default async function Home() {
     { title: "Career Support", desc: "Tips on freelancing, job applications, and building your client base after graduation.", Icon: Briefcase },
   ];
   const learningPath = [
-    { label: "Pick a Track", detail: "Choose the course colour that matches your next skill goal.", Icon: Palette },
-    { label: "Practice Weekly", detail: "Complete guided lessons, quizzes, assignments, and project tasks.", Icon: ClipboardCheck },
-    { label: "Build Proof", detail: "Package designs, videos, sites, prompts, or CAD models for your portfolio.", Icon: FolderCheck },
-    { label: "Get Certified", detail: "Finish all lessons and download your verified SCDS certificate.", Icon: Award },
+    { label: "Choose", detail: "Pick your skill path.", Icon: Palette },
+    { label: "Practice", detail: "Work on guided projects.", Icon: ClipboardCheck },
+    { label: "Showcase", detail: "Build portfolio proof.", Icon: FolderCheck },
+    { label: "Certify", detail: "Graduate with confidence.", Icon: Award },
   ];
 
   return (
@@ -248,33 +248,33 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="bg-white py-20">
+      <section className="overflow-hidden bg-white py-20">
         <div className="container mx-auto px-6">
-          <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+          <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
             <div className="animate-fade-in">
-              <span className="mb-3 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary">
+              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/5 px-4 py-2 text-xs font-black uppercase tracking-widest text-primary">
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
-                Colour-Coded Learning
+                Creative Paths
               </span>
-              <h2 className="max-w-2xl text-3xl font-extrabold text-dark md:text-4xl">
-                Every course has its own creative identity, badges, and project direction.
+              <h2 className="max-w-xl text-3xl font-extrabold leading-tight text-dark md:text-5xl">
+                Find the course that fits your next move.
               </h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-gray-600">
-                The website now uses a visual learning system that makes each program easier to scan while keeping the official SCDS blue, navy, gold, and white foundation.
+              <p className="mt-4 max-w-lg text-base leading-7 text-gray-600">
+                Explore focused tracks, practice real projects, and finish with work you can proudly show.
               </p>
-              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
                 {learningPath.map(({ Icon, ...item }, index) => (
-                  <div key={item.label} className="rounded-2xl border border-gray-100 bg-light-gray p-5 transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-md">
-                    <div className="mb-4 flex items-center gap-3">
-                      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-primary shadow-sm">
+                  <div key={item.label} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/10 text-primary">
                         <Icon className="h-5 w-5" aria-hidden="true" />
                       </span>
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-primary shadow-sm">
+                      <span className="rounded-full bg-light-gray px-3 py-1 text-xs font-black text-primary">
                         {String(index + 1).padStart(2, "0")}
                       </span>
                     </div>
-                    <h3 className="font-extrabold text-dark">{item.label}</h3>
-                    <p className="mt-2 text-sm leading-6 text-gray-600">{item.detail}</p>
+                    <h3 className="text-lg font-extrabold text-dark">{item.label}</h3>
+                    <p className="mt-1 text-sm leading-6 text-gray-500">{item.detail}</p>
                   </div>
                 ))}
               </div>
@@ -287,25 +287,37 @@ export default async function Home() {
                   <Link
                     key={course.id}
                     href={`/courses/${course.id}`}
-                    className={`group animate-fade-in overflow-hidden rounded-2xl border ${visual.border} bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}
+                    className="group animate-fade-in overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-xl"
                     style={{ animationDelay: `${index * 70}ms` }}
                   >
-                    <div className={`relative mb-4 overflow-hidden rounded-2xl bg-gradient-to-br ${visual.gradient} p-4 text-white`}>
-                      <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full border border-white/25 bg-white/10" />
-                      <div className="absolute -bottom-8 left-8 h-24 w-24 rounded-full border border-white/15" />
-                      <div className="relative flex items-center justify-between gap-4">
-                        <span className="grid h-14 w-14 place-items-center rounded-2xl border border-white/25 bg-white/18 text-lg font-black shadow-lg backdrop-blur">
-                          {visual.icon}
-                        </span>
-                        <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-black uppercase tracking-widest backdrop-blur">
-                          {course.duration}
-                        </span>
-                      </div>
+                    <div className="mb-5 flex items-center justify-between gap-4">
+                      <span
+                        className="grid h-14 w-14 place-items-center rounded-2xl text-lg font-black text-white shadow-lg transition-transform duration-300 group-hover:scale-105"
+                        style={{ background: `linear-gradient(135deg, ${visual.primary}, ${visual.secondary})` }}
+                      >
+                        {visual.icon}
+                      </span>
+                      <span className="rounded-full bg-light-gray px-3 py-1 text-xs font-black uppercase tracking-widest text-gray-500">
+                        {course.duration}
+                      </span>
                     </div>
-                    <h3 className="text-base font-extrabold leading-snug text-dark transition-colors group-hover:text-primary">
+                    <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-light-gray">
+                      <span
+                        className="block h-full w-2/3 rounded-full transition-all duration-300 group-hover:w-full"
+                        style={{ background: `linear-gradient(90deg, ${visual.primary}, ${visual.secondary})` }}
+                      />
+                    </div>
+                    <h3 className="text-lg font-extrabold leading-snug text-dark transition-colors group-hover:text-primary">
                       {course.shortTitle}
                     </h3>
-                    <p className="mt-2 text-sm leading-6 text-gray-600 line-clamp-2">{course.description}</p>
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-600">{course.description}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {course.skills.slice(0, 2).map((skill) => (
+                        <span key={skill} className="rounded-full border border-gray-100 bg-light-gray px-3 py-1 text-xs font-bold text-gray-600">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
                   </Link>
                 );
               })}

@@ -6,6 +6,8 @@ export type CourseVisual = {
   text: string;
   ring: string;
   icon: string;
+  primary: string;
+  secondary: string;
 };
 
 const defaultVisual: CourseVisual = {
@@ -16,6 +18,8 @@ const defaultVisual: CourseVisual = {
   text: "text-blue-700",
   ring: "ring-blue-200/70",
   icon: "SC",
+  primary: "#1A8FE3",
+  secondary: "#5AB4F0",
 };
 
 const courseVisuals: Record<string, CourseVisual> = {
@@ -27,6 +31,8 @@ const courseVisuals: Record<string, CourseVisual> = {
     text: "text-blue-700",
     ring: "ring-blue-200/70",
     icon: "PS",
+    primary: "#2563EB",
+    secondary: "#38BDF8",
   },
   "illustrator-training": {
     accent: "bg-amber-500",
@@ -36,6 +42,8 @@ const courseVisuals: Record<string, CourseVisual> = {
     text: "text-amber-700",
     ring: "ring-amber-200/70",
     icon: "AI",
+    primary: "#F59E0B",
+    secondary: "#FACC15",
   },
   "vibe-designing-uiux": {
     accent: "bg-emerald-500",
@@ -45,6 +53,8 @@ const courseVisuals: Record<string, CourseVisual> = {
     text: "text-emerald-700",
     ring: "ring-emerald-200/70",
     icon: "UX",
+    primary: "#10B981",
+    secondary: "#06B6D4",
   },
   "vibe-coding-web-dev": {
     accent: "bg-lime-500",
@@ -54,6 +64,8 @@ const courseVisuals: Record<string, CourseVisual> = {
     text: "text-green-700",
     ring: "ring-lime-200/70",
     icon: "</>",
+    primary: "#65A30D",
+    secondary: "#10B981",
   },
   "ai-prompt-engineering": {
     accent: "bg-violet-500",
@@ -63,6 +75,8 @@ const courseVisuals: Record<string, CourseVisual> = {
     text: "text-violet-700",
     ring: "ring-violet-200/70",
     icon: "AI",
+    primary: "#7C3AED",
+    secondary: "#F43F5E",
   },
   "capcut-masterclass": {
     accent: "bg-rose-500",
@@ -72,6 +86,8 @@ const courseVisuals: Record<string, CourseVisual> = {
     text: "text-rose-700",
     ring: "ring-rose-200/70",
     icon: "CC",
+    primary: "#E11D48",
+    secondary: "#EC4899",
   },
   "solidworks-engineers": {
     accent: "bg-slate-700",
@@ -81,6 +97,8 @@ const courseVisuals: Record<string, CourseVisual> = {
     text: "text-slate-700",
     ring: "ring-slate-200/80",
     icon: "3D",
+    primary: "#334155",
+    secondary: "#0891B2",
   },
 };
 
