@@ -70,7 +70,8 @@ assert(registerRoute.includes("isAllowedAvatar"), "registration must validate av
 
 const gamifiedRegistration = read("src/components/GamifiedRegistration.tsx");
 assert(gamifiedRegistration.includes("masteryPaths"), "gamified registration must render mastery path choices from structured data");
-assert(gamifiedRegistration.includes("file.size > 700 * 1024"), "gamified registration must limit avatar upload size");
+assert(gamifiedRegistration.includes("file.size > maxUploadBytes"), "gamified registration must limit avatar upload size");
+assert(gamifiedRegistration.includes("compressAvatar"), "gamified registration must compress avatar uploads before submission");
 
 for (const file of ["src/app/robots.ts", "src/app/sitemap.ts", "supabase/schema.sql"]) {
   assert(exists(file), `${file} is required for production readiness`);
