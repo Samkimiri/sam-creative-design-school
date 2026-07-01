@@ -45,6 +45,7 @@ export default function CoursePlayer() {
   const [assignmentForm, setAssignmentForm] = useState({ fileUrl: "", notes: "" });
   const [assignmentStatus, setAssignmentStatus] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">(isPreview ? "allowed" : "checking");
 
   const progressStorageKey = `scds-progress-${courseId}`;
 
@@ -62,6 +63,35 @@ export default function CoursePlayer() {
       })
       .catch(() => undefined);
   }, [activeLesson?.id]);
+
+  useEffect(() => {
+    if (isPreview) {
+      setAccessState("allowed");
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkCourseAccess = async () => {
+      setAccessState("checking");
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = await res.json();
+        if (cancelled) return;
+
+        const studentCourses = Array.isArray(data.student?.enrolledCourses) ? data.student.enrolledCourses : [];
+        const isAdmin = data.user?.role === "admin" || data.student?.role === "admin";
+        setAccessState(res.ok && data.success && (isAdmin || studentCourses.includes(courseId)) ? "allowed" : "denied");
+      } catch {
+        if (!cancelled) setAccessState("denied");
+      }
+    };
+
+    void checkCourseAccess();
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, isPreview]);
 
   const readLocalProgress = useCallback(() => {
     if (typeof window === "undefined") return [];
@@ -227,6 +257,40 @@ export default function CoursePlayer() {
   };
 
   if (!course) return <div className="pt-28 text-center text-2xl font-bold">Course not found</div>;
+
+  if (accessState === "checking") {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#F5F7FB] px-6 pt-24">
+        <div className="max-w-md rounded-3xl border border-primary/10 bg-white p-8 text-center shadow-2xl">
+          <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-sm font-black text-primary">LMS</div>
+          <h1 className="text-2xl font-black text-dark">Checking course access...</h1>
+          <p className="mt-3 text-sm leading-6 text-gray-500">We are confirming your approved enrollment before opening the lessons.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (accessState === "denied") {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#F5F7FB] px-6 pt-24">
+        <div className="max-w-lg rounded-3xl border border-amber-200 bg-white p-8 text-center shadow-2xl">
+          <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-sm font-black text-amber-700">LOCK</div>
+          <h1 className="text-2xl font-black text-dark">Admin Approval Required</h1>
+          <p className="mt-3 text-sm leading-6 text-gray-600">
+            This course opens after your WhatsApp payment review is approved by the school admin. Use the same email or phone you used during enrollment.
+          </p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link href={`/enroll?course=${courseId}`} className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary/90">
+              Send Payment Review
+            </Link>
+            <Link href="/lms" className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold text-dark transition hover:border-primary hover:text-primary">
+              Back to LMS
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative isolate min-h-screen overflow-x-hidden bg-[#F5F7FB] pt-20 sm:pt-24">

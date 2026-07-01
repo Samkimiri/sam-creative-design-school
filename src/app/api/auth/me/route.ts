@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getDB, getDBRecord } from "@/lib/db";
-import { courses } from "@/data/courses";
+import { adminCourseIds, attachConfirmedEnrollmentsToStudent } from "@/lib/enrollmentAccess";
 import type { ProgressRecord, Student } from "@/types";
 
 export async function GET() {
@@ -17,12 +17,13 @@ export async function GET() {
       return NextResponse.json({ success: false, message: "Student record not found" }, { status: 404 });
     }
 
+    const syncedStudent = await attachConfirmedEnrollmentsToStudent(student);
     const allProgress = await getDB<ProgressRecord>("progress.json");
     const progress = allProgress.filter((p) => p.studentId === session.user.id);
-    const isAdmin = session.user.role === "admin" || student.role === "admin";
+    const isAdmin = session.user.role === "admin" || syncedStudent.role === "admin";
     const normalizedStudent = isAdmin
-      ? { ...student, enrolledCourses: courses.map((course) => course.id) }
-      : student;
+      ? { ...syncedStudent, enrolledCourses: adminCourseIds() }
+      : syncedStudent;
 
     return NextResponse.json({ 
       success: true, 

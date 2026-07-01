@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, saveDB } from "@/lib/db";
+import { getDB, getDBRecord, saveDB } from "@/lib/db";
 import { courses, lessons } from "@/data/courses";
+import { hasCourseAccess } from "@/lib/enrollmentAccess";
+import type { Student } from "@/types";
 
 interface ProgressRecord {
   studentId: string;
@@ -24,6 +26,14 @@ export async function GET(request: Request) {
 
   if (courseId && !courses.some((course) => course.id === courseId)) {
     return NextResponse.json({ error: "Invalid course" }, { status: 400 });
+  }
+
+  if (courseId) {
+    const student = await getDBRecord<Student>("students.json", session.user.id);
+    const canAccess = session.user.role === "admin" || hasCourseAccess(student, courseId);
+    if (!canAccess) {
+      return NextResponse.json({ error: "Course access requires admin approval" }, { status: 403 });
+    }
   }
 
   const progress = await getDB<ProgressRecord>("progress.json");
@@ -56,6 +66,12 @@ export async function POST(request: Request) {
     const lesson = lessons.find((item) => item.id === lessonId && item.courseId === courseId);
     if (!lesson) {
       return NextResponse.json({ error: "Invalid lesson" }, { status: 400 });
+    }
+
+    const student = await getDBRecord<Student>("students.json", session.user.id);
+    const canAccess = session.user.role === "admin" || hasCourseAccess(student, courseId);
+    if (!canAccess) {
+      return NextResponse.json({ error: "Course access requires admin approval" }, { status: 403 });
     }
 
     const progress = (await getDB<ProgressRecord>("progress.json")).filter(isProgressRecord);

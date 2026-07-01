@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { getDB, getDBRecord } from "@/lib/db";
 import { getManagedCourses } from "@/lib/contentSettings";
 import { getCourseVisual } from "@/lib/courseVisuals";
+import { attachConfirmedEnrollmentsToStudent } from "@/lib/enrollmentAccess";
 import { createReferralCode } from "@/lib/referrals";
 import { Award, BadgeCheck, Flame, Medal, Sparkles, Trophy } from "lucide-react";
 
@@ -20,8 +21,9 @@ interface Student {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role?: string;
-  enrolledCourses: string[];
+  enrolledCourses?: string[];
   profileImage?: string;
 }
 
@@ -57,12 +59,13 @@ export default async function LMSDashboard() {
 
   if (session) {
     student = await getDBRecord<Student>("students.json", session.user.id) ?? undefined;
+    if (student) student = await attachConfirmedEnrollmentsToStudent(student);
     studentName = session.user.name;
 
     const isAdmin = session.user.role === "admin" || student?.role === "admin";
     const studentEnrolledIds = isAdmin
       ? courses.map((course) => course.id)
-      : student?.enrolledCourses || ["photoshop-masterclass"];
+      : student?.enrolledCourses || [];
     enrolledCourses = courses.filter((course) => studentEnrolledIds.includes(course.id));
     allProgress = (await getDB<ProgressRecord>("progress.json")).filter(
       (record) => isProgressRecord(record) && record.studentId === session.user.id

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, saveDB } from "@/lib/db";
+import { getDB, getDBRecord, saveDB } from "@/lib/db";
 import { courses, lessons } from "@/data/courses";
-import type { AssignmentSubmission } from "@/types";
+import { hasCourseAccess } from "@/lib/enrollmentAccess";
+import type { AssignmentSubmission, Student } from "@/types";
 
 export async function GET() {
   const session = await getSession();
@@ -30,6 +31,12 @@ export async function POST(request: Request) {
 
   if (!course || !lesson || (!fileUrl && !notes)) {
     return NextResponse.json({ success: false, message: "Choose a lesson and add a project link or notes." }, { status: 400 });
+  }
+
+  const student = await getDBRecord<Student>("students.json", session.user.id);
+  const canAccess = session.user.role === "admin" || hasCourseAccess(student, course.id);
+  if (!canAccess) {
+    return NextResponse.json({ success: false, message: "Course access requires admin approval." }, { status: 403 });
   }
 
   const submissions = await getDB<AssignmentSubmission>("assignments.json");

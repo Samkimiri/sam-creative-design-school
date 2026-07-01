@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDB, saveDB } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
+import { grantEnrollmentAccess } from "@/lib/enrollmentAccess";
 
 interface Enrollment {
   id: string;
@@ -21,16 +22,9 @@ interface Enrollment {
   status: string;
   whatsappConfirmed?: boolean;
   whatsappSentAt?: string;
+  accessGrantedAt?: string;
+  accessGrantMessage?: string;
   createdAt: string;
-}
-
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  password?: string;
-  enrolledCourses: string[];
 }
 
 export async function POST(request: Request) {
@@ -67,36 +61,20 @@ export async function PATCH(request: Request) {
   }
   await saveDB("enrollments.json", enrollments);
 
-  // If confirmed, add to student's enrolledCourses
   if (status.value === "confirmed") {
-    const students = await getDB<Student>("students.json");
     const enrollment = enrollments[index];
+    const grant = await grantEnrollmentAccess(enrollment);
 
-    // Match by email (case-insensitive) OR phone
-    const studentIndex = students.findIndex((s) =>
-      (s.email && enrollment.studentEmail && s.email.toLowerCase() === enrollment.studentEmail.toLowerCase()) ||
-      (s.phone && enrollment.phone && s.phone === enrollment.phone)
-    );
-
-    if (studentIndex > -1) {
-      const courseIds = enrollment.courseId.split(",");
-      let updated = false;
-
-      students[studentIndex].enrolledCourses = students[studentIndex].enrolledCourses ?? [];
-      courseIds.forEach(cid => {
-        const trimmedId = cid.trim();
-        if (trimmedId && !students[studentIndex].enrolledCourses.includes(trimmedId)) {
-          students[studentIndex].enrolledCourses.push(trimmedId);
-          updated = true;
-        }
-      });
-
-      if (updated) {
-        await saveDB("students.json", students);
-      }
+    if (grant.granted) {
+      enrollments[index].accessGrantedAt = new Date().toISOString();
+      enrollments[index].accessGrantMessage = grant.addedCourses.length > 0
+        ? `Access granted to ${grant.student?.name || "student"} for ${grant.addedCourses.length} course(s).`
+        : `${grant.student?.name || "Student"} already had access to these course(s).`;
     } else {
-      console.warn(`Could not find student record for email: ${enrollment.studentEmail} or phone: ${enrollment.phone}`);
+      enrollments[index].accessGrantMessage = "Payment approved. Student should create or sign in with the same email or phone to receive course access.";
     }
+
+    await saveDB("enrollments.json", enrollments);
   }
 
   return NextResponse.json({ success: true, data: enrollments[index] });

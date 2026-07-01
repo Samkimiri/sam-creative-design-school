@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, saveDB } from "@/lib/db";
+import { getDB, getDBRecord, saveDB } from "@/lib/db";
 import { lessons } from "@/data/courses";
+import { hasCourseAccess } from "@/lib/enrollmentAccess";
+import type { Student } from "@/types";
 
 interface QuizAttempt {
   studentId: string;
@@ -43,6 +45,12 @@ export async function POST(request: Request) {
     const lesson = lessons.find(l => l.id === lessonId && l.courseId === courseId);
     if (!lesson || !lesson.quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    }
+
+    const student = await getDBRecord<Student>("students.json", session.user.id);
+    const canAccess = session.user.role === "admin" || hasCourseAccess(student, courseId);
+    if (!canAccess) {
+      return NextResponse.json({ error: "Course access requires admin approval" }, { status: 403 });
     }
 
     if (!Array.isArray(answers) && (!answers || typeof answers !== "object")) {

@@ -54,6 +54,8 @@ export interface Enrollment {
   status: "pending" | "confirmed" | "failed" | string;
   whatsappConfirmed?: boolean;
   whatsappSentAt?: string;
+  accessGrantedAt?: string;
+  accessGrantMessage?: string;
   createdAt: string;
 }
 

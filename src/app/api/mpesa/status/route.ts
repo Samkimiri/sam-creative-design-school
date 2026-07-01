@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDB, upsertDBRecord } from "@/lib/db";
 import { isMpesaConfigured, queryStkPushStatus } from "@/lib/mpesa";
-import type { Enrollment, Student } from "@/types";
+import { grantEnrollmentAccess } from "@/lib/enrollmentAccess";
+import type { Enrollment } from "@/types";
 
 async function confirmEnrollment(checkoutRequestId: string): Promise<boolean> {
   const enrollments = await getDB<Enrollment>("enrollments.json");
@@ -12,25 +13,13 @@ async function confirmEnrollment(checkoutRequestId: string): Promise<boolean> {
 
   enrollments[idx].status = "confirmed";
   enrollments[idx].mpesaResultCode = "0";
-  await upsertDBRecord("enrollments.json", enrollments[idx]);
-
   const enrollment = enrollments[idx];
-  const students = await getDB<Student>("students.json");
-  const studentIdx = students.findIndex(
-    (s) =>
-      (enrollment.studentEmail && s.email === enrollment.studentEmail) ||
-      (enrollment.phone && s.phone === enrollment.phone)
-  );
-
-  if (studentIdx > -1) {
-    const enrolled = students[studentIdx].enrolledCourses ?? [];
-    enrollment.courseId.split(",").forEach((cid) => {
-      const trimmed = cid.trim();
-      if (trimmed && !enrolled.includes(trimmed)) enrolled.push(trimmed);
-    });
-    students[studentIdx].enrolledCourses = enrolled;
-    await upsertDBRecord("students.json", students[studentIdx]);
-  }
+  const grant = await grantEnrollmentAccess(enrollment);
+  enrollments[idx].accessGrantedAt = grant.granted ? new Date().toISOString() : undefined;
+  enrollments[idx].accessGrantMessage = grant.granted
+    ? "M-Pesa confirmed and course access granted."
+    : "M-Pesa confirmed. Student should create or sign in with the same email or phone to receive course access.";
+  await upsertDBRecord("enrollments.json", enrollments[idx]);
 
   return true;
 }

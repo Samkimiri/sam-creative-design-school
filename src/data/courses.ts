@@ -555,6 +555,329 @@ Portfolio checkpoint: save the final export, one timeline screenshot, one before
   };
 });
 
+type CourseExpansionPlan = {
+  courseId: string;
+  prefix: string;
+  courseLabel: string;
+  image: string;
+  imageAlt: string;
+  videoUrl: string;
+  startOrder: number;
+  lessons: {
+    module: string;
+    title: string;
+    theme: string;
+    practice: string;
+  }[];
+};
+
+function createProfessionalExpansionLessons(plan: CourseExpansionPlan): Lesson[] {
+  return plan.lessons.map((lesson, index) => {
+    const order = plan.startOrder + index;
+    const id = `${plan.prefix}-${order}`;
+
+    return {
+      id,
+      courseId: plan.courseId,
+      order,
+      title: `Module ${Math.floor(index / 3) + 2}: ${lesson.title}`,
+      duration: `${20 + (index % 7) * 2}:00`,
+      videoUrl: plan.videoUrl,
+      image: plan.image,
+      imageAlt: plan.imageAlt,
+      content: `${plan.courseLabel} - ${lesson.module}.
+
+${lesson.theme}
+
+Professional notes: begin with a clear brief, collect references, set up files correctly, and work in organized stages. Keep source files editable, name layers or features clearly, and save evidence of each important decision so tutor feedback can be specific.
+
+Production workflow: define the goal, build the first version, review it against the brief, improve weak areas, and export a clean final version. Do not rush to effects before the structure is correct. Strong work is planned, editable, reviewed, and presented professionally.
+
+Practice task: ${lesson.practice}
+
+Portfolio checkpoint: save the working file, final export, one screenshot of the process, and three short notes explaining what improved in this lesson.`,
+      resources: [{ name: `${lesson.title} Workbook.pdf`, url: "#", type: "pdf" }],
+      quiz: {
+        questions: [
+          {
+            id: `${id}-q1`,
+            question: `What is the main goal of ${lesson.title}?`,
+            options: ["To complete a practical professional checkpoint", "To skip planning", "To delete editable files", "To avoid tutor review"],
+            answer: 0,
+            explanation: `${lesson.title} is designed to create a reviewable skill checkpoint, not just a passive note.`,
+          },
+          {
+            id: `${id}-q2`,
+            question: "What should a strong lesson submission include?",
+            options: ["Working file, final export, process evidence, and notes", "Only a screenshot", "Only a file name", "Nothing until graduation"],
+            answer: 0,
+            explanation: "A complete submission shows both the final result and the process used to create it.",
+          },
+          {
+            id: `${id}-q3`,
+            question: "Why should files remain editable?",
+            options: ["So corrections and client changes are easier", "So the file cannot open", "So layers disappear", "So the project loses quality"],
+            answer: 0,
+            explanation: "Editable files make review, revision, and professional delivery much easier.",
+          },
+        ],
+      },
+    };
+  });
+}
+
+const photoshopProfessionalLessons = createProfessionalExpansionLessons({
+  courseId: "photoshop-masterclass",
+  prefix: "ps",
+  courseLabel: "Adobe Photoshop Masterclass",
+  image: "/images/course-photoshop.png",
+  imageAlt: "Photoshop professional design lesson workspace",
+  videoUrl: verifiedLessonVideos.photoshopWorkspace,
+  startOrder: 6,
+  lessons: [
+    {
+      module: "Design Foundations",
+      title: "Color Theory for Posters and Social Media",
+      theme: "Learn how hue, saturation, contrast, temperature, and color harmony affect emotion and readability. Build palettes that support the message instead of decorating randomly.",
+      practice: "Create three color palettes for a school intake poster: calm, energetic, and premium. Apply one palette to a finished layout.",
+    },
+    {
+      module: "Design Foundations",
+      title: "Composition, Grids, and Visual Balance",
+      theme: "Use margins, alignment, rule of thirds, focal points, and spacing to make posters feel intentional. Composition decides what the viewer sees first, second, and last.",
+      practice: "Redesign a crowded flyer into a balanced layout using a grid, one strong headline, and clear call-to-action placement.",
+    },
+    {
+      module: "Design Foundations",
+      title: "Photo Correction and Camera Raw Basics",
+      theme: "Correct exposure, contrast, white balance, highlights, shadows, sharpness, and noise before starting heavy design work. Clean source images make professional designs easier.",
+      practice: "Correct three low-quality photos, export before-after previews, and explain which settings improved each image.",
+    },
+    {
+      module: "Brand and Marketing Design",
+      title: "Social Media Campaign Design",
+      theme: "Plan a complete campaign with consistent colors, typography, logo placement, spacing, and message hierarchy across square, story, and status formats.",
+      practice: "Design a three-post campaign for a course launch: announcement, benefits, and deadline reminder.",
+    },
+    {
+      module: "Brand and Marketing Design",
+      title: "Product Mockups and Smart Object Workflow",
+      theme: "Use Smart Objects to place designs on phones, t-shirts, packaging, posters, and billboards while preserving shadows, perspective, and editability.",
+      practice: "Place one poster design into three mockups and export a presentation board for client review.",
+    },
+    {
+      module: "Brand and Marketing Design",
+      title: "Print Preparation and Export Standards",
+      theme: "Prepare files for printing with correct size, bleed, safe margins, 300 DPI images, CMYK awareness, and professional PDF delivery.",
+      practice: "Prepare a print-ready A4 flyer with bleed, safe margins, and export versions for print and WhatsApp sharing.",
+    },
+    {
+      module: "Advanced Compositing",
+      title: "Lighting, Shadows, and Realistic Blending",
+      theme: "Match subjects to backgrounds using direction of light, contact shadows, color balance, depth, blur, and edge cleanup so composites feel believable.",
+      practice: "Place a cutout subject into a new background and create matching shadows, color, and depth.",
+    },
+    {
+      module: "Advanced Compositing",
+      title: "Creative Effects and Double Exposure",
+      theme: "Combine masks, gradients, blending modes, textures, and adjustment layers to create expressive editorial effects without destroying the original photo.",
+      practice: "Create a double exposure portrait using at least two images, masks, and one adjustment layer group.",
+    },
+    {
+      module: "Advanced Compositing",
+      title: "Brand Poster Graduation Project",
+      theme: "Bring together layout, typography, color, image correction, masking, mockups, and export into one polished brand poster project.",
+      practice: "Submit a final campaign poster with PSD, social export, print export, mockup, and reflection notes.",
+    },
+    {
+      module: "Client Workflow",
+      title: "Client Briefs and Design Research",
+      theme: "Translate client goals into a design direction by asking better questions, studying competitors, collecting references, and defining deliverables.",
+      practice: "Write a design brief for a real or imagined small business and collect six reference images with notes.",
+    },
+    {
+      module: "Client Workflow",
+      title: "Revision Management and File Handover",
+      theme: "Handle feedback professionally by labeling versions, separating corrections from preferences, and preparing organized final files for the client.",
+      practice: "Create a revision log and final handover folder structure for one completed Photoshop project.",
+    },
+    {
+      module: "Client Workflow",
+      title: "Photoshop Portfolio Packaging",
+      theme: "Present finished work with project goals, process screenshots, before-after comparisons, mockups, and clear captions so clients can trust your skill.",
+      practice: "Build a one-page portfolio case study for your strongest Photoshop project.",
+    },
+  ],
+});
+
+const illustratorProfessionalLessons = createProfessionalExpansionLessons({
+  courseId: "illustrator-training",
+  prefix: "ai",
+  courseLabel: "Adobe Illustrator Training",
+  image: "/images/course-illustrator.png",
+  imageAlt: "Illustrator vector design lesson workspace",
+  videoUrl: "https://www.youtube.com/embed/Ib8UBwu3yGA",
+  startOrder: 4,
+  lessons: [
+    {
+      module: "Vector Foundations",
+      title: "Stroke, Fill, and Appearance Control",
+      theme: "Understand how fills, strokes, stroke weight, caps, corners, opacity, and the Appearance panel control clean vector artwork.",
+      practice: "Create an icon set using consistent stroke weights, rounded corners, and aligned fills.",
+    },
+    {
+      module: "Vector Foundations",
+      title: "Typography and Text Outlines",
+      theme: "Use type professionally, choose readable fonts, control spacing, and convert text to outlines only when preparing final logo or print files.",
+      practice: "Design three wordmark options and convert a final copy to outlines for delivery.",
+    },
+    {
+      module: "Vector Foundations",
+      title: "Color Systems, Swatches, and Gradients",
+      theme: "Build reusable color swatches, global colors, gradients, and tints so brand artwork stays consistent across many assets.",
+      practice: "Create a brand palette with primary, secondary, neutral, and accent swatches.",
+    },
+    {
+      module: "Brand Identity",
+      title: "Logo Research and Sketch Development",
+      theme: "Start logo design with research, audience understanding, rough sketches, symbol exploration, and visual direction before opening final vector files.",
+      practice: "Create ten rough logo concepts for a food, fashion, or school brand and choose the strongest three.",
+    },
+    {
+      module: "Brand Identity",
+      title: "Logo Refinement and Grid Alignment",
+      theme: "Refine chosen logo concepts with grids, spacing, alignment, optical balance, shape cleanup, and black-and-white testing.",
+      practice: "Refine one logo using a grid and present black, white, and color versions.",
+    },
+    {
+      module: "Brand Identity",
+      title: "Brand Guide and Usage Rules",
+      theme: "Create a simple brand guide that explains logo versions, clear space, color codes, fonts, wrong usage, and sample applications.",
+      practice: "Build a one-page brand guide for your final logo system.",
+    },
+    {
+      module: "Illustration and Layout",
+      title: "Icon Design and Consistency",
+      theme: "Design icons that share the same stroke weight, corner style, visual size, spacing, and level of detail.",
+      practice: "Create six matching icons for a school website or mobile app feature list.",
+    },
+    {
+      module: "Illustration and Layout",
+      title: "Infographic and Data Layout",
+      theme: "Turn facts, steps, comparisons, and numbers into clear visual layouts using hierarchy, icons, charts, labels, and spacing.",
+      practice: "Design an infographic explaining a course journey from enrollment to certificate.",
+    },
+    {
+      module: "Illustration and Layout",
+      title: "Pattern Design and Reusable Assets",
+      theme: "Create repeatable patterns, background elements, badges, stickers, and supporting graphics for brand systems.",
+      practice: "Design a simple brand pattern and apply it to a mock package or social media background.",
+    },
+    {
+      module: "Professional Delivery",
+      title: "Preparing Files for Print and Web",
+      theme: "Export SVG, PNG, PDF, and EPS files correctly while keeping editable AI source files organized for future revisions.",
+      practice: "Export one logo package with AI, PDF, SVG, PNG, black, white, and color versions.",
+    },
+    {
+      module: "Professional Delivery",
+      title: "Client Presentation Boards",
+      theme: "Present vector work professionally using clean boards that show the problem, concept, logo variations, colors, fonts, and mockups.",
+      practice: "Create a client presentation board for one complete logo identity.",
+    },
+    {
+      module: "Professional Delivery",
+      title: "Illustrator Graduation Brand Kit",
+      theme: "Combine logo, icons, color system, typography, pattern, brand guide, and export package into a complete portfolio project.",
+      practice: "Submit a complete brand kit with source files, exports, mockups, and a short project explanation.",
+    },
+  ],
+});
+
+const solidworksProfessionalLessons = createProfessionalExpansionLessons({
+  courseId: "solidworks-engineers",
+  prefix: "sw",
+  courseLabel: "SolidWorks for Engineers",
+  image: "/images/course-solidworks.png",
+  imageAlt: "SolidWorks mechanical engineering CAD lesson workspace",
+  videoUrl: "https://www.youtube.com/embed/cIKOwZhzh6Q",
+  startOrder: 3,
+  lessons: [
+    {
+      module: "Part Modeling",
+      title: "Reference Planes and Design Intent",
+      theme: "Use reference planes, origins, symmetry, and design intent so parts update predictably when dimensions change.",
+      practice: "Model a simple bracket using the origin, symmetry, and named reference planes.",
+    },
+    {
+      module: "Part Modeling",
+      title: "Holes, Slots, Patterns, and Mirroring",
+      theme: "Create repeated engineering features using Hole Wizard thinking, linear patterns, circular patterns, mirror features, and controlled spacing.",
+      practice: "Design a mounting plate with four holes, two slots, and a mirrored feature pattern.",
+    },
+    {
+      module: "Part Modeling",
+      title: "Shells, Ribs, Drafts, and Manufacturing Features",
+      theme: "Add realistic manufacturing features that reduce weight, strengthen parts, and prepare models for molding or fabrication.",
+      practice: "Create a lightweight plastic cover with shell, ribs, draft, fillets, and mounting bosses.",
+    },
+    {
+      module: "Assemblies",
+      title: "Assembly Mates and Motion Control",
+      theme: "Use concentric, coincident, distance, angle, parallel, and limit mates to control how parts fit and move inside an assembly.",
+      practice: "Assemble a hinge or clamp mechanism and test its movement with limit mates.",
+    },
+    {
+      module: "Assemblies",
+      title: "Fasteners, Subassemblies, and Interference Checks",
+      theme: "Organize assemblies with fasteners, subassemblies, exploded structure, and interference checks before drawings are produced.",
+      practice: "Build a small bolted assembly and run an interference check with notes.",
+    },
+    {
+      module: "Assemblies",
+      title: "Exploded Views and Assembly Presentation",
+      theme: "Create exploded views that show how parts fit together and help non-technical viewers understand the product.",
+      practice: "Produce an exploded assembly view with labels and a short assembly sequence.",
+    },
+    {
+      module: "Drawings and Documentation",
+      title: "Engineering Drawing Views and Dimensions",
+      theme: "Create front, top, side, section, detail, and isometric views with correct dimensions and clean drawing standards.",
+      practice: "Make a drawing sheet for one modeled part with at least four views and complete dimensions.",
+    },
+    {
+      module: "Drawings and Documentation",
+      title: "Tolerances, Notes, and Bill of Materials",
+      theme: "Add manufacturing notes, material callouts, tolerances, hole information, and a bill of materials for assemblies.",
+      practice: "Create an assembly drawing with BOM, balloons, and at least three manufacturing notes.",
+    },
+    {
+      module: "Drawings and Documentation",
+      title: "Sheet Metal Basics and Flat Patterns",
+      theme: "Understand sheet metal features such as base flange, edge flange, bends, reliefs, and flat pattern output.",
+      practice: "Model a simple folded sheet metal tray and export a flat pattern view.",
+    },
+    {
+      module: "Simulation and Rendering",
+      title: "Materials, Mass Properties, and Basic Checks",
+      theme: "Apply materials, calculate mass properties, inspect center of mass, and check whether the model matches the engineering requirement.",
+      practice: "Assign materials to three parts and compare weight, volume, and center of mass.",
+    },
+    {
+      module: "Simulation and Rendering",
+      title: "Basic Stress Thinking and Design Improvement",
+      theme: "Learn how loads, fixtures, weak points, thickness, fillets, and material choice affect whether a part is likely to fail.",
+      practice: "Review a bracket design and suggest three changes that would make it stronger.",
+    },
+    {
+      module: "Simulation and Rendering",
+      title: "SolidWorks Graduation Mechanical Project",
+      theme: "Combine sketching, features, assemblies, drawings, BOM, material notes, and presentation renders into one complete engineering project.",
+      practice: "Submit a complete mechanical project with part files, assembly, drawing sheet, exploded view, and project summary.",
+    },
+  ],
+});
+
 const vibeDesigningLessons = createModuleLessons(
   "vibe-designing-uiux",
   "vd",
@@ -920,7 +1243,10 @@ const lessonVisuals: Record<string, Pick<Lesson, "image" | "imageAlt">> = {
 
 export const lessons: Lesson[] = [
   ...baseLessons,
+  ...photoshopProfessionalLessons,
+  ...illustratorProfessionalLessons,
   ...capcutProfessionalLessons,
+  ...solidworksProfessionalLessons,
   ...vibeDesigningLessons,
   ...vibeCodingLessons,
   ...aiPromptLessons,

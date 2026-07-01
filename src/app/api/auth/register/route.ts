@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { appendDBRecord, findDBRecordByField } from "@/lib/db";
 import { hashPassword, setSession, UserSession } from "@/lib/auth";
+import { getConfirmedEnrollmentCourseIdsForStudent } from "@/lib/enrollmentAccess";
 
 interface Student {
   id: string;
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
       enrolledCourses: [],
       createdAt: new Date().toISOString(),
     };
+    newStudent.enrolledCourses = await getConfirmedEnrollmentCourseIdsForStudent(newStudent);
 
     await appendDBRecord("students.json", newStudent);
 

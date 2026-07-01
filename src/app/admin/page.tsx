@@ -41,6 +41,8 @@ interface Enrollment {
   status: "pending" | "confirmed" | "failed";
   whatsappConfirmed?: boolean;
   whatsappSentAt?: string;
+  accessGrantedAt?: string;
+  accessGrantMessage?: string;
   createdAt: string;
 }
 
@@ -844,6 +846,15 @@ export default function AdminDashboard() {
   const certificatePreviewUrl = certificateCourseId
     ? `/api/certificates/${certificateCourseId}?preview=1&studentName=${encodeURIComponent(certificateStudentName)}`
     : "";
+  const whatsappReviewRequests = enrollments.filter((enrollment) => enrollment.status === "pending" && enrollment.whatsappConfirmed);
+  const pendingEnrollments = enrollments.filter((enrollment) => enrollment.status === "pending");
+  const confirmedEnrollments = enrollments.filter((enrollment) => enrollment.status === "confirmed");
+  const sortedEnrollments = [...enrollments].sort((a, b) => {
+    const aPriority = a.status === "pending" && a.whatsappConfirmed ? 0 : a.status === "pending" ? 1 : 2;
+    const bPriority = b.status === "pending" && b.whatsappConfirmed ? 0 : b.status === "pending" ? 1 : 2;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    return new Date(b.whatsappSentAt || b.createdAt).getTime() - new Date(a.whatsappSentAt || a.createdAt).getTime();
+  });
 
   return (
     <div className="pt-24 pb-24 bg-[#F8F8F8] min-h-screen">
@@ -1040,7 +1051,30 @@ export default function AdminDashboard() {
 
         {/* Enrollments Table */}
         {tab === "enrollments" && (
-          <div key="enrollments-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+          <div key="enrollments-panel" className="admin-tab-panel space-y-5">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-[#25D366]/20 bg-[#25D366]/10 p-5 shadow-sm">
+                <p className="text-xs font-black uppercase tracking-widest text-[#128C43]">WhatsApp Review Queue</p>
+                <p className="mt-2 text-3xl font-black text-dark">{whatsappReviewRequests.length}</p>
+                <p className="mt-1 text-sm font-medium text-gray-600">Students who clicked WhatsApp payment review and need admin approval.</p>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+                <p className="text-xs font-black uppercase tracking-widest text-amber-700">Pending Payments</p>
+                <p className="mt-2 text-3xl font-black text-dark">{pendingEnrollments.length}</p>
+                <p className="mt-1 text-sm font-medium text-gray-600">Saved enrollments waiting for payment confirmation.</p>
+              </div>
+              <div className="rounded-2xl border border-green-200 bg-green-50 p-5 shadow-sm">
+                <p className="text-xs font-black uppercase tracking-widest text-green-700">Approved Access</p>
+                <p className="mt-2 text-3xl font-black text-dark">{confirmedEnrollments.length}</p>
+                <p className="mt-1 text-sm font-medium text-gray-600">Students approved and ready for LMS course access.</p>
+              </div>
+            </div>
+
+            <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+              <div className="border-b border-gray-100 px-6 py-5">
+                <h2 className="text-xl font-black text-dark">Enrollment Payment Reviews</h2>
+                <p className="mt-1 text-sm text-gray-500">Approve requests after checking the M-Pesa code and WhatsApp message. Approval unlocks the selected courses for the matching student account.</p>
+              </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
@@ -1059,8 +1093,8 @@ export default function AdminDashboard() {
                 <tbody className="divide-y divide-gray-100">
                   {enrollments.length === 0 ? (
                     <tr><td colSpan={9} className="text-center py-12 text-gray-400">No enrollments yet</td></tr>
-                  ) : enrollments.map((e) => (
-                    <tr key={e.id} className={adminRowMotion}>
+                  ) : sortedEnrollments.map((e) => (
+                    <tr key={e.id} className={`${adminRowMotion} ${e.status === "pending" && e.whatsappConfirmed ? "bg-[#25D366]/5" : ""}`}>
                       <td className="px-6 py-4">
                         <div className="font-bold text-dark">{e.studentName}</div>
                         <div className="text-gray-500 text-xs">{e.studentEmail || e.phone}</div>
@@ -1116,9 +1150,14 @@ export default function AdminDashboard() {
                           {e.status}
                         </span>
                         {e.whatsappConfirmed && (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-[#25D366] px-2 py-1 text-[10px] font-black text-white" title={e.whatsappSentAt ? `WhatsApp sent ${new Date(e.whatsappSentAt).toLocaleString()}` : "WhatsApp Confirmation Sent"}>
-                            WhatsApp sent
+                          <span className="ml-2 inline-flex items-center rounded-full bg-[#25D366] px-2 py-1 text-[10px] font-black text-white" title={e.whatsappSentAt ? `WhatsApp sent ${new Date(e.whatsappSentAt).toLocaleString()}` : "WhatsApp review requested"}>
+                            Review request
                           </span>
+                        )}
+                        {e.accessGrantMessage && (
+                          <p className={`mt-2 max-w-[220px] text-xs font-semibold ${e.accessGrantedAt ? "text-green-700" : "text-amber-700"}`}>
+                            {e.accessGrantMessage}
+                          </p>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -1128,8 +1167,11 @@ export default function AdminDashboard() {
                             disabled={pendingAction === `enrollment-${e.id}`}
                             className={`bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 disabled:opacity-50 ${adminActionMotion}`}
                           >
-                            {pendingAction === `enrollment-${e.id}` ? "Saving..." : "Confirm"}
+                            {pendingAction === `enrollment-${e.id}` ? "Saving..." : "Approve & Unlock"}
                           </button>
+                        )}
+                        {e.status === "confirmed" && (
+                          <span className="text-xs font-bold text-green-700">Approved</span>
                         )}
                       </td>
                     </tr>
@@ -1137,6 +1179,7 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+          </div>
           </div>
         )}
 
