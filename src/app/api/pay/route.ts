@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     const newEnrollment: Enrollment = {
-      id: "ENR_" + Math.random().toString(36).substring(2, 9),
+      id: "ENR_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       studentId: session.user.id,
       studentName: session.user.name || session.user.email || "Student",
       studentEmail: session.user.email,

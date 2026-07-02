@@ -188,7 +188,7 @@ export async function upsertSupabaseRecord<T>(
   collection: string,
   recordId: string,
   data: T,
-  position = Date.now()
+  position = Math.floor(Date.now() / 1000)
 ): Promise<void> {
   const row: SupabaseRow<T> = {
     collection,

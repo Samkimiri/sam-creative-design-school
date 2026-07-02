@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     const recipientName = process.env.MPESA_ACCOUNT_NAME || "Samuel Kimiri";
 
     const newEnrollment: Enrollment = {
-      id: "ENR-" + Date.now(),
+      id: "ENR-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       studentId: session?.user.id || "guest",
       studentName: name,
       studentEmail: session?.user.email || email,

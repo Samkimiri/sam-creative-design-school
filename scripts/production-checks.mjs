@@ -38,6 +38,7 @@ assert(profileRoute.includes("isAllowedAvatar"), "profile updates must validate 
 const dbLib = read("src/lib/db.ts");
 assert(dbLib.includes("Supabase upsertDBRecord error"), "database upserts must fall back when Supabase upsert fails");
 assert(dbLib.includes("hasMongoConfig"), "database layer must skip MongoDB calls when Mongo is not configured");
+assert(dbLib.includes("hasKVConfig"), "database layer must persist writes to Vercel KV when configured");
 
 const mongoLib = read("src/lib/mongodb.ts");
 assert(mongoLib.includes("export function hasMongoConfig"), "MongoDB helper must expose configuration status");

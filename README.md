@@ -58,9 +58,11 @@ Important notes:
 - For the school Buy Goods Till, use `MPESA_PAYMENT_MODE=buygoods`, `MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline`, and set `MPESA_PARTY_B=9322260`.
 - If `MPESA_TILL_NUMBER` is set and `MPESA_SHORTCODE` is empty, the app automatically uses Buy Goods mode.
 
-## Supabase Database Setup
+## Backend Database Setup
 
-The app can use Supabase as the primary production database while keeping the current MongoDB/local JSON fallback for development.
+The app should use a durable backend database in production so enrollments, students, messages, and admin changes survive server restarts.
+
+Supabase is the preferred production database:
 
 1. Create a Supabase project.
 2. Open the Supabase SQL editor and run [supabase/schema.sql](supabase/schema.sql).
@@ -73,7 +75,16 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 The service role key must stay server-only. Do not expose it with a `NEXT_PUBLIC_` prefix.
 
-When these variables are present, `src/lib/db.ts` reads and writes app collections through Supabase. If Supabase is not configured or a read fails, the app falls back to MongoDB and then local JSON files.
+Vercel KV is also supported as a durable fallback when Supabase and MongoDB are not configured:
+
+```env
+KV_REST_API_URL=your_vercel_kv_rest_url
+KV_REST_API_TOKEN=your_vercel_kv_token
+```
+
+MongoDB is supported with `MONGODB_URI` or `SCDS_DB_MONGODB_URI`.
+
+When Supabase variables are present, `src/lib/db.ts` reads and writes app collections through Supabase. If Supabase is not configured or a read fails, the app falls back to MongoDB, then Vercel KV, then local JSON files. Local JSON is only suitable for development because hosted filesystems can be read-only or temporary.
 
 ## Password Reset Email Setup
 

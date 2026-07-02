@@ -25,6 +25,10 @@ export async function getData<T>(key: string, defaultValue: T[]): Promise<T[]> {
   return defaultValue;
 }
 
+export function hasKVConfig(): boolean {
+  return Boolean(process.env.KV_REST_API_URL);
+}
+
 export async function setData<T>(key: string, data: T[]): Promise<void> {
   memoryCache[key] = data as unknown[];
 

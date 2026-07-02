@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { getData as getKVData, hasKVConfig, setData as setKVData } from "./kv";
 import getMongoClient, { hasMongoConfig } from "./mongodb";
 import {
   findSupabaseRecordByJsonField,
@@ -75,6 +76,13 @@ export async function getDB<T>(filename: string): Promise<T[]> {
   }
 
   if (!hasMongoConfig()) {
+    if (hasKVConfig()) {
+      const fallbackData = readJSON<T>(filename);
+      const data = await getKVData<T>(getCollectionName(filename), fallbackData);
+      if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
+      return data;
+    }
+
     return readJSON<T>(filename);
   }
 
@@ -244,6 +252,9 @@ export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
   }
 
   if (!hasMongoConfig()) {
+    if (hasKVConfig()) {
+      await setKVData(getCollectionName(filename), data);
+    }
     return;
   }
 
