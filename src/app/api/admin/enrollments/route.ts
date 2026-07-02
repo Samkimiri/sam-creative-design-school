@@ -27,12 +27,23 @@ interface Enrollment {
   createdAt: string;
 }
 
-export async function POST(request: Request) {
+async function listEnrollments(request: Request) {
   const auth = await requireAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const enrollments = await getDB<Enrollment>("enrollments.json");
-  return NextResponse.json({ success: true, data: enrollments });
+  return NextResponse.json(
+    { success: true, data: enrollments },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    }
+  );
+}
+
+export async function POST(request: Request) {
+  return listEnrollments(request);
 }
 
 export async function PATCH(request: Request) {
@@ -77,5 +88,12 @@ export async function PATCH(request: Request) {
     await saveDB("enrollments.json", enrollments);
   }
 
-  return NextResponse.json({ success: true, data: enrollments[index] });
+  return NextResponse.json(
+    { success: true, data: enrollments[index] },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    }
+  );
 }

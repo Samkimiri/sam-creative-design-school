@@ -382,6 +382,7 @@ export default function AdminDashboard() {
   const [certificateCourseId, setCertificateCourseId] = useState(courses[0]?.id || "");
   const [certificateStudentName, setCertificateStudentName] = useState("Robert Rangoma");
   const [loading, setLoading] = useState(false);
+  const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pendingAction, setPendingAction] = useState("");
@@ -393,7 +394,7 @@ export default function AdminDashboard() {
     const timeout = window.setTimeout(() => controller.abort(), adminFetchTimeoutMs);
 
     try {
-      const res = await fetch(url, { ...init, signal: controller.signal });
+      const res = await fetch(url, { cache: "no-store", ...init, signal: controller.signal });
       const data = await res.json().catch(() => ({ success: false, message: "Invalid server response" })) as AdminResponse<T>;
       return { res, data };
     } finally {
@@ -451,6 +452,31 @@ export default function AdminDashboard() {
     }
   }, [fetchAdminJson]);
 
+  const refreshEnrollments = useCallback(async (pw?: string) => {
+    setEnrollmentsLoading(true);
+    setNotice("");
+    try {
+      const { res, data } = await fetchAdminJson<Enrollment[]>("/api/admin/enrollments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pw ? { password: pw } : {}),
+      });
+
+      if (!res.ok || !data.success || !Array.isArray(data.data)) {
+        setNotice(data.message || "Could not load enrollment requests. Try refreshing again.");
+        return;
+      }
+
+      setEnrollments(data.data);
+    } catch (err) {
+      setNotice(err instanceof DOMException && err.name === "AbortError"
+        ? "Enrollment requests took too long to load. Try again."
+        : "Could not load enrollment requests. Check your connection and try again.");
+    } finally {
+      setEnrollmentsLoading(false);
+    }
+  }, [fetchAdminJson]);
+
   // Check account role before loading any admin data.
   useEffect(() => {
     let cancelled = false;
@@ -499,6 +525,11 @@ export default function AdminDashboard() {
     };
   }, [fetchData]);
 
+  useEffect(() => {
+    if (!authed || tab !== "enrollments") return;
+    void refreshEnrollments(password);
+  }, [authed, password, refreshEnrollments, tab]);
+
   const confirmEnrollment = async (enrollmentId: string) => {
     await runMutation<Enrollment>(
       `enrollment-${enrollmentId}`,
@@ -506,7 +537,7 @@ export default function AdminDashboard() {
       { password, enrollmentId, status: "confirmed" },
       (updated) => {
         setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, ...updated } : e));
-        void fetchData(password);
+        void refreshEnrollments(password);
       }
     );
   };
@@ -1071,9 +1102,19 @@ export default function AdminDashboard() {
             </div>
 
             <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
-              <div className="border-b border-gray-100 px-6 py-5">
-                <h2 className="text-xl font-black text-dark">Enrollment Payment Reviews</h2>
-                <p className="mt-1 text-sm text-gray-500">Approve requests after checking the M-Pesa code and WhatsApp message. Approval unlocks the selected courses for the matching student account.</p>
+              <div className="flex flex-col gap-4 border-b border-gray-100 px-6 py-5 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-dark">Enrollment Payment Reviews</h2>
+                  <p className="mt-1 text-sm text-gray-500">Approve requests after checking the M-Pesa code and WhatsApp message. Approval unlocks the selected courses for the matching student account.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void refreshEnrollments(password)}
+                  disabled={enrollmentsLoading}
+                  className={`shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
+                >
+                  {enrollmentsLoading ? "Checking..." : "Refresh Enrollments"}
+                </button>
               </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -1091,8 +1132,10 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {enrollments.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center py-12 text-gray-400">No enrollments yet</td></tr>
+                  {enrollmentsLoading && enrollments.length === 0 ? (
+                    <tr><td colSpan={9} className="text-center py-12 text-gray-400">Loading enrollment requests...</td></tr>
+                  ) : enrollments.length === 0 ? (
+                    <tr><td colSpan={9} className="text-center py-12 text-gray-400">No enrollment requests found yet</td></tr>
                   ) : sortedEnrollments.map((e) => (
                     <tr key={e.id} className={`${adminRowMotion} ${e.status === "pending" && e.whatsappConfirmed ? "bg-[#25D366]/5" : ""}`}>
                       <td className="px-6 py-4">

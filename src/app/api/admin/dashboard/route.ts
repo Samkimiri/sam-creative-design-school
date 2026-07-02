@@ -63,34 +63,41 @@ export async function POST(request: Request) {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 100);
 
-  return NextResponse.json({
-    success: true,
-    data: {
-      students,
-      enrollments,
-      reviews,
-      projects,
-      assignments,
-      settings: intake || content || discounts ? { intake, content, discounts } : undefined,
-      analytics: {
-        summary,
-        sessions: sessions.slice(0, 200),
-        events: recentEvents,
+  return NextResponse.json(
+    {
+      success: true,
+      data: {
+        students,
+        enrollments,
+        reviews,
+        projects,
+        assignments,
+        settings: intake || content || discounts ? { intake, content, discounts } : undefined,
+        analytics: {
+          summary,
+          sessions: sessions.slice(0, 200),
+          events: recentEvents,
+        },
       },
+      warnings: countRejected([
+        studentsResult,
+        enrollmentsResult,
+        sessionsResult,
+        eventsResult,
+        reviewsResult,
+        projectsResult,
+        assignmentsResult,
+        intakeResult,
+        contentResult,
+        discountsResult,
+      ]),
     },
-    warnings: countRejected([
-      studentsResult,
-      enrollmentsResult,
-      sessionsResult,
-      eventsResult,
-      reviewsResult,
-      projectsResult,
-      assignmentsResult,
-      intakeResult,
-      contentResult,
-      discountsResult,
-    ]),
-  });
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    }
+  );
 }
 
 function fulfilled<T>(result: PromiseSettledResult<T>, fallback: T) {
