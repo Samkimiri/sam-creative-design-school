@@ -34,6 +34,7 @@ export async function POST(request: Request) {
 
     const amount = course.price;
     const reference = `SCDS_${Date.now()}_${session.user.id.substring(0, 5)}`;
+    const now = new Date().toISOString();
     
     // Initiate actual STK Push via Daraja API
     const pushResult = await initiateStkPush(phone, amount, reference);
@@ -51,10 +52,18 @@ export async function POST(request: Request) {
       courseName: course?.title || String(courseId),
       amount,
       phone,
+      paymentProvider: "mpesa",
       status: "pending",
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       checkoutRequestId: pushResult.checkoutRequestId,
       merchantRequestId: pushResult.merchantRequestId,
+      mpesaPushInitiatedAt: now,
+      mpesaResultCode: pushResult.responseCode,
+      mpesaResultDesc: pushResult.customerMessage || pushResult.responseDescription,
+      paymentVerificationStatus: "awaiting_payment",
+      adminApprovalStatus: "pending",
+      adminNotificationMessage: "M-Pesa push sent to student. Waiting for payment confirmation before admin approval.",
+      accessGrantMessage: "M-Pesa push sent. LMS access will unlock after payment is verified and approved by admin.",
       reference,
     };
 
@@ -63,6 +72,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       success: true, 
       message: "Please check your phone and enter your M-Pesa PIN to complete the payment.",
+      approvalRequired: true,
       checkoutRequestId: pushResult.checkoutRequestId,
       reference,
       enrollment: newEnrollment 

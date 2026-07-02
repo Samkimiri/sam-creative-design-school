@@ -8,6 +8,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [resetCode, setResetCode] = useState("");
   const [resetUrl, setResetUrl] = useState("");
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -16,6 +17,7 @@ export default function ForgotPassword() {
 
     setStatus("loading");
     setMessage("");
+    setResetCode("");
     setResetUrl("");
 
     try {
@@ -27,6 +29,7 @@ export default function ForgotPassword() {
       const data = await response.json();
       setStatus(data.success ? "success" : "error");
       setMessage(data.message || "Could not send reset instructions.");
+      setResetCode(data.resetCode || "");
       setResetUrl(data.resetUrl || "");
     } catch {
       setStatus("error");
@@ -48,7 +51,7 @@ export default function ForgotPassword() {
             <span className="text-2xl font-extrabold tracking-tight text-white">Sam Creative <span className="text-primary">Graphics</span></span>
           </Link>
           <h1 className="mb-2 mt-8 text-3xl font-extrabold text-white">Reset Password</h1>
-          <p className="text-gray-400">Enter your email and we will send a secure reset link</p>
+          <p className="text-gray-400">Enter your email and we will send a secure reset code</p>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md transition duration-300 hover:border-white/20 hover:bg-white/[0.07] animate-fade-in">
@@ -66,6 +69,15 @@ export default function ForgotPassword() {
                   Open Local Reset Link
                 </Link>
               )}
+              {resetCode && (
+                <div className="mb-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-center">
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Local Reset Code</p>
+                  <p className="mt-1 text-2xl font-black tracking-[0.3em] text-primary-light">{resetCode}</p>
+                </div>
+              )}
+              <Link href="/auth/reset-password" className="mb-4 block w-full rounded-xl border border-white/10 bg-white/10 py-4 font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/15">
+                Enter Reset Code
+              </Link>
               <Link href="/auth/login" className="block w-full rounded-xl bg-primary py-4 font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0">
                 Back to Login
               </Link>
@@ -99,9 +111,9 @@ export default function ForgotPassword() {
                 {status === "loading" ? (
                   <span className="flex items-center justify-center gap-2">
                     <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-                    Sending link...
+                    Sending code...
                   </span>
-                ) : "Send Reset Link"}
+                ) : "Send Reset Code"}
               </button>
 
               <div className="pt-4 text-center">

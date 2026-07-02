@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const student = await findDBRecordByField<Student>("students.json", "email", email);
 
     if (student?.id && student.password) {
-      const { token, tokenHash } = createPasswordResetToken();
+      const { code, codeHash, token, tokenHash } = createPasswordResetToken();
       const now = new Date();
       const expiresAt = new Date(now.getTime() + passwordResetTokenTtlMs);
       const existingResets = await getDB<PasswordResetRecord>("password-resets.json");
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
         studentId: student.id,
         email,
         tokenHash,
+        codeHash,
         createdAt: now.toISOString(),
         expiresAt: expiresAt.toISOString(),
       };
@@ -57,9 +58,12 @@ export async function POST(request: Request) {
           .filter((record) => new Date(record.expiresAt).getTime() > now.getTime() - 24 * 60 * 60 * 1000),
       ].slice(0, 100);
 
+      await saveDB("password-resets.json", nextResets);
+
       const emailResult = await sendPasswordResetEmail({
         to: student.email,
         studentName: student.name || "Student",
+        resetCode: code,
         resetUrl: resetUrl.toString(),
         expiresInMinutes: Math.round(passwordResetTokenTtlMs / 60000),
       });
@@ -77,15 +81,13 @@ export async function POST(request: Request) {
           );
         }
 
-        await saveDB("password-resets.json", nextResets);
         return NextResponse.json({
           success: true,
-          message: `${genericMessage} Email delivery is not configured locally, so use the test link below.`,
+          message: `${genericMessage} Email delivery is not configured locally, so use the test code or link below.`,
+          resetCode: code,
           resetUrl: resetUrl.toString(),
         });
       }
-
-      await saveDB("password-resets.json", nextResets);
     }
 
     return NextResponse.json({ success: true, message: genericMessage });

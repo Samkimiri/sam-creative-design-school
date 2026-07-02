@@ -1,6 +1,7 @@
 interface SendPasswordResetEmailInput {
   to: string;
   studentName: string;
+  resetCode: string;
   resetUrl: string;
   expiresInMinutes: number;
 }
@@ -59,6 +60,8 @@ function passwordResetText(input: SendPasswordResetEmailInput) {
     `Hi ${input.studentName},`,
     "",
     "We received a request to reset your Sam Creative Design School password.",
+    `Your reset code is: ${input.resetCode}`,
+    "",
     `Use this secure link within ${input.expiresInMinutes} minutes:`,
     input.resetUrl,
     "",
@@ -73,6 +76,10 @@ function passwordResetHtml(input: SendPasswordResetEmailInput) {
       <h1 style="margin:0 0 12px;font-size:24px;color:#050914">Reset your SCDS password</h1>
       <p>Hi ${escapeHtml(input.studentName)},</p>
       <p>We received a request to reset your Sam Creative Design School password.</p>
+      <p style="font-size:15px;color:#374151;margin-bottom:8px">Your reset code is:</p>
+      <p style="font-size:28px;letter-spacing:6px;font-weight:800;color:#050914;background:#F3F4F6;border-radius:12px;padding:14px 18px;text-align:center">
+        ${escapeHtml(input.resetCode)}
+      </p>
       <p>
         <a href="${input.resetUrl}" style="display:inline-block;background:#0056FF;color:#fff;text-decoration:none;font-weight:700;padding:14px 20px;border-radius:12px">
           Reset Password

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getDB, upsertDBRecord } from "@/lib/db";
-import { grantEnrollmentAccess } from "@/lib/enrollmentAccess";
 import type { Enrollment } from "@/types";
 
 function getCallbackValue(
@@ -42,19 +41,20 @@ export async function POST(request: Request) {
     );
 
     if (String(ResultCode) !== "0") {
-      if (idx > -1) {
+      if (idx > -1 && enrollments[idx].status !== "confirmed") {
         enrollments[idx].status = "failed";
         enrollments[idx].mpesaResultCode = String(ResultCode);
         enrollments[idx].mpesaResultDesc = String(ResultDesc || "Payment failed");
+        enrollments[idx].paymentVerificationStatus = "failed";
+        enrollments[idx].adminNotificationMessage = "M-Pesa payment failed. No admin approval is needed.";
         await upsertDBRecord("enrollments.json", enrollments[idx]);
       }
       return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
     }
 
     if (idx > -1) {
-      enrollments[idx].status = "confirmed";
       enrollments[idx].mpesaResultCode = String(ResultCode);
-      enrollments[idx].mpesaResultDesc = String(ResultDesc || "Success");
+      enrollments[idx].mpesaResultDesc = String(ResultDesc || "Payment received. Awaiting admin approval.");
       enrollments[idx].mpesaReceiptNumber = String(
         getCallbackValue(CallbackMetadata, "MpesaReceiptNumber") || ""
       );
@@ -67,11 +67,12 @@ export async function POST(request: Request) {
       enrollments[idx].mpesaTransactionDate = String(
         getCallbackValue(CallbackMetadata, "TransactionDate") || ""
       );
-      const grant = await grantEnrollmentAccess(enrollments[idx]);
-      enrollments[idx].accessGrantedAt = grant.granted ? new Date().toISOString() : undefined;
-      enrollments[idx].accessGrantMessage = grant.granted
-        ? "M-Pesa callback confirmed and course access granted."
-        : "M-Pesa callback confirmed. Student should create or sign in with the same email or phone to receive course access.";
+      enrollments[idx].paymentConfirmedAt = enrollments[idx].paymentConfirmedAt || new Date().toISOString();
+      enrollments[idx].paymentVerificationStatus = "verified";
+      enrollments[idx].adminApprovalStatus = "pending";
+      enrollments[idx].adminReviewRequestedAt = enrollments[idx].adminReviewRequestedAt || new Date().toISOString();
+      enrollments[idx].adminNotificationMessage = "M-Pesa payment verified by callback. Admin confirmation is required to unlock LMS access.";
+      enrollments[idx].accessGrantMessage = "M-Pesa payment verified. Awaiting admin approval to unlock LMS access.";
       await upsertDBRecord("enrollments.json", enrollments[idx]);
     }
 

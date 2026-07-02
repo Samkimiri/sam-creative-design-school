@@ -33,11 +33,20 @@ interface Enrollment {
   phone: string;
   reference: string;
   paymentProvider?: string;
+  checkoutRequestId?: string;
+  merchantRequestId?: string;
+  mpesaPushInitiatedAt?: string;
+  paymentConfirmedAt?: string;
   mpesaReceiptNumber?: string;
   mpesaAmount?: number;
   mpesaPhoneNumber?: string;
   mpesaPayerName?: string;
   mpesaNotes?: string;
+  paymentVerificationStatus?: string;
+  adminApprovalStatus?: string;
+  adminReviewRequestedAt?: string;
+  adminApprovedAt?: string;
+  adminNotificationMessage?: string;
   status: "pending" | "confirmed" | "failed";
   whatsappConfirmed?: boolean;
   whatsappSentAt?: string;
@@ -877,12 +886,22 @@ export default function AdminDashboard() {
   const certificatePreviewUrl = certificateCourseId
     ? `/api/certificates/${certificateCourseId}?preview=1&studentName=${encodeURIComponent(certificateStudentName)}`
     : "";
+  const paymentReviewRequests = enrollments.filter((enrollment) =>
+    enrollment.status === "pending" &&
+    (
+      enrollment.paymentVerificationStatus === "verified" ||
+      enrollment.paymentVerificationStatus === "submitted" ||
+      Boolean(enrollment.paymentConfirmedAt || enrollment.mpesaReceiptNumber)
+    )
+  );
   const whatsappReviewRequests = enrollments.filter((enrollment) => enrollment.status === "pending" && enrollment.whatsappConfirmed);
   const pendingEnrollments = enrollments.filter((enrollment) => enrollment.status === "pending");
   const confirmedEnrollments = enrollments.filter((enrollment) => enrollment.status === "confirmed");
   const sortedEnrollments = [...enrollments].sort((a, b) => {
-    const aPriority = a.status === "pending" && a.whatsappConfirmed ? 0 : a.status === "pending" ? 1 : 2;
-    const bPriority = b.status === "pending" && b.whatsappConfirmed ? 0 : b.status === "pending" ? 1 : 2;
+    const aNeedsApproval = paymentReviewRequests.some((item) => item.id === a.id);
+    const bNeedsApproval = paymentReviewRequests.some((item) => item.id === b.id);
+    const aPriority = a.status === "pending" && aNeedsApproval ? 0 : a.status === "pending" && a.whatsappConfirmed ? 1 : a.status === "pending" ? 2 : 3;
+    const bPriority = b.status === "pending" && bNeedsApproval ? 0 : b.status === "pending" && b.whatsappConfirmed ? 1 : b.status === "pending" ? 2 : 3;
     if (aPriority !== bPriority) return aPriority - bPriority;
     return new Date(b.whatsappSentAt || b.createdAt).getTime() - new Date(a.whatsappSentAt || a.createdAt).getTime();
   });
@@ -1085,14 +1104,14 @@ export default function AdminDashboard() {
           <div key="enrollments-panel" className="admin-tab-panel space-y-5">
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-2xl border border-[#25D366]/20 bg-[#25D366]/10 p-5 shadow-sm">
-                <p className="text-xs font-black uppercase tracking-widest text-[#128C43]">WhatsApp Review Queue</p>
-                <p className="mt-2 text-3xl font-black text-dark">{whatsappReviewRequests.length}</p>
-                <p className="mt-1 text-sm font-medium text-gray-600">Students who clicked WhatsApp payment review and need admin approval.</p>
+                <p className="text-xs font-black uppercase tracking-widest text-[#128C43]">Admin Approval Queue</p>
+                <p className="mt-2 text-3xl font-black text-dark">{paymentReviewRequests.length}</p>
+                <p className="mt-1 text-sm font-medium text-gray-600">M-Pesa payments submitted or verified and waiting for admin confirmation.</p>
               </div>
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
                 <p className="text-xs font-black uppercase tracking-widest text-amber-700">Pending Payments</p>
                 <p className="mt-2 text-3xl font-black text-dark">{pendingEnrollments.length}</p>
-                <p className="mt-1 text-sm font-medium text-gray-600">Saved enrollments waiting for payment confirmation.</p>
+                <p className="mt-1 text-sm font-medium text-gray-600">Saved enrollments waiting for payment confirmation. WhatsApp review clicks: {whatsappReviewRequests.length}.</p>
               </div>
               <div className="rounded-2xl border border-green-200 bg-green-50 p-5 shadow-sm">
                 <p className="text-xs font-black uppercase tracking-widest text-green-700">Approved Access</p>
@@ -1105,7 +1124,7 @@ export default function AdminDashboard() {
               <div className="flex flex-col gap-4 border-b border-gray-100 px-6 py-5 md:flex-row md:items-start md:justify-between">
                 <div>
                   <h2 className="text-xl font-black text-dark">Enrollment Payment Reviews</h2>
-                  <p className="mt-1 text-sm text-gray-500">Approve requests after checking the M-Pesa code and WhatsApp message. Approval unlocks the selected courses for the matching student account.</p>
+                  <p className="mt-1 text-sm text-gray-500">Approve requests after checking the M-Pesa code, callback details, or WhatsApp message. Approval unlocks the selected courses for the matching student account.</p>
                 </div>
                 <button
                   type="button"
@@ -1137,7 +1156,7 @@ export default function AdminDashboard() {
                   ) : enrollments.length === 0 ? (
                     <tr><td colSpan={9} className="text-center py-12 text-gray-400">No enrollment requests found yet</td></tr>
                   ) : sortedEnrollments.map((e) => (
-                    <tr key={e.id} className={`${adminRowMotion} ${e.status === "pending" && e.whatsappConfirmed ? "bg-[#25D366]/5" : ""}`}>
+                    <tr key={e.id} className={`${adminRowMotion} ${e.status === "pending" && (e.paymentVerificationStatus === "verified" || e.paymentVerificationStatus === "submitted" || e.whatsappConfirmed) ? "bg-[#25D366]/5" : ""}`}>
                       <td className="px-6 py-4">
                         <div className="font-bold text-dark">{e.studentName}</div>
                         <div className="text-gray-500 text-xs">{e.studentEmail || e.phone}</div>
@@ -1168,6 +1187,16 @@ export default function AdminDashboard() {
                         ) : (
                           <span className="mt-2 inline-block text-gray-400">No manual details</span>
                         )}
+                        {e.paymentVerificationStatus && (
+                          <div className="mt-2 rounded-lg bg-blue-50 px-2 py-1 font-bold text-blue-700">
+                            {e.paymentVerificationStatus.replace("_", " ")}
+                          </div>
+                        )}
+                        {e.adminNotificationMessage && (
+                          <div className="mt-2 max-w-[240px] text-[11px] font-semibold text-gray-500">
+                            {e.adminNotificationMessage}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-xs">
                         {e.referredByName ? (
@@ -1195,6 +1224,11 @@ export default function AdminDashboard() {
                         {e.whatsappConfirmed && (
                           <span className="ml-2 inline-flex items-center rounded-full bg-[#25D366] px-2 py-1 text-[10px] font-black text-white" title={e.whatsappSentAt ? `WhatsApp sent ${new Date(e.whatsappSentAt).toLocaleString()}` : "WhatsApp review requested"}>
                             Review request
+                          </span>
+                        )}
+                        {e.adminApprovalStatus === "pending" && e.status === "pending" && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-[10px] font-black text-blue-700" title={e.adminReviewRequestedAt ? `Requested ${new Date(e.adminReviewRequestedAt).toLocaleString()}` : "Admin approval required"}>
+                            Admin approval
                           </span>
                         )}
                         {e.accessGrantMessage && (

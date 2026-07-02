@@ -13,6 +13,10 @@ assert(!nextConfig.includes("ignoreDuringBuilds"), "next.config.ts must not igno
 const resetRoute = read("src/app/api/auth/reset-password/route.ts");
 assert(!resetRoute.includes("newPassword"), "reset-password route must not accept direct password changes");
 assert(!resetRoute.includes("hash("), "reset-password route must not hash a supplied password without token verification");
+assert(resetRoute.includes("resetCode"), "reset-password route must expose local reset codes when email delivery is unavailable");
+assert(resetRoute.includes("await saveDB(\"password-resets.json\", nextResets);"), "reset-password route must save reset records before email delivery");
+const resetConfirmRoute = read("src/app/api/auth/reset-password/confirm/route.ts");
+assert(resetConfirmRoute.includes("codeHash"), "reset-password confirmation must accept reset codes");
 
 const enrollRoute = read("src/app/api/enroll/route.ts");
 assert(enrollRoute.includes("import { courses }"), "enroll route must validate course IDs against course data");
@@ -22,6 +26,13 @@ const payRoute = read("src/app/api/pay/route.ts");
 assert(!payRoute.includes("const { phone, amount, courseId }"), "pay route must not trust client-supplied amounts");
 assert(payRoute.includes("const amount = course.price"), "pay route must charge the trusted course price");
 assert(payRoute.includes("appendDBRecord(\"enrollments.json\""), "pay route must append enrollment records safely");
+assert(payRoute.includes("mpesaPushInitiatedAt"), "pay route must persist initiated M-Pesa pushes for admin approval");
+const mpesaStatusRoute = read("src/app/api/mpesa/status/route.ts");
+assert(!mpesaStatusRoute.includes("grantEnrollmentAccess"), "M-Pesa status polling must not unlock courses without admin approval");
+assert(mpesaStatusRoute.includes("approvalRequired: true"), "M-Pesa status polling must tell students admin approval is required");
+const mpesaCallbackRoute = read("src/app/api/mpesa/callback/route.ts");
+assert(!mpesaCallbackRoute.includes("grantEnrollmentAccess"), "M-Pesa callbacks must not unlock courses without admin approval");
+assert(mpesaCallbackRoute.includes("Awaiting admin approval"), "M-Pesa callbacks must keep verified payments pending for admin approval");
 
 const progressRoute = read("src/app/api/progress/route.ts");
 assert(progressRoute.includes('from "@/data/courses"'), "progress route must validate course and lesson IDs");

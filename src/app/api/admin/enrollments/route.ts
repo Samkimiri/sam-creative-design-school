@@ -19,6 +19,11 @@ interface Enrollment {
   mpesaPayerName?: string;
   mpesaNotes?: string;
   paymentConfirmedAt?: string;
+  paymentVerificationStatus?: string;
+  adminApprovalStatus?: string;
+  adminReviewRequestedAt?: string;
+  adminApprovedAt?: string;
+  adminNotificationMessage?: string;
   status: string;
   whatsappConfirmed?: boolean;
   whatsappSentAt?: string;
@@ -69,6 +74,8 @@ export async function PATCH(request: Request) {
   enrollments[index].status = status.value;
   if (status.value === "confirmed") {
     enrollments[index].paymentConfirmedAt = new Date().toISOString();
+    enrollments[index].adminApprovalStatus = "approved";
+    enrollments[index].adminApprovedAt = new Date().toISOString();
   }
   await saveDB("enrollments.json", enrollments);
 

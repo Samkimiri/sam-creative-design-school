@@ -12,29 +12,40 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
     const token = String(body.token || "").trim();
+    const email = String(body.email || "").trim().toLowerCase();
+    const resetCode = String(body.resetCode || body.code || "").replace(/\D/g, "");
     const password = String(body.password || "");
 
-    if (!token) {
-      return NextResponse.json({ success: false, message: "Reset link is missing or invalid." }, { status: 400 });
+    if (!token && (!email || resetCode.length !== 6)) {
+      return NextResponse.json({ success: false, message: "Enter the reset code sent to your email." }, { status: 400 });
     }
 
     if (password.length < 6) {
       return NextResponse.json({ success: false, message: "Password must be at least 6 characters." }, { status: 400 });
     }
 
-    const tokenHash = hashPasswordResetToken(token);
     const resets = await getDB<PasswordResetRecord>("password-resets.json");
-    const reset = resets.find((record) => record.tokenHash === tokenHash && !record.usedAt);
+    const tokenHash = token ? hashPasswordResetToken(token) : "";
+    const codeHash = resetCode ? hashPasswordResetToken(resetCode) : "";
+    const reset = resets.find((record) => {
+      if (record.usedAt) return false;
+      if (tokenHash && record.tokenHash === tokenHash) return true;
+      return Boolean(
+        codeHash &&
+          record.codeHash === codeHash &&
+          record.email.toLowerCase() === email
+      );
+    });
 
     if (!reset || isExpiredReset(reset)) {
-      return NextResponse.json({ success: false, message: "This reset link has expired or was already used." }, { status: 400 });
+      return NextResponse.json({ success: false, message: "This reset link or code has expired or was already used." }, { status: 400 });
     }
 
     const students = await getDB<Student>("students.json");
     const studentIndex = students.findIndex((student) => student.id === reset.studentId);
 
     if (studentIndex === -1) {
-      return NextResponse.json({ success: false, message: "This reset link is no longer valid." }, { status: 400 });
+      return NextResponse.json({ success: false, message: "This reset link or code is no longer valid." }, { status: 400 });
     }
 
     const now = new Date().toISOString();

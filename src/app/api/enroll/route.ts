@@ -70,6 +70,7 @@ export async function POST(request: Request) {
     const courseName = selectedCourses.map((course) => course.title).join(", ");
     const parsedAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
+    const now = new Date().toISOString();
     const session = await getSession();
     const students = referralCode ? await getDB<Student>("students.json") : [];
     const referrer = findReferrerByCode(students, referralCode);
@@ -126,8 +127,13 @@ export async function POST(request: Request) {
       mpesaPhoneNumber,
       mpesaPayerName: mpesaPayerName || name,
       mpesaNotes,
+      paymentVerificationStatus: "submitted",
+      adminApprovalStatus: "pending",
+      adminReviewRequestedAt: now,
+      adminNotificationMessage: "Student submitted M-Pesa payment details. Admin should confirm the receipt before unlocking LMS access.",
+      accessGrantMessage: "M-Pesa details submitted. Awaiting admin approval to unlock LMS access.",
       status: "pending",
-      createdAt: new Date().toISOString(),
+      createdAt: now,
     };
 
     await appendDBRecord("enrollments.json", newEnrollment);

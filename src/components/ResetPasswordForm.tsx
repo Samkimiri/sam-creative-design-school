@@ -5,7 +5,7 @@ import Link from "next/link";
 import { LoaderCircle, ShieldCheck } from "lucide-react";
 
 export default function ResetPasswordForm({ token }: { token: string }) {
-  const [form, setForm] = useState({ password: "", confirm: "" });
+  const [form, setForm] = useState({ email: "", resetCode: "", password: "", confirm: "" });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -32,29 +32,22 @@ export default function ResetPasswordForm({ token }: { token: string }) {
       const response = await fetch("/api/auth/reset-password/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password: form.password }),
+        body: JSON.stringify({
+          token,
+          email: form.email,
+          resetCode: form.resetCode,
+          password: form.password,
+        }),
       });
       const data = await response.json();
       setStatus(data.success ? "success" : "error");
       setMessage(data.message || "Could not reset password. Please try again.");
-      if (data.success) setForm({ password: "", confirm: "" });
+      if (data.success) setForm({ email: "", resetCode: "", password: "", confirm: "" });
     } catch {
       setStatus("error");
       setMessage("Could not reset password. Please check your connection and try again.");
     }
   };
-
-  if (!token) {
-    return (
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-        <h1 className="text-2xl font-extrabold text-white">Reset link missing</h1>
-        <p className="mt-3 text-sm leading-6 text-gray-400">Request a new password reset link from the forgot password page.</p>
-        <Link href="/auth/forgot-password" className="mt-6 inline-flex rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition hover:bg-primary/90">
-          Request New Link
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
@@ -63,7 +56,7 @@ export default function ResetPasswordForm({ token }: { token: string }) {
           <ShieldCheck className="h-7 w-7" aria-hidden="true" />
         </div>
         <h1 className="text-3xl font-extrabold text-white">Create New Password</h1>
-        <p className="mt-2 text-sm text-gray-400">Choose a strong password for your SCDS account.</p>
+        <p className="mt-2 text-sm text-gray-400">{token ? "Choose a strong password for your SCDS account." : "Enter the code sent to your email, then choose a new password."}</p>
       </div>
 
       {status === "success" ? (
@@ -81,6 +74,37 @@ export default function ResetPasswordForm({ token }: { token: string }) {
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-300" role="alert">
               {message}
             </div>
+          )}
+          {!token && (
+            <>
+              <div>
+                <label htmlFor="reset-email" className="mb-2 block text-sm font-bold uppercase tracking-wider text-gray-400">Email Address</label>
+                <input
+                  id="reset-email"
+                  required
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={(event) => setForm({ ...form, email: event.target.value })}
+                  className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-4 text-white outline-none transition-all duration-300 placeholder:text-gray-600 focus:-translate-y-0.5 focus:border-primary focus:shadow-lg focus:shadow-primary/10"
+                  placeholder="name@example.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="reset-code" className="mb-2 block text-sm font-bold uppercase tracking-wider text-gray-400">Reset Code</label>
+                <input
+                  id="reset-code"
+                  required
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  value={form.resetCode}
+                  onChange={(event) => setForm({ ...form, resetCode: event.target.value.replace(/\D/g, "").slice(0, 6) })}
+                  className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-4 text-center text-2xl font-black tracking-[0.3em] text-white outline-none transition-all duration-300 placeholder:text-gray-600 focus:-translate-y-0.5 focus:border-primary focus:shadow-lg focus:shadow-primary/10"
+                  placeholder="000000"
+                />
+              </div>
+            </>
           )}
           <div>
             <label htmlFor="new-password" className="mb-2 block text-sm font-bold uppercase tracking-wider text-gray-400">New Password</label>

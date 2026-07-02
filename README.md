@@ -88,7 +88,7 @@ When Supabase variables are present, `src/lib/db.ts` reads and writes app collec
 
 ## Password Reset Email Setup
 
-Forgot password is handled from the site. A student enters their email, the app creates a one-time reset link, and the link is emailed automatically when Resend is configured.
+Forgot password is handled from the site. A student enters their email, the app creates a one-time reset link plus a 6-digit reset code, and both are emailed automatically when Resend is configured.
 
 Add these server-side variables locally and in Vercel:
 
@@ -97,7 +97,7 @@ RESEND_API_KEY=your_resend_api_key
 SCDS_EMAIL_FROM="Sam Creative Design School <support@your-domain.com>"
 ```
 
-Use a verified Resend sender/domain in production. Reset links expire after 30 minutes and can only be used once.
+Use a verified Resend sender/domain in production. Reset links and reset codes expire after 30 minutes and can only be used once.
 
 ## Deploy on Vercel
 

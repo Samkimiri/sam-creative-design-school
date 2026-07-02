@@ -1,27 +1,26 @@
 import { NextResponse } from "next/server";
 import { getDB, upsertDBRecord } from "@/lib/db";
 import { isMpesaConfigured, queryStkPushStatus } from "@/lib/mpesa";
-import { grantEnrollmentAccess } from "@/lib/enrollmentAccess";
 import type { Enrollment } from "@/types";
 
-async function confirmEnrollment(checkoutRequestId: string): Promise<boolean> {
+async function markPaymentVerified(checkoutRequestId: string, resultDesc?: string): Promise<Enrollment | null> {
   const enrollments = await getDB<Enrollment>("enrollments.json");
   const idx = enrollments.findIndex((e) => e.checkoutRequestId === checkoutRequestId);
-  if (idx === -1) return false;
+  if (idx === -1) return null;
 
-  if (enrollments[idx].status === "confirmed") return true;
+  if (enrollments[idx].status === "confirmed") return enrollments[idx];
 
-  enrollments[idx].status = "confirmed";
   enrollments[idx].mpesaResultCode = "0";
-  const enrollment = enrollments[idx];
-  const grant = await grantEnrollmentAccess(enrollment);
-  enrollments[idx].accessGrantedAt = grant.granted ? new Date().toISOString() : undefined;
-  enrollments[idx].accessGrantMessage = grant.granted
-    ? "M-Pesa confirmed and course access granted."
-    : "M-Pesa confirmed. Student should create or sign in with the same email or phone to receive course access.";
+  enrollments[idx].mpesaResultDesc = resultDesc || "M-Pesa payment verified. Awaiting admin approval.";
+  enrollments[idx].paymentConfirmedAt = enrollments[idx].paymentConfirmedAt || new Date().toISOString();
+  enrollments[idx].paymentVerificationStatus = "verified";
+  enrollments[idx].adminApprovalStatus = "pending";
+  enrollments[idx].adminReviewRequestedAt = enrollments[idx].adminReviewRequestedAt || new Date().toISOString();
+  enrollments[idx].adminNotificationMessage = "M-Pesa payment verified by status check. Admin confirmation is required to unlock LMS access.";
+  enrollments[idx].accessGrantMessage = "M-Pesa payment verified. Awaiting admin approval to unlock LMS access.";
   await upsertDBRecord("enrollments.json", enrollments[idx]);
 
-  return true;
+  return enrollments[idx];
 }
 
 export async function POST(request: Request) {
@@ -49,6 +48,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         paid: true,
+        approvalRequired: false,
         status: "confirmed",
         reference: enrollment.reference,
       });
@@ -62,6 +62,18 @@ export async function POST(request: Request) {
         reference: enrollment.reference,
         resultCode: enrollment.mpesaResultCode,
         resultDesc: enrollment.mpesaResultDesc || "Payment failed",
+      });
+    }
+
+    if (enrollment.paymentConfirmedAt) {
+      return NextResponse.json({
+        success: true,
+        paid: true,
+        approvalRequired: true,
+        status: enrollment.status,
+        reference: enrollment.reference,
+        resultCode: enrollment.mpesaResultCode,
+        resultDesc: "Payment received. Admin approval is required before LMS access is unlocked.",
       });
     }
 
@@ -86,13 +98,14 @@ export async function POST(request: Request) {
     const query = await queryStkPushStatus(enrollment.checkoutRequestId);
 
     if (query.success) {
-      await confirmEnrollment(enrollment.checkoutRequestId);
+      const updatedEnrollment = await markPaymentVerified(enrollment.checkoutRequestId, query.resultDesc);
       return NextResponse.json({
         success: true,
         paid: true,
-        status: "confirmed",
+        approvalRequired: true,
+        status: updatedEnrollment?.status || "pending",
         reference: enrollment.reference,
-        resultDesc: query.resultDesc,
+        resultDesc: "Payment received. Admin approval is required before LMS access is unlocked.",
       });
     }
 
@@ -104,7 +117,17 @@ export async function POST(request: Request) {
         enrollments[idx].status = "failed";
         enrollments[idx].mpesaResultCode = query.resultCode;
         enrollments[idx].mpesaResultDesc = query.resultDesc || "Payment failed";
+        enrollments[idx].paymentVerificationStatus = "failed";
+        enrollments[idx].adminNotificationMessage = "M-Pesa payment failed. No admin approval is needed.";
         await upsertDBRecord("enrollments.json", enrollments[idx]);
+        return NextResponse.json({
+          success: true,
+          paid: false,
+          status: "failed",
+          reference: enrollments[idx].reference,
+          resultCode: query.resultCode,
+          resultDesc: enrollments[idx].mpesaResultDesc,
+        });
       }
     }
 

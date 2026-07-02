@@ -42,6 +42,7 @@ export interface Enrollment {
   paymentProvider?: "mpesa" | string;
   checkoutRequestId?: string;
   merchantRequestId?: string;
+  mpesaPushInitiatedAt?: string;
   paymentConfirmedAt?: string;
   mpesaReceiptNumber?: string;
   mpesaAmount?: number;
@@ -51,6 +52,11 @@ export interface Enrollment {
   mpesaTransactionDate?: string;
   mpesaResultCode?: string;
   mpesaResultDesc?: string;
+  paymentVerificationStatus?: "awaiting_payment" | "submitted" | "verified" | "failed" | string;
+  adminApprovalStatus?: "pending" | "approved" | string;
+  adminReviewRequestedAt?: string;
+  adminApprovedAt?: string;
+  adminNotificationMessage?: string;
   status: "pending" | "confirmed" | "failed" | string;
   whatsappConfirmed?: boolean;
   whatsappSentAt?: string;
