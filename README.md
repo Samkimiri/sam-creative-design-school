@@ -31,7 +31,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## M-Pesa Sandbox / Production Setup
 
-This app uses manual M-Pesa Buy Goods confirmation for enrollment payments. Students pay to the school Till, enter the M-Pesa confirmation details, send the prepared WhatsApp message, and an admin confirms the enrollment from the dashboard.
+This app uses M-Pesa STK Push for enrollment payments. Students submit their phone number, receive a Safaricom prompt, and an admin approves LMS access from the dashboard after payment is verified.
 
 Create a `.env.local` file at the project root with values like:
 

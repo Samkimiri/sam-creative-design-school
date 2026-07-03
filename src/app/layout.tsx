@@ -8,22 +8,52 @@ import PWAInstaller from "@/components/PWAInstaller";
 import StudyBreakPrompt from "@/components/StudyBreakPrompt";
 import PremiumMotion from "@/components/PremiumMotion";
 import { getContentSettings } from "@/lib/contentSettings";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://sam-creative-design-school.vercel.app";
+import {
+  defaultOgImage,
+  defaultSeoDescription,
+  jsonLdScript,
+  organizationJsonLd,
+  siteName,
+  siteUrl,
+  websiteJsonLd,
+} from "@/lib/seo";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Sam Creative Design School | Graphic Design Training in Kenya",
-    template: "%s | Sam Creative Design School",
+    default: "Sam Creative Design School | Online Graphic Design Courses in Kenya",
+    template: `%s | ${siteName}`,
   },
-  description: "Learn Photoshop, Illustrator, CapCut, and SolidWorks with industry-level training in Kenya. Practical skills for young creatives and engineers.",
-  keywords: ["Graphic design training Kenya", "Photoshop classes Kenya", "SolidWorks training", "Sam Creative Design School"],
+  description: defaultSeoDescription,
+  keywords: [
+    "graphic design course Kenya",
+    "Photoshop course in Kenya",
+    "Illustrator training Kenya",
+    "CapCut course Kenya",
+    "SolidWorks training Kenya",
+    "online design courses with certificate Kenya",
+    "Sam Creative Design School",
+  ],
   alternates: {
     canonical: "/",
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   manifest: "/manifest.webmanifest",
-  applicationName: "Sam Creative Design School",
+  applicationName: siteName,
+  authors: [{ name: "Samuel Kimiri" }],
+  creator: "Samuel Kimiri",
+  publisher: siteName,
+  category: "Education",
   appleWebApp: {
     capable: true,
     title: "SCDS",
@@ -37,13 +67,13 @@ export const metadata: Metadata = {
     "msapplication-TileColor": "#0056FF",
   },
   openGraph: {
-    title: "Sam Creative Design School",
-    description: "Practical Photoshop, Illustrator, CapCut, and SolidWorks training for creatives and engineers.",
+    title: "Sam Creative Design School | Online Graphic Design Courses in Kenya",
+    description: defaultSeoDescription,
     url: siteUrl,
-    siteName: "Sam Creative Design School",
+    siteName,
     images: [
       {
-        url: "/images/app-icon-512.png",
+        url: defaultOgImage,
         width: 512,
         height: 512,
         alt: "Sam Creative Design School logo",
@@ -54,9 +84,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sam Creative Design School",
-    description: "Practical creative and engineering software training in Kenya.",
-    images: ["/images/app-icon-512.png"],
+    title: "Sam Creative Design School | Online Graphic Design Courses in Kenya",
+    description: defaultSeoDescription,
+    images: [defaultOgImage],
   },
   icons: {
     icon: [
@@ -78,6 +108,14 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLdScript(organizationJsonLd())}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLdScript(websiteJsonLd())}
+        />
         <Navbar />
         <main className="min-h-screen">
           {children}

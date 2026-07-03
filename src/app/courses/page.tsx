@@ -5,6 +5,7 @@ import { getManagedCourses } from "@/lib/contentSettings";
 import { getDB } from "@/lib/db";
 import CourseReviewForm from "@/components/CourseReviewForm";
 import type { Review } from "@/types";
+import { absoluteUrl, jsonLdScript, siteName } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Courses in Kenya | Design, Coding, AI, Video and CAD",
@@ -21,6 +22,9 @@ export const metadata: Metadata = {
       },
     ],
   },
+  alternates: {
+    canonical: "/courses",
+  },
 };
 
 export default async function Courses() {
@@ -29,9 +33,31 @@ export default async function Courses() {
     getDB<Review>("reviews.json"),
   ]);
   const approvedReviews = savedReviews.filter((review) => review.approved === true);
+  const coursesJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Creative and technical courses in Kenya",
+    itemListElement: courses.map((course, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Course",
+        name: course.title,
+        description: course.description,
+        url: absoluteUrl(`/courses/${course.id}`),
+        image: absoluteUrl(course.image),
+        provider: {
+          "@type": "EducationalOrganization",
+          name: siteName,
+          sameAs: absoluteUrl("/"),
+        },
+      },
+    })),
+  };
 
   return (
     <div className="pt-32 pb-24 bg-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(coursesJsonLd)} />
       <div className="container mx-auto px-6">
         <div className="text-center mb-20 animate-fade-in">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-6">Our <span className="text-primary">Professional</span> Courses</h1>

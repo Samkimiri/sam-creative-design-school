@@ -5,8 +5,8 @@ export default async function FAQPage() {
   const enrollmentSteps = [
     { step: 1, title: "Choose Course", desc: "Select the training program that fits your goals." },
     { step: 2, title: "Fill Details", desc: "Provide your name, phone number, and preferred payment method." },
-    { step: 3, title: "Complete Payment", desc: "Pay through M-Pesa Buy Goods, then send your confirmation details on WhatsApp." },
-    { step: 4, title: "Get Access", desc: "Receive LMS access and start learning." },
+    { step: 3, title: "Complete Payment", desc: "Confirm the M-Pesa STK Push sent to your phone." },
+    { step: 4, title: "Get Access", desc: "Admin approves the verified payment, then LMS access unlocks." },
   ];
   const faqs = await getManagedFAQs();
 

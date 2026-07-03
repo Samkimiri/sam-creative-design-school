@@ -277,7 +277,7 @@ export default function CoursePlayer() {
           <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-sm font-black text-amber-700">LOCK</div>
           <h1 className="text-2xl font-black text-dark">Admin Approval Required</h1>
           <p className="mt-3 text-sm leading-6 text-gray-600">
-            This course opens after your WhatsApp payment review is approved by the school admin. Use the same email or phone you used during enrollment.
+            This course opens after your verified M-Pesa payment is approved by the school admin. Use the same email or phone you used during enrollment.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href={`/enroll?course=${courseId}`} className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary/90">

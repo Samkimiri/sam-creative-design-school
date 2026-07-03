@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getBlogPost } from "@/data/blog";
+import { absoluteUrl, jsonLdScript, siteName } from "@/lib/seo";
 
 export default function BlogArticleView({ id }: { id: string }) {
   const post = getBlogPost(id);
@@ -15,8 +16,33 @@ export default function BlogArticleView({ id }: { id: string }) {
     );
   }
 
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt,
+    image: absoluteUrl(post.image),
+    datePublished: new Date(post.date).toISOString(),
+    dateModified: new Date(post.date).toISOString(),
+    author: {
+      "@type": "Person",
+      name: "Samuel Kimiri",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: siteName,
+      logo: {
+        "@type": "ImageObject",
+        url: absoluteUrl("/images/app-icon-512.png"),
+      },
+    },
+    mainEntityOfPage: absoluteUrl(`/blog/${post.id}`),
+    keywords: post.tags.join(", "),
+  };
+
   return (
     <div className="pt-28 pb-24">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(articleJsonLd)} />
       <article>
         <div className="bg-dark text-white">
           <div className="container mx-auto grid min-h-[420px] items-end gap-8 px-6 py-16 md:grid-cols-2">

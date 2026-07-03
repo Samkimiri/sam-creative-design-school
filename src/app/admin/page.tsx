@@ -1185,7 +1185,7 @@ export default function AdminDashboard() {
                             {e.mpesaNotes && <div className="text-green-700">{e.mpesaNotes}</div>}
                           </div>
                         ) : (
-                          <span className="mt-2 inline-block text-gray-400">No manual details</span>
+                          <span className="mt-2 inline-block text-gray-400">Waiting for STK receipt</span>
                         )}
                         {e.paymentVerificationStatus && (
                           <div className="mt-2 rounded-lg bg-blue-50 px-2 py-1 font-bold text-blue-700">

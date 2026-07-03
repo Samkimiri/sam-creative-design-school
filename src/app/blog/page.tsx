@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Blog and Resources | Sam Creative Design School",
   description:
     "Current design, Photoshop, CapCut, Illustrator, SolidWorks, freelancing, and LMS learning resources from Sam Creative Design School in Kenya.",
+  alternates: {
+    canonical: "/blog",
+  },
 };
 
 export default function BlogPage() {

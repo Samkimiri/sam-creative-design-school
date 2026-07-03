@@ -1,8 +1,7 @@
 import type { MetadataRoute } from "next";
 import { courses } from "@/data/courses";
 import { blogPosts } from "@/data/blog";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://sam-creative-design-school.vercel.app";
+import { siteUrl } from "@/lib/seo";
 
 const routes = [
   "",
@@ -16,8 +15,6 @@ const routes = [
   "/enroll",
   "/faq",
   "/gallery",
-  "/games",
-  "/install",
   "/portfolio-builder",
   "/opportunities",
   "/resources",
@@ -46,19 +43,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  const lmsRoutes = courses.map((course) => ({
-    url: `${siteUrl}/lms/${course.id}`,
-    lastModified: now,
-    changeFrequency: "monthly" as const,
-    priority: 0.6,
-  }));
-
   const blogRoutes = blogPosts.map((post) => ({
     url: `${siteUrl}/blog/${post.id}`,
-    lastModified: now,
+    lastModified: new Date(post.date),
     changeFrequency: "monthly" as const,
     priority: 0.75,
   }));
 
-  return [...staticRoutes, ...courseRoutes, ...blogRoutes, ...lmsRoutes];
+  return [...staticRoutes, ...courseRoutes, ...blogRoutes];
 }

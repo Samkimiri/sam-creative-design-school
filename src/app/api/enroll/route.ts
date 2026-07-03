@@ -5,10 +5,33 @@ import { getManagedCourses } from "@/lib/contentSettings";
 import { courses } from "@/data/courses";
 import { findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
 import { applyPromoCode, calculateReferralDiscount, getDiscountSettings, normalizePromoCode } from "@/lib/discountSettings";
+import { initiateStkPush, isMpesaConfigured } from "@/lib/mpesa";
 import type { Enrollment, Student } from "@/types";
 
 const clean = (value: unknown, maxLength: number) =>
   String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
+
+function getPaymentDetails() {
+  const paymentNumber =
+    process.env.MPESA_TILL_NUMBER ||
+    process.env.MPESA_PARTY_B ||
+    process.env.MPESA_SHORTCODE ||
+    "9322260";
+  const paymentLabel =
+    (process.env.MPESA_PAYMENT_MODE || "").toLowerCase().includes("paybill")
+      ? "PayBill"
+      : "Buy Goods Till";
+
+  return {
+    mpesaConfigured: isMpesaConfigured(),
+    paymentMode: paymentLabel === "PayBill" ? "paybill" : "buygoods",
+    paymentLabel,
+    paymentNumber,
+    paybillNumber: paymentLabel === "PayBill" ? paymentNumber : "",
+    tillNumber: paymentLabel === "Buy Goods Till" ? paymentNumber : "",
+    recipientName: process.env.MPESA_ACCOUNT_NAME || "Samuel Kimiri",
+  };
+}
 
 export async function POST(request: Request) {
   try {
@@ -16,11 +39,6 @@ export async function POST(request: Request) {
     const name = clean(body.name, 80);
     const phone = clean(body.phone, 20);
     const email = clean(body.email, 120);
-    const paymentMethod = "mpesa";
-    const mpesaReceiptNumber = clean(body.mpesaReceiptNumber, 40).toUpperCase();
-    const mpesaPayerName = clean(body.mpesaPayerName, 80);
-    const mpesaPhoneNumber = clean(body.mpesaPhoneNumber || phone, 20);
-    const mpesaNotes = clean(body.mpesaNotes, 240);
     const referralCode = normalizeReferralCode(body.referralCode).slice(0, 24);
     const promoCode = normalizePromoCode(body.promoCode);
     const courseIds = String(body.courseId || "")
@@ -35,20 +53,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!mpesaReceiptNumber) {
-      return NextResponse.json(
-        { success: false, message: "Enter the M-Pesa confirmation code before sending payment details." },
-        { status: 400 }
-      );
-    }
-
     const phoneRegex = /^0[71]\d{8}$/;
     if (!phoneRegex.test(phone)) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Please enter a valid Kenyan phone number (07XXXXXXXX or 01XXXXXXXX)",
-        },
+        { success: false, message: "Please enter a valid Kenyan phone number (07XXXXXXXX or 01XXXXXXXX)." },
         { status: 400 }
       );
     }
@@ -66,8 +74,6 @@ export async function POST(request: Request) {
 
     const managedCourses = await getManagedCourses();
     const selectedCourses = managedCourses.filter((course) => requestedCourseIds.has(course.id));
-
-    const courseName = selectedCourses.map((course) => course.title).join(", ");
     const parsedAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
     const now = new Date().toISOString();
@@ -89,18 +95,38 @@ export async function POST(request: Request) {
     });
     const promoDiscount = promoResult.valid ? promoResult.discount : 0;
     const payableAmount = Math.max(0, parsedAmount - referralDiscount - promoDiscount);
+    const paymentDetails = getPaymentDetails();
 
-    const pushSuccess = false;
-    const paymentNumber =
-      process.env.MPESA_TILL_NUMBER ||
-      process.env.MPESA_PARTY_B ||
-      process.env.MPESA_SHORTCODE ||
-      "9322260";
-    const paymentLabel =
-      (process.env.MPESA_PAYMENT_MODE || "").toLowerCase().includes("paybill")
-        ? "PayBill"
-        : "Buy Goods Till";
-    const recipientName = process.env.MPESA_ACCOUNT_NAME || "Samuel Kimiri";
+    if (!paymentDetails.mpesaConfigured) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "M-Pesa STK Push is not configured on the server. Please contact SCDS support.",
+          ...paymentDetails,
+        },
+        { status: 503 }
+      );
+    }
+
+    if (payableAmount < 1) {
+      return NextResponse.json(
+        { success: false, message: "The payable amount must be at least Ksh 1 for M-Pesa STK Push.", ...paymentDetails },
+        { status: 400 }
+      );
+    }
+
+    const pushResult = await initiateStkPush(phone, payableAmount, reference);
+
+    if (!pushResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: pushResult.errorMessage || "M-Pesa STK Push failed. Please try again.",
+          ...paymentDetails,
+        },
+        { status: 400 }
+      );
+    }
 
     const newEnrollment: Enrollment = {
       id: "ENR-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
@@ -108,7 +134,7 @@ export async function POST(request: Request) {
       studentName: name,
       studentEmail: session?.user.email || email,
       courseId: selectedCourses.map((course) => course.id).join(","),
-      courseName: courseName || "Course",
+      courseName: selectedCourses.map((course) => course.title).join(", ") || "Course",
       originalAmount: parsedAmount,
       amount: payableAmount,
       referralCode: referralCode || undefined,
@@ -121,17 +147,18 @@ export async function POST(request: Request) {
       referredByEmail: referrer && !isSelfReferral ? referrer.email : undefined,
       phone,
       reference,
-      paymentProvider: paymentMethod,
-      mpesaReceiptNumber,
+      paymentProvider: "mpesa",
+      checkoutRequestId: pushResult.checkoutRequestId,
+      merchantRequestId: pushResult.merchantRequestId,
+      mpesaPushInitiatedAt: now,
       mpesaAmount: payableAmount,
-      mpesaPhoneNumber,
-      mpesaPayerName: mpesaPayerName || name,
-      mpesaNotes,
-      paymentVerificationStatus: "submitted",
+      mpesaPhoneNumber: phone,
+      mpesaResultCode: pushResult.responseCode,
+      mpesaResultDesc: pushResult.customerMessage || pushResult.responseDescription,
+      paymentVerificationStatus: "awaiting_payment",
       adminApprovalStatus: "pending",
-      adminReviewRequestedAt: now,
-      adminNotificationMessage: "Student submitted M-Pesa payment details. Admin should confirm the receipt before unlocking LMS access.",
-      accessGrantMessage: "M-Pesa details submitted. Awaiting admin approval to unlock LMS access.",
+      adminNotificationMessage: "M-Pesa STK Push sent to student. Waiting for Safaricom confirmation before admin approval.",
+      accessGrantMessage: "M-Pesa prompt sent. LMS access will unlock after payment is verified and approved by admin.",
       status: "pending",
       createdAt: now,
     };
@@ -140,7 +167,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Payment details saved. Send them on WhatsApp so the school can approve your LMS access.",
+      message: pushResult.customerMessage || "M-Pesa prompt sent. Enter your PIN to complete payment.",
       reference,
       amount: payableAmount,
       originalAmount: parsedAmount,
@@ -151,24 +178,15 @@ export async function POST(request: Request) {
       promoApplied: promoResult.valid,
       promoMessage: promoCode ? promoResult.message : "",
       promoDescription: promoResult.valid ? promoResult.promo?.description : "",
-      pushSuccess,
-      manualPayment: true,
-      paymentProvider: paymentMethod,
-      mpesaConfigured: true,
-      paymentMode: paymentLabel === "PayBill" ? "paybill" : "buygoods",
-      paymentLabel,
-      paymentNumber,
-      paybillNumber: paymentLabel === "PayBill" ? paymentNumber : "",
-      tillNumber: paymentLabel === "Buy Goods Till" ? paymentNumber : "",
-      recipientName,
-      mpesaReceiptNumber,
-      mpesaPayerName: mpesaPayerName || name,
-      mpesaPhoneNumber,
+      pushSuccess: true,
+      approvalRequired: true,
+      paymentProvider: "mpesa",
+      checkoutRequestId: pushResult.checkoutRequestId,
+      ...paymentDetails,
     });
   } catch (error) {
     console.error("Enrollment error:", error);
-    const message =
-      error instanceof Error ? error.message : "Failed to process enrollment";
+    const message = error instanceof Error ? error.message : "Failed to process enrollment";
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

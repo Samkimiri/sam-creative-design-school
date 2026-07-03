@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState, type CSSProperties } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { courses as fallbackCourses, type Course } from "@/data/courses";
@@ -17,10 +18,6 @@ function EnrollForm() {
     referralCode: initialReferralCode,
     promoCode: "",
     paymentMethod: "mpesa" as const,
-    mpesaReceiptNumber: "",
-    mpesaPayerName: "",
-    mpesaPhoneNumber: "",
-    mpesaNotes: "",
     selectedCourses: initialCourse ? [initialCourse] : ([] as string[]),
   });
   const [status, setStatus] = useState<"idle" | "submitting" | "stk" | "success" | "failed">("idle");
@@ -33,9 +30,6 @@ function EnrollForm() {
     paymentLabel: "Buy Goods Till",
     paymentNumber: "9322260",
     recipientName: "Samuel Kimiri",
-    mpesaReceiptNumber: "",
-    mpesaPayerName: "",
-    mpesaPhoneNumber: "",
   });
   const [referralMessage, setReferralMessage] = useState("");
   const [promoMessage, setPromoMessage] = useState("");
@@ -143,10 +137,6 @@ function EnrollForm() {
           email: formData.email,
           phone: formData.phone,
           paymentMethod: formData.paymentMethod,
-          mpesaReceiptNumber: formData.mpesaReceiptNumber,
-          mpesaPayerName: formData.mpesaPayerName,
-          mpesaPhoneNumber: formData.mpesaPhoneNumber || formData.phone,
-          mpesaNotes: formData.mpesaNotes,
           courseId: formData.selectedCourses.join(","),
           courseName: courseNames,
           amount: totalAmount,
@@ -159,27 +149,16 @@ function EnrollForm() {
       if (data.success && data.pushSuccess) {
         setRef(data.reference);
         setPaymentAmount(Number(data.amount) || totalAmount);
+        setPaymentDetails({
+          paymentLabel: data.paymentLabel || "Buy Goods Till",
+          paymentNumber: data.paymentNumber || "9322260",
+          recipientName: data.recipientName || "Samuel Kimiri",
+        });
         if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
         if (data.promoApplied) setPromoMessage(`${data.promoDescription || "Promo code"} applied. Discount: Ksh ${Number(data.promoDiscount || 0).toLocaleString()}.`);
         setCheckoutRequestId(data.checkoutRequestId || "");
         setStkMessage(data.message || "M-Pesa prompt sent to your phone.");
         setStatus("stk");
-      } else if (data.success && data.manualPayment) {
-        setRef(data.reference);
-        setPaymentAmount(Number(data.amount) || totalAmount);
-        setPaymentDetails({
-          paymentLabel: data.paymentLabel || "Buy Goods Till",
-          paymentNumber: data.paymentNumber || "9322260",
-          recipientName: data.recipientName || "Samuel Kimiri",
-          mpesaReceiptNumber: data.mpesaReceiptNumber || formData.mpesaReceiptNumber,
-          mpesaPayerName: data.mpesaPayerName || formData.mpesaPayerName || formData.name,
-          mpesaPhoneNumber: data.mpesaPhoneNumber || formData.mpesaPhoneNumber || formData.phone,
-        });
-        if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
-        if (data.promoApplied) setPromoMessage(`${data.promoDescription || "Promo code"} applied. Discount: Ksh ${Number(data.promoDiscount || 0).toLocaleString()}.`);
-        if (!data.promoApplied && data.promoMessage) setPromoMessage(data.promoMessage);
-        setStkMessage(data.message || "Payment details saved for admin review.");
-        setStatus("success");
       } else if (data.success) {
         setRef(data.reference);
         setPaymentAmount(Number(data.amount) || totalAmount);
@@ -203,7 +182,7 @@ function EnrollForm() {
       <div className="motion-scale bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-red-200">
         <div className="text-center py-4 sm:py-6">
           <div className="text-4xl sm:text-5xl mb-4 animate-pulse text-red-500">!</div>
-          <h2 className="text-2xl font-black text-dark mb-3">Till Payment Not Started</h2>
+          <h2 className="text-2xl font-black text-dark mb-3">M-Pesa Prompt Not Started</h2>
           <p className="text-gray-600 mb-6" role="alert">{errorMessage}</p>
           {ref && (
             <p className="text-sm text-gray-500 mb-6">
@@ -234,6 +213,10 @@ function EnrollForm() {
           <p className="text-gray-600 mb-4 max-w-md mx-auto">
             Safaricom sent an M-Pesa prompt to <span className="font-bold text-primary">{formData.phone}</span>.
           </p>
+          <div className="mx-auto mb-5 max-w-md rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-gray-700">
+            <p className="font-black text-dark">{paymentDetails.paymentLabel}: {paymentDetails.paymentNumber}</p>
+            <p className="text-xs font-semibold text-gray-500">Recipient: {paymentDetails.recipientName}</p>
+          </div>
           {stkMessage && (
             <p className="text-sm text-green-700 bg-green-50 rounded-xl px-4 py-2 mb-6 inline-block font-medium">
               {stkMessage}
@@ -298,52 +281,32 @@ function EnrollForm() {
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">Payment Details Ready for Review</h2>
           <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">
             {formData.name ? (
-              <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Send your {activePaymentLabel} details on WhatsApp so the school can confirm them and activate your LMS access.</>
+              <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your {activePaymentLabel} payment has been received and sent to the admin dashboard for approval.</>
             ) : (
-              <>Your {activePaymentLabel} details are saved. Send the reference to WhatsApp so the school can activate your LMS access quickly.</>
+              <>Your {activePaymentLabel} payment has been received and sent to the admin dashboard for approval.</>
             )}
           </p>
 
           <div className="bg-light-gray p-5 sm:p-8 rounded-2xl mb-6 sm:mb-8 text-left border-l-4 border-primary animate-fade-in">
-            <h3 className="font-bold text-lg mb-4">WhatsApp Activation Message</h3>
-            <p className="text-gray-700 mb-4">The button below opens a prepared message with your name, course, reference, amount, and next step.</p>
+            <h3 className="font-bold text-lg mb-4">Admin Approval Pending</h3>
+            <p className="text-gray-700 mb-4">Your course access will unlock after an admin confirms the verified M-Pesa payment.</p>
             <div className="space-y-2">
               <p className="flex justify-between"><span>Reference:</span> <span className="font-bold text-primary">{ref}</span></p>
-              {paymentDetails.mpesaReceiptNumber && (
-                <p className="flex justify-between"><span>M-Pesa Code:</span> <span className="font-bold">{paymentDetails.mpesaReceiptNumber}</span></p>
-              )}
               {amountForStatus > 0 && (
                 <p className="flex justify-between"><span>Total Amount:</span> <span className="font-bold">Ksh {amountForStatus.toLocaleString()}</span></p>
               )}
+              <p className="flex justify-between"><span>Approval:</span> <span className="font-bold text-amber-700">Waiting for admin</span></p>
               {referralMessage && <p className="text-sm font-bold text-green-700">{referralMessage}</p>}
               {promoMessage && <p className="text-sm font-bold text-blue-700">{promoMessage}</p>}
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                await fetch("/api/enroll", {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ reference: ref, whatsappConfirmed: true }),
-                });
-              } catch {}
-
-              const courseNames = selectedCourses.map((course) => course.title).join(", ");
-              const amountText = amountForStatus > 0 ? ` of Ksh ${amountForStatus}` : "";
-              const courseText = courseNames ? ` for ${courseNames}` : "";
-              const mpesaCodeText = paymentDetails.mpesaReceiptNumber ? ` M-Pesa confirmation code: ${paymentDetails.mpesaReceiptNumber}.` : "";
-              const payerText = paymentDetails.mpesaPayerName ? ` Paid by: ${paymentDetails.mpesaPayerName}.` : "";
-              const phoneText = paymentDetails.mpesaPhoneNumber ? ` Payment phone: ${paymentDetails.mpesaPhoneNumber}.` : "";
-              const message = `Hi, my name is ${formData.name || "a student"}. I have paid${amountText}${courseText} via ${activePaymentLabel}.${mpesaCodeText}${payerText}${phoneText} Enrollment reference: ${ref}. Please confirm my payment in the admin portal and activate my LMS access.`;
-              window.open(`https://wa.me/254743475247?text=${encodeURIComponent(message)}`, "_blank");
-            }}
-            className="premium-button inline-block w-full bg-[#25D366] text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:opacity-90 transition-all duration-300 text-center shadow-lg active:translate-y-0"
+          <Link
+            href="/lms"
+            className="premium-button inline-block w-full bg-primary text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary/90 transition-all duration-300 text-center shadow-lg active:translate-y-0"
           >
-            Send WhatsApp Payment Details
-          </button>
+            Go to LMS
+          </Link>
         </div>
       </div>
     );
@@ -429,77 +392,26 @@ function EnrollForm() {
         <div className="motion-soft motion-delay-5">
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Payment Method</p>
           <div className="rounded-2xl border-2 border-primary bg-primary/5 p-4 text-left shadow-md shadow-primary/10">
-            <span className="block font-black text-dark text-sm">Manual M-Pesa Confirmation</span>
-            <span className="mt-1 block text-xs font-medium text-gray-500">Enter your M-Pesa code, then send details on WhatsApp for admin approval.</span>
+            <span className="block font-black text-dark text-sm">M-Pesa STK Push</span>
+            <span className="mt-1 block text-xs font-medium text-gray-500">We send a secure Safaricom prompt to your phone. Admin approves LMS access after payment is verified.</span>
           </div>
         </div>
 
         <div className="motion-soft rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">M-Pesa Payment Details</p>
-                <h3 className="mt-1 text-lg font-black text-dark">Pay first, then enter the confirmation message details</h3>
-              </div>
-              <div className="rounded-xl bg-white px-4 py-3 text-sm shadow-sm">
-                <p className="font-black text-dark">Till 9322260</p>
-                <p className="text-xs font-bold text-gray-500">Buy Goods and Services</p>
-              </div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">M-Pesa Till</p>
+              <h3 className="mt-1 text-lg font-black text-dark">Till 9322260</h3>
+              <p className="mt-2 text-sm font-semibold text-gray-600">
+                Use the phone number above. When you submit, Safaricom will send an STK Push prompt for the selected course total.
+              </p>
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label htmlFor="mpesa-code" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">M-Pesa Code</label>
-                <input
-                  id="mpesa-code"
-                  required
-                  type="text"
-                  autoComplete="off"
-                  className="w-full bg-white border border-primary/10 rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold uppercase transition-all duration-300"
-                  placeholder="e.g., RFA1B2C3D4"
-                  value={formData.mpesaReceiptNumber}
-                  onChange={(event) => setFormData({ ...formData, mpesaReceiptNumber: event.target.value.toUpperCase() })}
-                />
-              </div>
-              <div>
-                <label htmlFor="mpesa-phone" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Payment Phone</label>
-                <input
-                  id="mpesa-phone"
-                  required
-                  type="tel"
-                  autoComplete="tel"
-                  pattern="0[17][0-9]{8}"
-                  className="w-full bg-white border border-primary/10 rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300"
-                  placeholder="07XXXXXXXX"
-                  value={formData.mpesaPhoneNumber || formData.phone}
-                  onChange={(event) => setFormData({ ...formData, mpesaPhoneNumber: event.target.value })}
-                />
-              </div>
-              <div>
-                <label htmlFor="mpesa-name" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Name on M-Pesa</label>
-                <input
-                  id="mpesa-name"
-                  required
-                  type="text"
-                  autoComplete="name"
-                  className="w-full bg-white border border-primary/10 rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300"
-                  placeholder="Name shown in the M-Pesa message"
-                  value={formData.mpesaPayerName}
-                  onChange={(event) => setFormData({ ...formData, mpesaPayerName: event.target.value })}
-                />
-              </div>
-              <div>
-                <label htmlFor="mpesa-notes" className="block text-xs font-black mb-2 text-gray-400 uppercase tracking-[0.2em]">Payment Note</label>
-                <input
-                  id="mpesa-notes"
-                  type="text"
-                  autoComplete="off"
-                  className="w-full bg-white border border-primary/10 rounded-xl p-3.5 sm:p-4 outline-none focus:ring-2 focus:ring-primary font-bold transition-all duration-300"
-                  placeholder="Optional extra detail"
-                  value={formData.mpesaNotes}
-                  onChange={(event) => setFormData({ ...formData, mpesaNotes: event.target.value })}
-                />
-              </div>
+            <div className="rounded-xl bg-white px-4 py-3 text-sm shadow-sm">
+              <p className="font-black text-dark">Buy Goods and Services</p>
+              <p className="text-xs font-bold text-gray-500">Recipient: Samuel Kimiri</p>
             </div>
           </div>
+        </div>
 
         <div className="motion-soft">
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Select Courses to Join</p>
@@ -558,12 +470,12 @@ function EnrollForm() {
             {status === "submitting" ? (
               <>
                 <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-                Saving Payment Details...
+                Sending M-Pesa Prompt...
               </>
-            ) : "Save Details & Send WhatsApp"}
+            ) : "Send M-Pesa STK Push"}
           </button>
           <p className="text-[10px] text-center text-gray-400 mt-4 font-medium uppercase tracking-widest">
-            Security Verified | Manual M-Pesa admin approval
+            Secure M-Pesa STK Push | Admin approval after payment
           </p>
         </div>
       </form>

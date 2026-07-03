@@ -141,7 +141,15 @@ const sitemap = read("src/app/sitemap.ts");
 for (const route of ["/about", "/contact", "/courses", "/enroll", "/faq", "/gallery", "/reviews"]) {
   assert(sitemap.includes(route), `sitemap must include ${route}`);
 }
-assert(sitemap.includes("/lms/${course.id}"), "sitemap must include dynamic LMS course URLs");
+assert(sitemap.includes("/courses/${course.id}"), "sitemap must include dynamic public course URLs");
+assert(!sitemap.includes("/lms/${course.id}"), "sitemap must not include private LMS course URLs");
+
+const robots = read("src/app/robots.ts");
+assert(robots.includes('"/lms"'), "robots must disallow private LMS routes");
+assert(robots.includes('"/admin"'), "robots must disallow admin routes");
+
+const lmsLayout = read("src/app/lms/layout.tsx");
+assert(lmsLayout.includes("index: false"), "LMS routes must emit noindex metadata");
 
 const faq = read("src/app/faq/page.tsx");
 for (const courseName of ["Vibe Designing", "Vibe Coding", "AI & Prompt Engineering"]) {

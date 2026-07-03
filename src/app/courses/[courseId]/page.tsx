@@ -20,6 +20,7 @@ import { getManagedCourses, getManagedLessons } from "@/lib/contentSettings";
 import { getDB } from "@/lib/db";
 import CourseReviewForm from "@/components/CourseReviewForm";
 import type { Review } from "@/types";
+import { absoluteUrl, jsonLdScript, siteName } from "@/lib/seo";
 
 type CoursePageProps = {
   params: Promise<{ courseId: string }>;
@@ -94,7 +95,11 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
     openGraph: {
       title: `${course.title} in Kenya`,
       description: course.description,
+      url: `/courses/${course.id}`,
       images: [{ url: course.image, alt: course.title }],
+    },
+    alternates: {
+      canonical: `/courses/${course.id}`,
     },
   };
 }
@@ -120,9 +125,64 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
   const tools = courseTools[course.id] || ["Laptop or smartphone", "Stable internet", "LMS access", "Practice files"];
   const projects = courseProjects[course.id] || course.skills.map((skill) => `${skill} practice project`);
   const faqs = getCourseFAQs(course.title);
+  const courseJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: course.title,
+    description: course.longDescription || course.description,
+    url: absoluteUrl(`/courses/${course.id}`),
+    image: absoluteUrl(course.image),
+    provider: {
+      "@type": "EducationalOrganization",
+      name: siteName,
+      sameAs: absoluteUrl("/"),
+    },
+    offers: {
+      "@type": "Offer",
+      price: course.price,
+      priceCurrency: "KES",
+      availability: "https://schema.org/InStock",
+      url: absoluteUrl(`/enroll?course=${course.id}`),
+    },
+    educationalLevel: course.level,
+    teaches: course.skills,
+    timeRequired: course.duration,
+    hasCourseInstance: {
+      "@type": "CourseInstance",
+      courseMode: "online",
+      courseWorkload: course.duration,
+      instructor: {
+        "@type": "Person",
+        name: "Samuel Kimiri",
+      },
+    },
+    ...(courseReviews.length > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: ratingAverage.toFixed(1),
+            reviewCount: courseReviews.length,
+          },
+        }
+      : {}),
+  };
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.a,
+      },
+    })),
+  };
 
   return (
     <div className="bg-white pt-28">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(courseJsonLd)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(faqJsonLd)} />
       <section className="bg-dark py-16 text-white md:py-20">
         <div className="container mx-auto px-6">
           <Link href="/courses" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-primary-light hover:text-white">
