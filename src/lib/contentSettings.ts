@@ -29,7 +29,7 @@ export const defaultFAQs: FAQSection[] = [
     items: [
       {
         q: "How do I pay for a course?",
-        a: "You pay through M-Pesa STK Push during enrollment. The school admin approves LMS access after Safaricom verifies the payment.",
+        a: "You pay to the school M-Pesa Till during enrollment, then submit the form for admin review. The school admin confirms the payment and unlocks LMS access.",
       },
       {
         q: "Do you offer discounts?",

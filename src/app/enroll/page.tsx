@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState, type CSSProperties } from "react";
+import { Suspense, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
@@ -20,10 +20,8 @@ function EnrollForm() {
     paymentMethod: "mpesa" as const,
     selectedCourses: initialCourse ? [initialCourse] : ([] as string[]),
   });
-  const [status, setStatus] = useState<"idle" | "submitting" | "stk" | "success" | "failed">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "failed">("idle");
   const [ref, setRef] = useState("");
-  const [checkoutRequestId, setCheckoutRequestId] = useState("");
-  const [stkMessage, setStkMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentDetails, setPaymentDetails] = useState({
@@ -68,41 +66,6 @@ function EnrollForm() {
   const amountForStatus = paymentAmount || totalAmount;
   const activePaymentLabel = "M-Pesa";
 
-  const checkPaymentStatus = useCallback(async () => {
-    if (!checkoutRequestId) return;
-
-    const res = await fetch("/api/mpesa/status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ checkoutRequestId, reference: ref }),
-    });
-    const data = await res.json();
-    if (data.paid) {
-      setStatus("success");
-    } else if (data.status === "failed") {
-      setErrorMessage(data.resultDesc || "M-Pesa payment was not completed.");
-      setStatus("failed");
-    } else if (data.resultDesc) {
-      setStkMessage(data.resultDesc);
-    }
-  }, [checkoutRequestId, ref]);
-
-  useEffect(() => {
-    if (status !== "stk" || !checkoutRequestId) return;
-
-    const poll = async () => {
-      try {
-        await checkPaymentStatus();
-      } catch {
-        // Keep polling while Safaricom confirmation is pending.
-      }
-    };
-
-    const interval = setInterval(poll, 5000);
-    poll();
-    return () => clearInterval(interval);
-  }, [status, checkoutRequestId, checkPaymentStatus]);
-
   const toggleCourse = (id: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -146,7 +109,7 @@ function EnrollForm() {
       });
 
       const data = await res.json();
-      if (data.success && data.pushSuccess) {
+      if (data.success && data.reviewPending) {
         setRef(data.reference);
         setPaymentAmount(Number(data.amount) || totalAmount);
         setPaymentDetails({
@@ -156,16 +119,15 @@ function EnrollForm() {
         });
         if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
         if (data.promoApplied) setPromoMessage(`${data.promoDescription || "Promo code"} applied. Discount: Ksh ${Number(data.promoDiscount || 0).toLocaleString()}.`);
-        setCheckoutRequestId(data.checkoutRequestId || "");
-        setStkMessage(data.message || "M-Pesa prompt sent to your phone.");
-        setStatus("stk");
+        if (!data.promoApplied && data.promoMessage) setPromoMessage(data.promoMessage);
+        setStatus("success");
       } else if (data.success) {
         setRef(data.reference);
         setPaymentAmount(Number(data.amount) || totalAmount);
         if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
         if (data.promoApplied) setPromoMessage(`${data.promoDescription || "Promo code"} applied. Discount: Ksh ${Number(data.promoDiscount || 0).toLocaleString()}.`);
         if (!data.promoApplied && data.promoMessage) setPromoMessage(data.promoMessage);
-        setErrorMessage(data.message || "Enrollment saved but M-Pesa prompt was not sent.");
+        setErrorMessage(data.message || "Enrollment could not be submitted for admin review.");
         setStatus("failed");
       } else {
         setErrorMessage(data.message || "Enrollment failed.");
@@ -182,7 +144,7 @@ function EnrollForm() {
       <div className="motion-scale bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-red-200">
         <div className="text-center py-4 sm:py-6">
           <div className="text-4xl sm:text-5xl mb-4 animate-pulse text-red-500">!</div>
-          <h2 className="text-2xl font-black text-dark mb-3">M-Pesa Prompt Not Started</h2>
+          <h2 className="text-2xl font-black text-dark mb-3">Enrollment Not Submitted</h2>
           <p className="text-gray-600 mb-6" role="alert">{errorMessage}</p>
           {ref && (
             <p className="text-sm text-gray-500 mb-6">
@@ -204,73 +166,6 @@ function EnrollForm() {
     );
   }
 
-  if (status === "stk") {
-    return (
-      <div className="motion-scale bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-4 border-primary relative overflow-hidden">
-        <div className="text-center py-5 sm:py-10">
-          <div className="text-4xl sm:text-5xl mb-5 sm:mb-6 animate-pulse font-black text-primary">M-PESA</div>
-          <h2 className="text-2xl sm:text-3xl font-black text-dark mb-4">Check Your Phone</h2>
-          <p className="text-gray-600 mb-4 max-w-md mx-auto">
-            Safaricom sent an M-Pesa prompt to <span className="font-bold text-primary">{formData.phone}</span>.
-          </p>
-          <div className="mx-auto mb-5 max-w-md rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-gray-700">
-            <p className="font-black text-dark">{paymentDetails.paymentLabel}: {paymentDetails.paymentNumber}</p>
-            <p className="text-xs font-semibold text-gray-500">Recipient: {paymentDetails.recipientName}</p>
-          </div>
-          {stkMessage && (
-            <p className="text-sm text-green-700 bg-green-50 rounded-xl px-4 py-2 mb-6 inline-block font-medium">
-              {stkMessage}
-            </p>
-          )}
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            Enter your <span className="font-bold text-dark">M-Pesa PIN</span> to pay:
-            <span className="font-bold text-primary block text-3xl mt-2 tracking-tighter">
-              Ksh {amountForStatus.toLocaleString()}
-            </span>
-          </p>
-          {referralMessage && (
-            <p className="mx-auto mb-5 max-w-md rounded-xl bg-green-50 px-4 py-2 text-sm font-bold text-green-700">
-              {referralMessage}
-            </p>
-          )}
-          {promoMessage && (
-            <p className="mx-auto mb-5 max-w-md rounded-xl bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700">
-              {promoMessage}
-            </p>
-          )}
-
-          <div className="progress-sheen bg-primary/5 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-primary/10">
-            <div className="flex items-center justify-center gap-3 text-primary font-bold mb-2">
-              <span className="w-2 h-2 bg-primary rounded-full animate-ping" />
-              Waiting for Safaricom confirmation...
-            </div>
-            <p className="text-xs text-gray-400">
-              This page updates automatically when payment is received. Ref: {ref}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              void checkPaymentStatus();
-            }}
-            className="premium-button w-full bg-dark text-white font-bold py-4 rounded-xl hover:-translate-y-0.5 hover:bg-primary transition-all duration-300 shadow-lg mb-4 active:translate-y-0"
-          >
-            I have entered my PIN - check status
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setStatus("idle")}
-            className="text-sm text-gray-400 hover:text-red-500 transition-colors font-medium"
-          >
-            Cancel and try again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   if (status === "success") {
     return (
       <div className="motion-scale bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-primary">
@@ -278,20 +173,22 @@ function EnrollForm() {
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6 text-xl font-black animate-fade-in">
             OK
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Payment Details Ready for Review</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Enrollment Sent to Admin</h2>
           <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">
             {formData.name ? (
-              <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your {activePaymentLabel} payment has been received and sent to the admin dashboard for approval.</>
+              <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your enrollment has been prioritized in the admin dashboard for {activePaymentLabel} payment confirmation.</>
             ) : (
-              <>Your {activePaymentLabel} payment has been received and sent to the admin dashboard for approval.</>
+              <>Your enrollment has been prioritized in the admin dashboard for {activePaymentLabel} payment confirmation.</>
             )}
           </p>
 
           <div className="bg-light-gray p-5 sm:p-8 rounded-2xl mb-6 sm:mb-8 text-left border-l-4 border-primary animate-fade-in">
             <h3 className="font-bold text-lg mb-4">Admin Approval Pending</h3>
-            <p className="text-gray-700 mb-4">Your course access will unlock after an admin confirms the verified M-Pesa payment.</p>
+            <p className="text-gray-700 mb-4">Pay to the Till below if you have not already paid. Your LMS access unlocks after admin confirms the payment.</p>
             <div className="space-y-2">
               <p className="flex justify-between"><span>Reference:</span> <span className="font-bold text-primary">{ref}</span></p>
+              <p className="flex justify-between"><span>{paymentDetails.paymentLabel}:</span> <span className="font-bold">{paymentDetails.paymentNumber}</span></p>
+              <p className="flex justify-between"><span>Recipient:</span> <span className="font-bold">{paymentDetails.recipientName}</span></p>
               {amountForStatus > 0 && (
                 <p className="flex justify-between"><span>Total Amount:</span> <span className="font-bold">Ksh {amountForStatus.toLocaleString()}</span></p>
               )}
@@ -392,8 +289,8 @@ function EnrollForm() {
         <div className="motion-soft motion-delay-5">
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Payment Method</p>
           <div className="rounded-2xl border-2 border-primary bg-primary/5 p-4 text-left shadow-md shadow-primary/10">
-            <span className="block font-black text-dark text-sm">M-Pesa STK Push</span>
-            <span className="mt-1 block text-xs font-medium text-gray-500">We send a secure Safaricom prompt to your phone. Admin approves LMS access after payment is verified.</span>
+            <span className="block font-black text-dark text-sm">M-Pesa Till Review</span>
+            <span className="mt-1 block text-xs font-medium text-gray-500">Pay to the Till, submit this form, and admin will confirm payment before unlocking LMS access.</span>
           </div>
         </div>
 
@@ -403,7 +300,7 @@ function EnrollForm() {
               <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">M-Pesa Till</p>
               <h3 className="mt-1 text-lg font-black text-dark">Till 9322260</h3>
               <p className="mt-2 text-sm font-semibold text-gray-600">
-                Use the phone number above. When you submit, Safaricom will send an STK Push prompt for the selected course total.
+                Pay the selected course total to this Till, then submit this form so admin can confirm and approve your LMS access.
               </p>
             </div>
             <div className="rounded-xl bg-white px-4 py-3 text-sm shadow-sm">
@@ -470,12 +367,12 @@ function EnrollForm() {
             {status === "submitting" ? (
               <>
                 <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-                Sending M-Pesa Prompt...
+                Sending to Admin Review...
               </>
-            ) : "Send M-Pesa STK Push"}
+            ) : "Submit for Admin Approval"}
           </button>
           <p className="text-[10px] text-center text-gray-400 mt-4 font-medium uppercase tracking-widest">
-            Secure M-Pesa STK Push | Admin approval after payment
+            M-Pesa Till payment | Priority admin approval
           </p>
         </div>
       </form>

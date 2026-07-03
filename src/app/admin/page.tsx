@@ -903,7 +903,7 @@ export default function AdminDashboard() {
     const aPriority = a.status === "pending" && aNeedsApproval ? 0 : a.status === "pending" && a.whatsappConfirmed ? 1 : a.status === "pending" ? 2 : 3;
     const bPriority = b.status === "pending" && bNeedsApproval ? 0 : b.status === "pending" && b.whatsappConfirmed ? 1 : b.status === "pending" ? 2 : 3;
     if (aPriority !== bPriority) return aPriority - bPriority;
-    return new Date(b.whatsappSentAt || b.createdAt).getTime() - new Date(a.whatsappSentAt || a.createdAt).getTime();
+    return new Date(b.adminReviewRequestedAt || b.whatsappSentAt || b.createdAt).getTime() - new Date(a.adminReviewRequestedAt || a.whatsappSentAt || a.createdAt).getTime();
   });
 
   return (
@@ -1185,7 +1185,7 @@ export default function AdminDashboard() {
                             {e.mpesaNotes && <div className="text-green-700">{e.mpesaNotes}</div>}
                           </div>
                         ) : (
-                          <span className="mt-2 inline-block text-gray-400">Waiting for STK receipt</span>
+                          <span className="mt-2 inline-block text-gray-400">Awaiting admin payment check</span>
                         )}
                         {e.paymentVerificationStatus && (
                           <div className="mt-2 rounded-lg bg-blue-50 px-2 py-1 font-bold text-blue-700">

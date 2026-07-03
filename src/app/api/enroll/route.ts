@@ -5,7 +5,6 @@ import { getManagedCourses } from "@/lib/contentSettings";
 import { courses } from "@/data/courses";
 import { findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
 import { applyPromoCode, calculateReferralDiscount, getDiscountSettings, normalizePromoCode } from "@/lib/discountSettings";
-import { initiateStkPush, isMpesaConfigured } from "@/lib/mpesa";
 import type { Enrollment, Student } from "@/types";
 
 const clean = (value: unknown, maxLength: number) =>
@@ -23,7 +22,7 @@ function getPaymentDetails() {
       : "Buy Goods Till";
 
   return {
-    mpesaConfigured: isMpesaConfigured(),
+    mpesaConfigured: false,
     paymentMode: paymentLabel === "PayBill" ? "paybill" : "buygoods",
     paymentLabel,
     paymentNumber,
@@ -97,33 +96,9 @@ export async function POST(request: Request) {
     const payableAmount = Math.max(0, parsedAmount - referralDiscount - promoDiscount);
     const paymentDetails = getPaymentDetails();
 
-    if (!paymentDetails.mpesaConfigured) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "M-Pesa STK Push is not configured on the server. Please contact SCDS support.",
-          ...paymentDetails,
-        },
-        { status: 503 }
-      );
-    }
-
     if (payableAmount < 1) {
       return NextResponse.json(
-        { success: false, message: "The payable amount must be at least Ksh 1 for M-Pesa STK Push.", ...paymentDetails },
-        { status: 400 }
-      );
-    }
-
-    const pushResult = await initiateStkPush(phone, payableAmount, reference);
-
-    if (!pushResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: pushResult.errorMessage || "M-Pesa STK Push failed. Please try again.",
-          ...paymentDetails,
-        },
+        { success: false, message: "The payable amount must be at least Ksh 1.", ...paymentDetails },
         { status: 400 }
       );
     }
@@ -148,17 +123,13 @@ export async function POST(request: Request) {
       phone,
       reference,
       paymentProvider: "mpesa",
-      checkoutRequestId: pushResult.checkoutRequestId,
-      merchantRequestId: pushResult.merchantRequestId,
-      mpesaPushInitiatedAt: now,
       mpesaAmount: payableAmount,
       mpesaPhoneNumber: phone,
-      mpesaResultCode: pushResult.responseCode,
-      mpesaResultDesc: pushResult.customerMessage || pushResult.responseDescription,
-      paymentVerificationStatus: "awaiting_payment",
+      paymentVerificationStatus: "submitted",
       adminApprovalStatus: "pending",
-      adminNotificationMessage: "M-Pesa STK Push sent to student. Waiting for Safaricom confirmation before admin approval.",
-      accessGrantMessage: "M-Pesa prompt sent. LMS access will unlock after payment is verified and approved by admin.",
+      adminReviewRequestedAt: now,
+      adminNotificationMessage: `Student submitted enrollment for ${paymentDetails.paymentLabel} ${paymentDetails.paymentNumber}. Confirm payment in M-Pesa, then approve to unlock LMS access.`,
+      accessGrantMessage: "Enrollment submitted for admin payment review. LMS access unlocks after approval.",
       status: "pending",
       createdAt: now,
     };
@@ -167,7 +138,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: pushResult.customerMessage || "M-Pesa prompt sent. Enter your PIN to complete payment.",
+      message: "Enrollment submitted for admin payment review. Pay to the Till shown if you have not already paid.",
       reference,
       amount: payableAmount,
       originalAmount: parsedAmount,
@@ -178,10 +149,9 @@ export async function POST(request: Request) {
       promoApplied: promoResult.valid,
       promoMessage: promoCode ? promoResult.message : "",
       promoDescription: promoResult.valid ? promoResult.promo?.description : "",
-      pushSuccess: true,
+      reviewPending: true,
       approvalRequired: true,
       paymentProvider: "mpesa",
-      checkoutRequestId: pushResult.checkoutRequestId,
       ...paymentDetails,
     });
   } catch (error) {

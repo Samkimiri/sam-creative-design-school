@@ -29,34 +29,23 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## M-Pesa Sandbox / Production Setup
+## M-Pesa Till Payment Review Setup
 
-This app uses M-Pesa STK Push for enrollment payments. Students submit their phone number, receive a Safaricom prompt, and an admin approves LMS access from the dashboard after payment is verified.
+This app uses M-Pesa Till payment review for enrollment payments. Students pay to the school Till, submit enrollment details, and an admin prioritizes the request from the dashboard before unlocking LMS access.
 
 Create a `.env.local` file at the project root with values like:
 
 ```env
-MPESA_ENV=sandbox
-MPESA_CONSUMER_KEY=your_mpesa_consumer_key
-MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret
-MPESA_SHORTCODE=
 MPESA_TILL_NUMBER=9322260
-MPESA_PASSKEY=your_mpesa_passkey
-MPESA_CALLBACK_URL=https://your-public-domain/api/mpesa/callback
 MPESA_PAYMENT_MODE=buygoods
-MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline
-MPESA_PARTY_B=9322260
 MPESA_ACCOUNT_NAME=Sam Creative Design School
 ```
 
 Important notes:
 
-- `MPESA_ENV` should be `sandbox` for testing, and `production` for live.
-- `MPESA_CALLBACK_URL` must be publicly accessible to receive Safaricom callback notifications.
-- For extra callback protection, set `MPESA_CALLBACK_SECRET` and include it in the callback URL, for example `https://your-public-domain/api/mpesa/callback?secret=your_secret`.
-- If you are developing locally, use a tunneling service like `ngrok` or `localtunnel`.
-- For the school Buy Goods Till, use `MPESA_PAYMENT_MODE=buygoods`, `MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline`, and set `MPESA_PARTY_B=9322260`.
-- If `MPESA_TILL_NUMBER` is set and `MPESA_SHORTCODE` is empty, the app automatically uses Buy Goods mode.
+- `MPESA_TILL_NUMBER` is shown on the enrollment page and admin payment review messages.
+- `MPESA_PAYMENT_MODE=buygoods` labels the payment as a Buy Goods Till.
+- Admins confirm payment from their M-Pesa records, then approve the prioritized enrollment from the dashboard.
 
 ## Backend Database Setup
 
