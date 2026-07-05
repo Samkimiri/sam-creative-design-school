@@ -128,8 +128,8 @@ export async function POST(request: Request) {
       paymentVerificationStatus: "submitted",
       adminApprovalStatus: "pending",
       adminReviewRequestedAt: now,
-      adminNotificationMessage: `Student submitted enrollment for ${paymentDetails.paymentLabel} ${paymentDetails.paymentNumber}. Confirm payment in M-Pesa, then approve to unlock LMS access.`,
-      accessGrantMessage: "Enrollment submitted for admin payment review. LMS access unlocks after approval.",
+      adminNotificationMessage: `Student submitted an access request for ${paymentDetails.paymentLabel} ${paymentDetails.paymentNumber}. Confirm payment in M-Pesa, then approve to unlock LMS access.`,
+      accessGrantMessage: "Enrollment submitted for admin approval. LMS access unlocks after approval.",
       status: "pending",
       createdAt: now,
     };
@@ -138,7 +138,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Enrollment submitted for admin payment review. Pay to the Till shown if you have not already paid.",
+      message: "Enrollment submitted for admin approval. Pay to the Till shown if you have not already paid.",
       reference,
       amount: payableAmount,
       originalAmount: parsedAmount,

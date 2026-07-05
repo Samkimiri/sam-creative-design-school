@@ -16,6 +16,7 @@ interface Student {
 
 interface Enrollment {
   id: string;
+  studentId?: string;
   studentName: string;
   studentEmail: string;
   courseId: string;
@@ -886,20 +887,19 @@ export default function AdminDashboard() {
   const certificatePreviewUrl = certificateCourseId
     ? `/api/certificates/${certificateCourseId}?preview=1&studentName=${encodeURIComponent(certificateStudentName)}`
     : "";
-  const paymentReviewRequests = enrollments.filter((enrollment) =>
-    enrollment.status === "pending" &&
-    (
-      enrollment.paymentVerificationStatus === "verified" ||
-      enrollment.paymentVerificationStatus === "submitted" ||
-      Boolean(enrollment.paymentConfirmedAt || enrollment.mpesaReceiptNumber)
-    )
+  const pendingAccessRequests = enrollments.filter((enrollment) => enrollment.status === "pending");
+  const approvalReadyRequests = pendingAccessRequests.filter((enrollment) =>
+    enrollment.paymentVerificationStatus === "verified" ||
+    enrollment.paymentVerificationStatus === "submitted" ||
+    enrollment.whatsappConfirmed ||
+    Boolean(enrollment.paymentConfirmedAt || enrollment.mpesaReceiptNumber || enrollment.adminApprovalStatus === "pending")
   );
+  const approvalReadyRequestIds = new Set(approvalReadyRequests.map((enrollment) => enrollment.id));
   const whatsappReviewRequests = enrollments.filter((enrollment) => enrollment.status === "pending" && enrollment.whatsappConfirmed);
-  const pendingEnrollments = enrollments.filter((enrollment) => enrollment.status === "pending");
   const confirmedEnrollments = enrollments.filter((enrollment) => enrollment.status === "confirmed");
   const sortedEnrollments = [...enrollments].sort((a, b) => {
-    const aNeedsApproval = paymentReviewRequests.some((item) => item.id === a.id);
-    const bNeedsApproval = paymentReviewRequests.some((item) => item.id === b.id);
+    const aNeedsApproval = approvalReadyRequestIds.has(a.id);
+    const bNeedsApproval = approvalReadyRequestIds.has(b.id);
     const aPriority = a.status === "pending" && aNeedsApproval ? 0 : a.status === "pending" && a.whatsappConfirmed ? 1 : a.status === "pending" ? 2 : 3;
     const bPriority = b.status === "pending" && bNeedsApproval ? 0 : b.status === "pending" && b.whatsappConfirmed ? 1 : b.status === "pending" ? 2 : 3;
     if (aPriority !== bPriority) return aPriority - bPriority;
@@ -1104,14 +1104,14 @@ export default function AdminDashboard() {
           <div key="enrollments-panel" className="admin-tab-panel space-y-5">
             <div className="grid gap-4 md:grid-cols-3">
               <div className="rounded-2xl border border-[#25D366]/20 bg-[#25D366]/10 p-5 shadow-sm">
-                <p className="text-xs font-black uppercase tracking-widest text-[#128C43]">Admin Approval Queue</p>
-                <p className="mt-2 text-3xl font-black text-dark">{paymentReviewRequests.length}</p>
-                <p className="mt-1 text-sm font-medium text-gray-600">M-Pesa payments submitted or verified and waiting for admin confirmation.</p>
+                <p className="text-xs font-black uppercase tracking-widest text-[#128C43]">Access Requests</p>
+                <p className="mt-2 text-3xl font-black text-dark">{pendingAccessRequests.length}</p>
+                <p className="mt-1 text-sm font-medium text-gray-600">Students who submitted enrollment requests and are waiting for admin approval.</p>
               </div>
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-                <p className="text-xs font-black uppercase tracking-widest text-amber-700">Pending Payments</p>
-                <p className="mt-2 text-3xl font-black text-dark">{pendingEnrollments.length}</p>
-                <p className="mt-1 text-sm font-medium text-gray-600">Saved enrollments waiting for payment confirmation. WhatsApp review clicks: {whatsappReviewRequests.length}.</p>
+                <p className="text-xs font-black uppercase tracking-widest text-amber-700">Ready for Approval</p>
+                <p className="mt-2 text-3xl font-black text-dark">{approvalReadyRequests.length}</p>
+                <p className="mt-1 text-sm font-medium text-gray-600">Requests with submitted payment details. WhatsApp review clicks: {whatsappReviewRequests.length}.</p>
               </div>
               <div className="rounded-2xl border border-green-200 bg-green-50 p-5 shadow-sm">
                 <p className="text-xs font-black uppercase tracking-widest text-green-700">Approved Access</p>
@@ -1123,8 +1123,8 @@ export default function AdminDashboard() {
             <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
               <div className="flex flex-col gap-4 border-b border-gray-100 px-6 py-5 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <h2 className="text-xl font-black text-dark">Enrollment Payment Reviews</h2>
-                  <p className="mt-1 text-sm text-gray-500">Approve requests after checking the M-Pesa code, callback details, or WhatsApp message. Approval unlocks the selected courses for the matching student account.</p>
+                  <h2 className="text-xl font-black text-dark">Enrollment Access Requests</h2>
+                  <p className="mt-1 text-sm text-gray-500">Approve an enrollment request after checking the payment details. Approval unlocks the selected courses for the matching student account.</p>
                 </div>
                 <button
                   type="button"
@@ -1155,8 +1155,10 @@ export default function AdminDashboard() {
                     <tr><td colSpan={9} className="text-center py-12 text-gray-400">Loading enrollment requests...</td></tr>
                   ) : enrollments.length === 0 ? (
                     <tr><td colSpan={9} className="text-center py-12 text-gray-400">No enrollment requests found yet</td></tr>
-                  ) : sortedEnrollments.map((e) => (
-                    <tr key={e.id} className={`${adminRowMotion} ${e.status === "pending" && (e.paymentVerificationStatus === "verified" || e.paymentVerificationStatus === "submitted" || e.whatsappConfirmed) ? "bg-[#25D366]/5" : ""}`}>
+                  ) : sortedEnrollments.map((e) => {
+                    const isApprovalReady = approvalReadyRequestIds.has(e.id);
+                    return (
+                      <tr key={e.id} className={`${adminRowMotion} ${isApprovalReady ? "bg-[#25D366]/5" : ""}`}>
                       <td className="px-6 py-4">
                         <div className="font-bold text-dark">{e.studentName}</div>
                         <div className="text-gray-500 text-xs">{e.studentEmail || e.phone}</div>
@@ -1244,15 +1246,16 @@ export default function AdminDashboard() {
                             disabled={pendingAction === `enrollment-${e.id}`}
                             className={`bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 disabled:opacity-50 ${adminActionMotion}`}
                           >
-                            {pendingAction === `enrollment-${e.id}` ? "Saving..." : "Approve & Unlock"}
+                            {pendingAction === `enrollment-${e.id}` ? "Saving..." : "Give Access"}
                           </button>
                         )}
                         {e.status === "confirmed" && (
                           <span className="text-xs font-bold text-green-700">Approved</span>
                         )}
                       </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

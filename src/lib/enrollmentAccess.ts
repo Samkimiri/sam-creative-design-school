@@ -10,6 +10,10 @@ function normalizePhone(value?: string) {
   return String(value || "").trim();
 }
 
+function normalizeId(value?: string) {
+  return String(value || "").trim();
+}
+
 function courseIdsFromEnrollment(enrollment: Pick<Enrollment, "courseId">) {
   return enrollment.courseId
     .split(",")
@@ -18,13 +22,16 @@ function courseIdsFromEnrollment(enrollment: Pick<Enrollment, "courseId">) {
 }
 
 export function enrollmentMatchesStudent(enrollment: Enrollment, student: Student) {
+  const enrollmentStudentId = normalizeId(enrollment.studentId);
+  const studentId = normalizeId(student.id);
   const enrollmentEmail = normalizeEmail(enrollment.studentEmail);
   const studentEmail = normalizeEmail(student.email);
   const enrollmentPhone = normalizePhone(enrollment.phone);
   const studentPhone = normalizePhone(student.phone);
 
   return Boolean(
-    (enrollmentEmail && studentEmail && enrollmentEmail === studentEmail) ||
+    (enrollmentStudentId && enrollmentStudentId !== "guest" && studentId && enrollmentStudentId === studentId) ||
+      (enrollmentEmail && studentEmail && enrollmentEmail === studentEmail) ||
       (enrollmentPhone && studentPhone && enrollmentPhone === studentPhone)
   );
 }

@@ -281,7 +281,7 @@ export default function CoursePlayer() {
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href={`/enroll?course=${courseId}`} className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary/90">
-              Send Payment Review
+              Request Access
             </Link>
             <Link href="/lms" className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold text-dark transition hover:border-primary hover:text-primary">
               Back to LMS

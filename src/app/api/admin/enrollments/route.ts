@@ -5,6 +5,7 @@ import { grantEnrollmentAccess } from "@/lib/enrollmentAccess";
 
 interface Enrollment {
   id: string;
+  studentId?: string;
   studentName: string;
   studentEmail: string;
   courseId: string;

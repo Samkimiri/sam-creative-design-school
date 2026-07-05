@@ -176,9 +176,9 @@ function EnrollForm() {
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">Enrollment Sent to Admin</h2>
           <p className="text-gray-600 mb-6 sm:mb-8 text-base sm:text-lg">
             {formData.name ? (
-              <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your enrollment has been prioritized in the admin dashboard for {activePaymentLabel} payment confirmation.</>
+              <>Thank you, <span className="font-bold text-dark">{formData.name}</span>. Your enrollment has been sent to the admin dashboard for {activePaymentLabel} approval.</>
             ) : (
-              <>Your enrollment has been prioritized in the admin dashboard for {activePaymentLabel} payment confirmation.</>
+              <>Your enrollment has been sent to the admin dashboard for {activePaymentLabel} approval.</>
             )}
           </p>
 
@@ -289,7 +289,7 @@ function EnrollForm() {
         <div className="motion-soft motion-delay-5">
           <p className="block text-xs font-black mb-4 text-gray-400 uppercase tracking-[0.2em]">Payment Method</p>
           <div className="rounded-2xl border-2 border-primary bg-primary/5 p-4 text-left shadow-md shadow-primary/10">
-            <span className="block font-black text-dark text-sm">M-Pesa Till Review</span>
+            <span className="block font-black text-dark text-sm">M-Pesa Till Approval</span>
             <span className="mt-1 block text-xs font-medium text-gray-500">Pay to the Till, submit this form, and admin will confirm payment before unlocking LMS access.</span>
           </div>
         </div>
@@ -367,7 +367,7 @@ function EnrollForm() {
             {status === "submitting" ? (
               <>
                 <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-                Sending to Admin Review...
+                Sending for Admin Approval...
               </>
             ) : "Submit for Admin Approval"}
           </button>
