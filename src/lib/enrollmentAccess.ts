@@ -7,11 +7,15 @@ function normalizeEmail(value?: string) {
 }
 
 function normalizePhone(value?: string) {
-  return String(value || "").trim();
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("254") && digits.length === 12) return `0${digits.slice(3)}`;
+  if ((digits.startsWith("7") || digits.startsWith("1")) && digits.length === 9) return `0${digits}`;
+  return digits;
 }
 
 function normalizeId(value?: string) {
-  return String(value || "").trim();
+  return String(value || "").trim().toLowerCase();
 }
 
 function courseIdsFromEnrollment(enrollment: Pick<Enrollment, "courseId">) {
@@ -56,9 +60,7 @@ export async function grantEnrollmentAccess(enrollment: Enrollment) {
 
   students[studentIndex].enrolledCourses = currentCourses;
 
-  if (addedCourses.length > 0) {
-    await upsertDBRecord("students.json", students[studentIndex]);
-  }
+  if (addedCourses.length > 0) await upsertDBRecord("students.json", students[studentIndex]);
 
   return { granted: true, student: students[studentIndex], addedCourses };
 }

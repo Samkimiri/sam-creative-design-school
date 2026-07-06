@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB, saveDB } from "@/lib/db";
+import { getDB, upsertDBRecord } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
 import { grantEnrollmentAccess } from "@/lib/enrollmentAccess";
 
@@ -72,29 +72,32 @@ export async function PATCH(request: Request) {
     return notFound("Enrollment not found");
   }
 
+  const now = new Date().toISOString();
   enrollments[index].status = status.value;
-  if (status.value === "confirmed") {
-    enrollments[index].paymentConfirmedAt = new Date().toISOString();
-    enrollments[index].adminApprovalStatus = "approved";
-    enrollments[index].adminApprovedAt = new Date().toISOString();
-  }
-  await saveDB("enrollments.json", enrollments);
 
   if (status.value === "confirmed") {
+    enrollments[index].paymentConfirmedAt = now;
+    enrollments[index].adminApprovalStatus = "approved";
+    enrollments[index].adminApprovedAt = now;
+
     const enrollment = enrollments[index];
     const grant = await grantEnrollmentAccess(enrollment);
 
     if (grant.granted) {
-      enrollments[index].accessGrantedAt = new Date().toISOString();
+      enrollments[index].accessGrantedAt = now;
       enrollments[index].accessGrantMessage = grant.addedCourses.length > 0
         ? `Access granted to ${grant.student?.name || "student"} for ${grant.addedCourses.length} course(s).`
         : `${grant.student?.name || "Student"} already had access to these course(s).`;
     } else {
       enrollments[index].accessGrantMessage = "Payment approved. Student should create or sign in with the same email or phone to receive course access.";
     }
-
-    await saveDB("enrollments.json", enrollments);
+  } else {
+    enrollments[index].adminApprovalStatus = "pending";
+    enrollments[index].accessGrantedAt = undefined;
+    enrollments[index].accessGrantMessage = "Enrollment is pending admin approval. LMS access unlocks after approval.";
   }
+
+  await upsertDBRecord("enrollments.json", enrollments[index]);
 
   return NextResponse.json(
     { success: true, data: enrollments[index] },
