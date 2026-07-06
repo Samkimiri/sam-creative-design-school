@@ -2,11 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import WhatsAppButton from "@/components/WhatsAppButton";
-import AnalyticsTracker from "@/components/AnalyticsTracker";
-import PWAInstaller from "@/components/PWAInstaller";
-import StudyBreakPrompt from "@/components/StudyBreakPrompt";
-import PremiumMotion from "@/components/PremiumMotion";
+import ClientPerformanceWidgets from "@/components/ClientPerformanceWidgets";
 import { getContentSettings } from "@/lib/contentSettings";
 import {
   defaultOgImage,
@@ -121,11 +117,7 @@ export default async function RootLayout({
           {children}
         </main>
         <Footer />
-        <WhatsAppButton number={content.homepage.whatsappNumber} />
-        <PWAInstaller />
-        <StudyBreakPrompt />
-        <AnalyticsTracker />
-        <PremiumMotion />
+        <ClientPerformanceWidgets whatsappNumber={content.homepage.whatsappNumber} />
       </body>
     </html>
   );

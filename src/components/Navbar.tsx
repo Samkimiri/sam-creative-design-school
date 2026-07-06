@@ -1,8 +1,17 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { LogIn, Menu, X } from "lucide-react";
+
+function runWhenIdle(callback: () => void) {
+  const requestIdle = window.requestIdleCallback || ((handler: IdleRequestCallback) => window.setTimeout(handler, 300));
+  const cancelIdle = window.cancelIdleCallback || window.clearTimeout;
+  const id = requestIdle(callback);
+
+  return () => cancelIdle(id);
+}
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -12,19 +21,32 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const nextScrolled = window.scrollY > 20;
+        setScrolled((current) => (current === nextScrolled ? current : nextScrolled));
+        ticking = false;
+      });
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success && d.user) setUser(d.user);
-        else setUser(null);
-      })
-      .catch(() => setUser(null));
+    return runWhenIdle(() => {
+      fetch("/api/auth/me")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && d.user) setUser(d.user);
+          else setUser(null);
+        })
+        .catch(() => setUser(null));
+    });
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -64,9 +86,12 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-all group">
           <div className="relative">
             <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full scale-0 group-hover:scale-100 transition-transform duration-500" />
-            <img
+            <Image
               src="/images/scds-monogram.svg"
               alt="SCDS Logo"
+              width={48}
+              height={48}
+              priority
               className="relative w-12 h-12 rounded-2xl bg-white object-contain p-1 shadow-2xl shadow-primary/30 border border-white/20 group-hover:scale-105 transition-all duration-500"
             />
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-primary rounded-lg border-2 border-white shadow-lg" />

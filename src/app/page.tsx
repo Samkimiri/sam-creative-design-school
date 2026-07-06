@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { CSSProperties } from "react";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import CreativeShowcaseSlider from "@/components/CreativeShowcaseSlider";
@@ -34,7 +35,7 @@ import {
   Wallet,
 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 function renderHeroTitle(title: string) {
   const normalizedTitle = title.trim().toLowerCase();
@@ -100,9 +101,13 @@ export default async function Home() {
       <section className="relative flex min-h-[88vh] items-center justify-center overflow-hidden bg-dark pt-24">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 z-10 bg-[linear-gradient(105deg,rgba(5,9,20,0.92)_0%,rgba(5,9,20,0.72)_45%,rgba(10,15,30,0.26)_100%)]" />
-          <div
-            className="h-full w-full bg-cover bg-center opacity-70 motion-safe:animate-[hero-image-in_1200ms_ease-out_both]"
-            style={{ backgroundImage: "url('/images/hero.png')" }}
+          <Image
+            src="/images/hero.png"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center opacity-70 motion-safe:animate-[hero-image-in_1200ms_ease-out_both]"
           />
         </div>
 
@@ -503,9 +508,11 @@ export default async function Home() {
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div className="animate-fade-in">
               <div className="relative mx-auto aspect-[4/5] max-w-sm overflow-hidden rounded-3xl bg-light-gray shadow-2xl lg:mx-0 image-zoom">
-                <img
+                <Image
                   src="/images/samuel.png"
                   alt="Samuel Kimiri, instructor at Sam Creative Design School"
+                  fill
+                  sizes="(min-width: 1024px) 384px, 100vw"
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">

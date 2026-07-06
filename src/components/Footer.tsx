@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { MessageCircle } from "lucide-react";
 import { getContentSettings } from "@/lib/contentSettings";
 
@@ -51,9 +52,11 @@ export default async function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-3 mb-6 hover:opacity-90 transition-all group">
-              <img
+              <Image
                 src="/images/scds-monogram.svg"
                 alt="SCDS Logo"
+                width={48}
+                height={48}
                 className="w-12 h-12 rounded-2xl bg-white object-contain p-1 shadow-2xl shadow-primary/20"
               />
               <div className="flex flex-col">

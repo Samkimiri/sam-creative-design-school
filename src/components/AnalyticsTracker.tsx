@@ -19,6 +19,14 @@ function shouldTrack(path: string): boolean {
   return !path.startsWith("/admin") && !path.startsWith("/api");
 }
 
+function runWhenIdle(callback: () => void) {
+  const requestIdle = window.requestIdleCallback || ((handler: IdleRequestCallback) => window.setTimeout(handler, 500));
+  const cancelIdle = window.cancelIdleCallback || window.clearTimeout;
+  const id = requestIdle(callback);
+
+  return () => cancelIdle(id);
+}
+
 export default function AnalyticsTracker() {
   const pathname = usePathname();
   const userRef = useRef<{
@@ -66,18 +74,20 @@ export default function AnalyticsTracker() {
   );
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success && data.student) {
-          userRef.current = {
-            userId: data.user?.id,
-            userName: data.student.name,
-            userEmail: data.student.email,
-          };
-        }
-      })
-      .catch(() => {});
+    return runWhenIdle(() => {
+      fetch("/api/auth/me")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success && data.student) {
+            userRef.current = {
+              userId: data.user?.id,
+              userName: data.student.name,
+              userEmail: data.student.email,
+            };
+          }
+        })
+        .catch(() => {});
+    });
   }, []);
 
   useEffect(() => {
@@ -87,18 +97,27 @@ export default function AnalyticsTracker() {
     track("session_start");
     track("page_view");
 
+    let ticking = false;
     const onScroll = () => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      if (maxScroll <= 0) return;
-      const pct = Math.round((window.scrollY / maxScroll) * 100);
-      for (const threshold of [25, 50, 75, 100]) {
-        if (pct >= threshold && !scrollSent.current.has(threshold)) {
-          scrollSent.current.add(threshold);
-          track("scroll_depth", {
-            metadata: { depth: String(threshold) },
-          });
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        if (maxScroll <= 0) {
+          ticking = false;
+          return;
         }
-      }
+        const pct = Math.round((window.scrollY / maxScroll) * 100);
+        for (const threshold of [25, 50, 75, 100]) {
+          if (pct >= threshold && !scrollSent.current.has(threshold)) {
+            scrollSent.current.add(threshold);
+            track("scroll_depth", {
+              metadata: { depth: String(threshold) },
+            });
+          }
+        }
+        ticking = false;
+      });
     };
 
     const onClick = (e: MouseEvent) => {
