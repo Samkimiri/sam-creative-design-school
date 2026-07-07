@@ -5,7 +5,6 @@ import AnimatedCounter from "@/components/AnimatedCounter";
 import CreativeShowcaseSlider from "@/components/CreativeShowcaseSlider";
 import GamifiedRegistration from "@/components/GamifiedRegistration";
 import ReviewsSection from "@/components/ReviewsSection";
-import FeaturedCoursesCarousel from "@/components/FeaturedCoursesCarousel";
 import IntakeCountdown from "@/components/IntakeCountdown";
 import { getContentSettings, getManagedCourses } from "@/lib/contentSettings";
 import { getCourseVisual } from "@/lib/courseVisuals";
@@ -592,8 +591,6 @@ export default async function Home() {
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-
-          <FeaturedCoursesCarousel courses={courses} />
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {courses.map((course) => {

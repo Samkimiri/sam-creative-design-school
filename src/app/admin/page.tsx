@@ -393,6 +393,7 @@ export default function AdminDashboard() {
   const [certificateStudentName, setCertificateStudentName] = useState("Robert Rangoma");
   const [loading, setLoading] = useState(false);
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
+  const [enrollmentsLastUpdated, setEnrollmentsLastUpdated] = useState<string>("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pendingAction, setPendingAction] = useState("");
@@ -430,6 +431,7 @@ export default function AdminDashboard() {
         const dashboard = data.data ?? {};
         setStudents(Array.isArray(dashboard.students) ? dashboard.students : []);
         setEnrollments(Array.isArray(dashboard.enrollments) ? dashboard.enrollments : []);
+        setEnrollmentsLastUpdated(new Date().toISOString());
         setReviews(Array.isArray(dashboard.reviews) ? dashboard.reviews : []);
         setProjects(Array.isArray(dashboard.projects) ? dashboard.projects : []);
         setAssignments(Array.isArray(dashboard.assignments) ? dashboard.assignments : []);
@@ -462,9 +464,9 @@ export default function AdminDashboard() {
     }
   }, [fetchAdminJson]);
 
-  const refreshEnrollments = useCallback(async (pw?: string) => {
-    setEnrollmentsLoading(true);
-    setNotice("");
+  const refreshEnrollments = useCallback(async (pw?: string, options?: { silent?: boolean }) => {
+    if (!options?.silent) setEnrollmentsLoading(true);
+    if (!options?.silent) setNotice("");
     try {
       const { res, data } = await fetchAdminJson<Enrollment[]>("/api/admin/enrollments", {
         method: "POST",
@@ -478,12 +480,15 @@ export default function AdminDashboard() {
       }
 
       setEnrollments(data.data);
+      setEnrollmentsLastUpdated(new Date().toISOString());
     } catch (err) {
-      setNotice(err instanceof DOMException && err.name === "AbortError"
-        ? "Enrollment requests took too long to load. Try again."
-        : "Could not load enrollment requests. Check your connection and try again.");
+      if (!options?.silent) {
+        setNotice(err instanceof DOMException && err.name === "AbortError"
+          ? "Enrollment requests took too long to load. Try again."
+          : "Could not load enrollment requests. Check your connection and try again.");
+      }
     } finally {
-      setEnrollmentsLoading(false);
+      if (!options?.silent) setEnrollmentsLoading(false);
     }
   }, [fetchAdminJson]);
 
@@ -538,6 +543,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!authed || tab !== "enrollments") return;
     void refreshEnrollments(password);
+  }, [authed, password, refreshEnrollments, tab]);
+
+  useEffect(() => {
+    if (!authed || tab !== "enrollments") return;
+    const interval = window.setInterval(() => {
+      void refreshEnrollments(password, { silent: true });
+    }, 20000);
+    return () => window.clearInterval(interval);
   }, [authed, password, refreshEnrollments, tab]);
 
   const confirmEnrollment = async (enrollmentId: string) => {
@@ -907,40 +920,46 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div className="pt-24 pb-24 bg-[#F8F8F8] min-h-screen">
-      <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-start mb-10 gap-4" data-reveal>
+    <div className="min-h-screen bg-slate-50 pb-24 pt-28">
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" data-reveal>
+          <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between md:p-6">
           <div>
-            <p className="text-primary font-bold uppercase tracking-widest text-sm mb-1">Admin Panel</p>
-            <h1 className="text-3xl font-extrabold text-dark">School Dashboard</h1>
+              <p className="mb-1 text-xs font-black uppercase tracking-widest text-primary">Admin Panel</p>
+              <h1 className="text-2xl font-extrabold text-dark md:text-3xl">School Dashboard</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Monitor visitors, approve course access, review submissions, and keep public content current from one focused workspace.</p>
           </div>
-          <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={() => void fetchData(password)}
               disabled={loading}
-              className={`rounded-xl bg-white px-4 py-2 text-sm font-bold text-dark border border-gray-200 disabled:opacity-50 ${adminActionMotion}`}
+                className={`rounded-xl border border-slate-200 bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-50 ${adminActionMotion}`}
             >
               {loading ? "Refreshing..." : "Refresh Data"}
             </button>
-            <Link href="/" className={`rounded-xl bg-white px-4 py-2 text-sm font-bold text-gray-500 hover:text-primary border border-gray-200 ${adminActionMotion}`}>
+              <Link href="/" className={`rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 hover:text-primary ${adminActionMotion}`}>
               Back to Website
             </Link>
+            </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Unique Visitors", value: analyticsSummary?.uniqueVisitors ?? 0, icon: "UV", color: "bg-purple-50 text-purple-600" },
-            { label: "Page Views", value: analyticsSummary?.pageViews ?? 0, icon: "PV", color: "bg-indigo-50 text-indigo-600" },
-            { label: "Today's Visitors", value: analyticsSummary?.todayVisitors ?? 0, icon: "TD", color: "bg-blue-50 text-blue-600" },
-            { label: "Engagements", value: analyticsSummary?.engagements ?? 0, icon: "EG", color: "bg-orange-50 text-orange-600" },
+            { label: "Unique Visitors", value: analyticsSummary?.uniqueVisitors ?? 0, icon: "UV", color: "bg-primary/10 text-primary" },
+            { label: "Page Views", value: analyticsSummary?.pageViews ?? 0, icon: "PV", color: "bg-emerald-50 text-emerald-700" },
+            { label: "Today's Visitors", value: analyticsSummary?.todayVisitors ?? 0, icon: "TD", color: "bg-amber-50 text-amber-700" },
+            { label: "Engagements", value: analyticsSummary?.engagements ?? 0, icon: "EG", color: "bg-rose-50 text-rose-700" },
           ].map((stat, i) => (
-            <div key={i} className={`rounded-2xl p-5 ${stat.color} ${adminCardMotion}`} data-reveal style={{ "--reveal-delay": `${i * 45}ms` } as CSSProperties}>
-              <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/80 text-xs font-black">{stat.icon}</div>
-              <div className="text-2xl font-extrabold">{stat.value}</div>
-              <div className="text-xs font-medium opacity-70">{stat.label}</div>
+            <div key={i} className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminCardMotion}`} data-reveal style={{ "--reveal-delay": `${i * 45}ms` } as CSSProperties}>
+              <div className="mb-4 flex items-center justify-between">
+                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black ${stat.color}`}>{stat.icon}</div>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">Live</span>
+              </div>
+              <div className="text-3xl font-extrabold text-dark">{stat.value}</div>
+              <div className="mt-1 text-sm font-semibold text-slate-500">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -952,12 +971,12 @@ export default function AdminDashboard() {
         )}
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+        <div className="mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
           {adminTabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`shrink-0 px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm ${adminTabMotion} ${tab === t ? "admin-tab-active bg-dark text-white shadow-sm" : "bg-white text-gray-500 hover:text-dark border border-gray-200 hover:border-gray-300"}`}
+              className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold sm:px-5 ${adminTabMotion} ${tab === t ? "admin-tab-active bg-dark text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-dark"}`}
             >
               {t === "analytics" ? "Visitors" : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
@@ -965,16 +984,22 @@ export default function AdminDashboard() {
         </div>
 
         {tab === "analytics" && (
-          <div key="analytics-panel" className="admin-tab-panel space-y-8">
+          <div key="analytics-panel" className="admin-tab-panel space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className={`bg-white rounded-2xl border border-gray-100 p-6 shadow-sm ${adminPanelMotion}`}>
-                <h3 className="font-bold text-dark mb-4">Top Pages</h3>
+              <div className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminPanelMotion}`}>
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-dark">Top Pages</h3>
+                    <p className="mt-1 text-xs font-medium text-slate-500">Most visited routes</p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{analyticsSummary?.topPages.length ?? 0}</span>
+                </div>
                 {analyticsSummary?.topPages.length ? (
-                  <ul className="space-y-3">
+                  <ul className="space-y-2">
                     {analyticsSummary.topPages.map((p) => (
-                      <li key={p.path} className={`flex justify-between items-center text-sm rounded-xl px-2 py-1 ${adminRowMotion}`}>
-                        <span className="text-gray-700 truncate mr-4">{p.path}</span>
-                        <span className="font-bold text-primary shrink-0">{p.count} views</span>
+                      <li key={p.path} className={`flex items-center justify-between gap-4 rounded-xl border border-transparent px-3 py-2 text-sm ${adminRowMotion}`}>
+                        <span className="min-w-0 truncate font-medium text-slate-700">{p.path}</span>
+                        <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-primary">{p.count} views</span>
                       </li>
                     ))}
                   </ul>
@@ -982,14 +1007,20 @@ export default function AdminDashboard() {
                   <p className="text-gray-400 text-sm">No page views yet. Browse the site to collect data.</p>
                 )}
               </div>
-              <div className={`bg-white rounded-2xl border border-gray-100 p-6 shadow-sm ${adminPanelMotion}`}>
-                <h3 className="font-bold text-dark mb-4">Top Clicks &amp; Actions</h3>
+              <div className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminPanelMotion}`}>
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-dark">Top Clicks &amp; Actions</h3>
+                    <p className="mt-1 text-xs font-medium text-slate-500">Highest intent interactions</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{analyticsSummary?.topClicks.length ?? 0}</span>
+                </div>
                 {analyticsSummary?.topClicks.length ? (
-                  <ul className="space-y-3">
+                  <ul className="space-y-2">
                     {analyticsSummary.topClicks.map((c) => (
-                      <li key={c.label} className={`flex justify-between items-center text-sm gap-4 rounded-xl px-2 py-1 ${adminRowMotion}`}>
-                        <span className="text-gray-700 truncate">{c.label}</span>
-                        <span className="font-bold text-primary shrink-0">{c.count}</span>
+                      <li key={c.label} className={`flex items-center justify-between gap-4 rounded-xl border border-transparent px-3 py-2 text-sm ${adminRowMotion}`}>
+                        <span className="min-w-0 truncate font-medium text-slate-700">{c.label}</span>
+                        <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-primary">{c.count}</span>
                       </li>
                     ))}
                   </ul>
@@ -999,14 +1030,14 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
-              <div className="px-6 py-4 border-b border-gray-100">
+            <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${adminPanelMotion}`}>
+              <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
                 <h3 className="font-bold text-dark">Visitor Sessions</h3>
-                <p className="text-xs text-gray-500 mt-1">Everyone who viewed or engaged with the website</p>
+                <p className="mt-1 text-xs font-medium text-slate-500">Everyone who viewed or engaged with the website</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
+                  <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                     <tr>
                       <th className="px-6 py-4 text-left">Visitor</th>
                       <th className="px-6 py-4 text-left">Device</th>
@@ -1124,7 +1155,12 @@ export default function AdminDashboard() {
               <div className="flex flex-col gap-4 border-b border-gray-100 px-6 py-5 md:flex-row md:items-start md:justify-between">
                 <div>
                   <h2 className="text-xl font-black text-dark">Enrollment Access Requests</h2>
-                  <p className="mt-1 text-sm text-gray-500">Approve an enrollment request after checking the payment details. Approval unlocks the selected courses for the matching student account.</p>
+                  <p className="mt-1 text-sm text-gray-500">Approve an enrollment request after checking the payment details. Approval unlocks the selected LMS courses for the matching student account.</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-400">
+                    {enrollmentsLastUpdated
+                      ? `Auto-sync active. Last checked ${new Date(enrollmentsLastUpdated).toLocaleTimeString()}.`
+                      : "Auto-sync starts when this tab opens."}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -1134,6 +1170,22 @@ export default function AdminDashboard() {
                 >
                   {enrollmentsLoading ? "Checking..." : "Refresh Enrollments"}
                 </button>
+              </div>
+              <div className="border-b border-gray-100 bg-[#F6FAFF] px-6 py-4">
+                <div className="grid gap-3 text-sm md:grid-cols-3">
+                  <div className="rounded-xl border border-blue-100 bg-white p-4">
+                    <p className="font-black text-dark">1. Verify payment</p>
+                    <p className="mt-1 text-gray-500">Match the M-Pesa receipt, payer phone, amount, and enrollment reference before approval.</p>
+                  </div>
+                  <div className="rounded-xl border border-green-100 bg-white p-4">
+                    <p className="font-black text-dark">2. Approve LMS access</p>
+                    <p className="mt-1 text-gray-500">Use the approval button to mark the request confirmed and attach the selected course to the student.</p>
+                  </div>
+                  <div className="rounded-xl border border-amber-100 bg-white p-4">
+                    <p className="font-black text-dark">3. Student signs in</p>
+                    <p className="mt-1 text-gray-500">The student must use the same email or phone from enrollment to see the approved course in the LMS.</p>
+                  </div>
+                </div>
               </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -1157,10 +1209,18 @@ export default function AdminDashboard() {
                     <tr><td colSpan={9} className="text-center py-12 text-gray-400">No enrollment requests found yet</td></tr>
                   ) : sortedEnrollments.map((e) => {
                     const isApprovalReady = approvalReadyRequestIds.has(e.id);
+                    const isRecentEnrollment = Date.now() - new Date(e.createdAt).getTime() < 24 * 60 * 60 * 1000;
                     return (
                       <tr key={e.id} className={`${adminRowMotion} ${isApprovalReady ? "bg-[#25D366]/5" : ""}`}>
                       <td className="px-6 py-4">
-                        <div className="font-bold text-dark">{e.studentName}</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-dark">{e.studentName}</span>
+                          {isRecentEnrollment && (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary">
+                              New
+                            </span>
+                          )}
+                        </div>
                         <div className="text-gray-500 text-xs">{e.studentEmail || e.phone}</div>
                       </td>
                       <td className="px-6 py-4 font-medium text-dark">{e.courseName}</td>
@@ -1218,7 +1278,10 @@ export default function AdminDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4 font-mono text-xs text-gray-600">{e.reference}</td>
-                      <td className="px-6 py-4 text-gray-500">{new Date(e.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 text-gray-500">
+                        <div>{new Date(e.createdAt).toLocaleDateString()}</div>
+                        <div className="text-xs text-gray-400">{new Date(e.createdAt).toLocaleTimeString()}</div>
+                      </td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${e.status === "confirmed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
                           {e.status}
@@ -1242,11 +1305,13 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4">
                         {e.status === "pending" && (
                           <button
-                            onClick={() => confirmEnrollment(e.id)}
+                            type="button"
+                            title="Approve this payment and unlock the selected LMS course for the matching student account"
+                            onClick={() => void confirmEnrollment(e.id)}
                             disabled={pendingAction === `enrollment-${e.id}`}
                             className={`bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 disabled:opacity-50 ${adminActionMotion}`}
                           >
-                            {pendingAction === `enrollment-${e.id}` ? "Saving..." : "Give Access"}
+                            {pendingAction === `enrollment-${e.id}` ? "Approving..." : "Approve LMS"}
                           </button>
                         )}
                         {e.status === "confirmed" && (

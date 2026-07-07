@@ -81,7 +81,7 @@ export default function Navbar() {
           : "bg-transparent"
       }`}
     >
-      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+      <div className="container mx-auto flex items-center justify-between px-4 py-4 sm:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-all group">
           <div className="relative">
@@ -107,29 +107,31 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden lg:flex items-center gap-1">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`group relative px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-                pathname === link.href
-                  ? "text-primary"
-                  : scrolled || isLmsPage
-                  ? "text-gray-600 hover:text-primary"
-                  : "text-white/90 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              {link.label}
-              <span
-                className={`absolute inset-x-4 -bottom-0.5 h-0.5 origin-left rounded-full bg-primary transition-transform duration-300 ${
-                  pathname === link.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+        {!isLmsPage && (
+          <div className="hidden items-center gap-1 xl:flex">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`group relative rounded-lg px-3 py-2 text-sm font-bold transition-all 2xl:px-4 ${
+                  pathname === link.href
+                    ? "text-primary"
+                    : scrolled || isLmsPage
+                    ? "text-gray-600 hover:text-primary"
+                    : "text-white/90 hover:bg-white/10 hover:text-white"
                 }`}
-                aria-hidden="true"
-              />
-            </Link>
-          ))}
-        </div>
+              >
+                {link.label}
+                <span
+                  className={`absolute inset-x-4 -bottom-0.5 h-0.5 origin-left rounded-full bg-primary transition-transform duration-300 ${
+                    pathname === link.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                  }`}
+                  aria-hidden="true"
+                />
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* CTA */}
         <div className="hidden lg:flex items-center gap-3">
