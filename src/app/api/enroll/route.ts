@@ -135,6 +135,12 @@ export async function POST(request: Request) {
     };
 
     await appendDBRecord("enrollments.json", newEnrollment);
+    const savedEnrollments = await getDB<Enrollment>("enrollments.json");
+    const savedEnrollment = savedEnrollments.some((enrollment) => enrollment.reference === reference);
+
+    if (!savedEnrollment) {
+      throw new Error("Enrollment was not saved to admin storage. Please contact the school before paying.");
+    }
 
     return NextResponse.json({
       success: true,

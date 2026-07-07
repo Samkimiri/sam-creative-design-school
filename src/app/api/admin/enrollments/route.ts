@@ -37,15 +37,30 @@ async function listEnrollments(request: Request) {
   const auth = await requireAdminRequest(request);
   if ("response" in auth) return auth.response;
 
-  const enrollments = await getDB<Enrollment>("enrollments.json");
-  return NextResponse.json(
-    { success: true, data: enrollments },
-    {
-      headers: {
-        "Cache-Control": "no-store, max-age=0",
-      },
-    }
-  );
+  try {
+    const enrollments = await getDB<Enrollment>("enrollments.json");
+    return NextResponse.json(
+      { success: true, data: enrollments },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
+    );
+  } catch (error) {
+    const message = error instanceof Error
+      ? error.message
+      : "Enrollment storage is not available. Try again after database configuration is fixed.";
+    return NextResponse.json(
+      { success: false, message },
+      {
+        status: 500,
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
+    );
+  }
 }
 
 export async function POST(request: Request) {

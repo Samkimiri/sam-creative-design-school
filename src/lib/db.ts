@@ -35,6 +35,20 @@ function shouldUseMemoryCache(filename: string) {
   return !HIGH_WRITE_FILES.has(filename);
 }
 
+export function hasPersistentStorageConfig() {
+  return hasSupabaseConfig() || hasMongoConfig() || hasKVConfig();
+}
+
+export function requiresPersistentStorage(filename: string) {
+  return HIGH_WRITE_FILES.has(filename) && Boolean(process.env.VERCEL);
+}
+
+export function persistentStorageError(filename: string) {
+  return new Error(
+    `${getCollectionName(filename)} requires persistent storage in production. Configure Supabase, MongoDB, or Vercel KV so submitted records can appear in the admin dashboard.`
+  );
+}
+
 export function readJSON<T>(filename: string): T[] {
   if (shouldUseMemoryCache(filename) && memoryDB[filename]) return memoryDB[filename] as T[];
 
@@ -52,6 +66,10 @@ export function readJSON<T>(filename: string): T[] {
 
 export async function getDB<T>(filename: string): Promise<T[]> {
   if (shouldUseMemoryCache(filename) && memoryDB[filename]) return memoryDB[filename] as T[];
+
+  if (requiresPersistentStorage(filename) && !hasPersistentStorageConfig()) {
+    throw persistentStorageError(filename);
+  }
 
   if (hasSupabaseConfig()) {
     try {
@@ -81,6 +99,10 @@ export async function getDB<T>(filename: string): Promise<T[]> {
       const data = await getKVData<T>(getCollectionName(filename), fallbackData);
       if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
       return data;
+    }
+
+    if (requiresPersistentStorage(filename)) {
+      throw persistentStorageError(filename);
     }
 
     return readJSON<T>(filename);
@@ -118,6 +140,10 @@ export async function getDB<T>(filename: string): Promise<T[]> {
 
 export async function getDBRecord<T>(filename: string, recordId: string): Promise<T | null> {
   if (!recordId.trim()) return null;
+
+  if (requiresPersistentStorage(filename) && !hasPersistentStorageConfig()) {
+    throw persistentStorageError(filename);
+  }
 
   if (hasSupabaseConfig()) {
     try {
@@ -234,6 +260,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
 
 export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
   if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
+  const persistenceErrors: unknown[] = [];
 
   const filePath = path.join(DATA_DIR, filename);
   try {
@@ -248,12 +275,23 @@ export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
       return;
     } catch (error) {
       console.error("Supabase saveDB error:", error);
+      persistenceErrors.push(error);
     }
   }
 
   if (!hasMongoConfig()) {
     if (hasKVConfig()) {
-      await setKVData(getCollectionName(filename), data);
+      try {
+        await setKVData(getCollectionName(filename), data);
+        return;
+      } catch (error) {
+        console.error("KV saveDB error:", error);
+        persistenceErrors.push(error);
+      }
+    }
+
+    if (requiresPersistentStorage(filename)) {
+      throw persistenceErrors[0] instanceof Error ? persistenceErrors[0] : persistentStorageError(filename);
     }
     return;
   }
@@ -275,6 +313,9 @@ export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
     }
   } catch (error) {
     console.error("MongoDB saveDB error:", error);
+    if (requiresPersistentStorage(filename)) {
+      throw error instanceof Error ? error : persistentStorageError(filename);
+    }
   }
 }
 
@@ -306,10 +347,17 @@ export async function upsertDBRecord<T extends object>(
       return;
     } catch (error) {
       console.error("Supabase upsertDBRecord error:", error);
+      if (!hasMongoConfig() && !hasKVConfig() && requiresPersistentStorage(filename)) {
+        throw error instanceof Error ? error : persistentStorageError(filename);
+      }
     }
   }
 
   if (!hasMongoConfig()) {
+    if (requiresPersistentStorage(filename) && !hasKVConfig()) {
+      throw persistentStorageError(filename);
+    }
+
     const data = await getDB<T>(filename);
     const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
     if (index > -1) data[index] = record;
@@ -330,6 +378,9 @@ export async function upsertDBRecord<T extends object>(
     return;
   } catch (error) {
     console.error("MongoDB upsertDBRecord error:", error);
+    if (requiresPersistentStorage(filename) && !hasKVConfig()) {
+      throw error instanceof Error ? error : persistentStorageError(filename);
+    }
   }
 
   const data = await getDB<T>(filename);

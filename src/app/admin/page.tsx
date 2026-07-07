@@ -168,6 +168,7 @@ interface AdminSettings {
 interface AdminDashboardPayload {
   students?: Student[];
   enrollments?: Enrollment[];
+  enrollmentStorageWarning?: string;
   reviews?: AdminReview[];
   projects?: AdminProject[];
   assignments?: AdminAssignment[];
@@ -432,6 +433,7 @@ export default function AdminDashboard() {
         setStudents(Array.isArray(dashboard.students) ? dashboard.students : []);
         setEnrollments(Array.isArray(dashboard.enrollments) ? dashboard.enrollments : []);
         setEnrollmentsLastUpdated(new Date().toISOString());
+        if (dashboard.enrollmentStorageWarning) setNotice(dashboard.enrollmentStorageWarning);
         setReviews(Array.isArray(dashboard.reviews) ? dashboard.reviews : []);
         setProjects(Array.isArray(dashboard.projects) ? dashboard.projects : []);
         setAssignments(Array.isArray(dashboard.assignments) ? dashboard.assignments : []);
@@ -446,7 +448,7 @@ export default function AdminDashboard() {
         setAuthed(true);
         setAccessChecked(true);
         if (pw) setPassword(pw);
-        if (data.warnings && data.warnings > 0) {
+        if (!dashboard.enrollmentStorageWarning && data.warnings && data.warnings > 0) {
           setNotice(`${data.warnings} dashboard section${data.warnings === 1 ? "" : "s"} used fallback data. Try refreshing if something looks stale.`);
         }
       } else {

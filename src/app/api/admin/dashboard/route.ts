@@ -50,6 +50,9 @@ export async function POST(request: Request) {
     return student;
   });
   const enrollments = fulfilled(enrollmentsResult, []);
+  const enrollmentStorageWarning = enrollmentsResult.status === "rejected"
+    ? "Enrollment storage is not available. New student requests cannot appear here until persistent storage is configured."
+    : undefined;
   const sessions = fulfilled(sessionsResult, []);
   const events = fulfilled(eventsResult, []);
   const reviews = fulfilled(reviewsResult, []).filter((review) => !review.id.startsWith("seed-"));
@@ -69,6 +72,7 @@ export async function POST(request: Request) {
       data: {
         students,
         enrollments,
+        enrollmentStorageWarning,
         reviews,
         projects,
         assignments,

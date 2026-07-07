@@ -14,6 +14,9 @@ export async function getData<T>(key: string, defaultValue: T[]): Promise<T[]> {
     }
   } catch (error) {
     console.error(`KV Read Error for ${key}:`, error);
+    if (process.env.KV_REST_API_URL) {
+      throw error;
+    }
   }
 
   if (memoryCache[key]) {
@@ -38,5 +41,8 @@ export async function setData<T>(key: string, data: T[]): Promise<void> {
     }
   } catch (error) {
     console.error(`KV Write Error for ${key}:`, error);
+    if (process.env.KV_REST_API_URL) {
+      throw error;
+    }
   }
 }
