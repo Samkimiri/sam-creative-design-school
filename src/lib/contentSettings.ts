@@ -106,8 +106,13 @@ export const defaultContentSettings: ContentSettings = {
 };
 
 export async function getContentSettings() {
-  const saved = await getDBRecord<ContentSettings>("site-settings.json", defaultContentSettings.id);
-  return normalizeContentSettings(saved);
+  try {
+    const saved = await getDBRecord<ContentSettings>("site-settings.json", defaultContentSettings.id);
+    return normalizeContentSettings(saved);
+  } catch (error) {
+    console.error("Content settings read failed; using defaults:", error);
+    return normalizeContentSettings(null);
+  }
 }
 
 export async function saveContentSettings(input: Partial<ContentSettings>) {

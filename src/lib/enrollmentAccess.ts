@@ -66,7 +66,14 @@ export async function grantEnrollmentAccess(enrollment: Enrollment) {
 }
 
 export async function getConfirmedEnrollmentCourseIdsForStudent(student: Student) {
-  const enrollments = await getDB<Enrollment>("enrollments.json");
+  let enrollments: Enrollment[] = [];
+  try {
+    enrollments = await getDB<Enrollment>("enrollments.json");
+  } catch (error) {
+    console.error("Confirmed enrollment lookup failed; using saved student courses only:", error);
+    return [];
+  }
+
   const courseIds = new Set<string>();
 
   for (const enrollment of enrollments) {

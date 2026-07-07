@@ -22,10 +22,16 @@ export const defaultUpcomingIntakeSettings: UpcomingIntakeSettings = {
 };
 
 export async function getUpcomingIntakeSettings() {
-  const saved = await getDBRecord<UpcomingIntakeSettings>(
-    "site-settings.json",
-    defaultUpcomingIntakeSettings.id
-  );
+  let saved: UpcomingIntakeSettings | null = null;
+  try {
+    saved = await getDBRecord<UpcomingIntakeSettings>(
+      "site-settings.json",
+      defaultUpcomingIntakeSettings.id
+    );
+  } catch (error) {
+    console.error("Intake settings read failed; using defaults:", error);
+  }
+
   const savedSettings = saved
     ? {
         ...saved,
