@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, getDBRecord, saveDB } from "@/lib/db";
+import { getDB, saveDB } from "@/lib/db";
 import { courses, lessons } from "@/data/courses";
-import { hasCourseAccess } from "@/lib/enrollmentAccess";
-import type { Student } from "@/types";
+import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 
 interface ProgressRecord {
   studentId: string;
@@ -29,7 +28,7 @@ export async function GET(request: Request) {
   }
 
   if (courseId) {
-    const student = await getDBRecord<Student>("students.json", session.user.id);
+    const student = await getStudentWithConfirmedEnrollmentAccess(session.user.id);
     const canAccess = session.user.role === "admin" || hasCourseAccess(student, courseId);
     if (!canAccess) {
       return NextResponse.json({ error: "Course access requires admin approval" }, { status: 403 });
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid lesson" }, { status: 400 });
     }
 
-    const student = await getDBRecord<Student>("students.json", session.user.id);
+    const student = await getStudentWithConfirmedEnrollmentAccess(session.user.id);
     const canAccess = session.user.role === "admin" || hasCourseAccess(student, courseId);
     if (!canAccess) {
       return NextResponse.json({ error: "Course access requires admin approval" }, { status: 403 });

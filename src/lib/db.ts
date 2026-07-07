@@ -89,6 +89,9 @@ export async function getDB<T>(filename: string): Promise<T[]> {
       return data;
     } catch (error) {
       console.error("Supabase getDB error:", error);
+      if (requiresPersistentStorage(filename)) {
+        throw error instanceof Error ? error : persistentStorageError(filename);
+      }
       return readJSON<T>(filename);
     }
   }
@@ -134,6 +137,9 @@ export async function getDB<T>(filename: string): Promise<T[]> {
     return data;
   } catch (error) {
     console.error("MongoDB getDB error:", error);
+    if (requiresPersistentStorage(filename)) {
+      throw error instanceof Error ? error : persistentStorageError(filename);
+    }
     return readJSON<T>(filename);
   }
 }

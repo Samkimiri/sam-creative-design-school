@@ -109,6 +109,14 @@ export async function attachConfirmedEnrollmentsToStudent(student: Student) {
   return updatedStudent;
 }
 
+export async function getStudentWithConfirmedEnrollmentAccess(studentId: string) {
+  const student = await getDB<Student>("students.json")
+    .then((students) => students.find((item) => item.id === studentId) ?? null);
+
+  if (!student) return null;
+  return attachConfirmedEnrollmentsToStudent(student);
+}
+
 export function hasCourseAccess(student: Student | null | undefined, courseId: string) {
   if (!student) return false;
   if (student.role === "admin") return true;

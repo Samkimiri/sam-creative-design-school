@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, getDBRecord, saveDB } from "@/lib/db";
+import { getDB, saveDB } from "@/lib/db";
 import { lessons } from "@/data/courses";
-import { hasCourseAccess } from "@/lib/enrollmentAccess";
-import type { Student } from "@/types";
+import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 
 interface QuizAttempt {
   studentId: string;
@@ -47,7 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
-    const student = await getDBRecord<Student>("students.json", session.user.id);
+    const student = await getStudentWithConfirmedEnrollmentAccess(session.user.id);
     const canAccess = session.user.role === "admin" || hasCourseAccess(student, courseId);
     if (!canAccess) {
       return NextResponse.json({ error: "Course access requires admin approval" }, { status: 403 });

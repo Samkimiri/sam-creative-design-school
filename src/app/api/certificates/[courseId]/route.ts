@@ -4,7 +4,7 @@ import path from "path";
 import { getSession } from "@/lib/auth";
 import { getDB } from "@/lib/db";
 import { courses, lessons } from "@/data/courses";
-import { hasCourseAccess } from "@/lib/enrollmentAccess";
+import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 import type { ProgressRecord, Student } from "@/types";
 
 export const runtime = "nodejs";
@@ -346,8 +346,7 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const isAdminPreview = session.user.role === "admin" && searchParams.get("preview") === "1";
   const shouldDownload = !isAdminPreview || searchParams.get("download") === "1";
-  const students = await getDB<Student>("students.json");
-  const student = students.find((item) => item.id === session.user.id);
+  const student = await getStudentWithConfirmedEnrollmentAccess(session.user.id);
 
   if (!isAdminPreview && session.user.role !== "admin" && !hasCourseAccess(student, courseId)) {
     return NextResponse.json(
