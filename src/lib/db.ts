@@ -89,7 +89,7 @@ export async function getDB<T>(filename: string): Promise<T[]> {
       return data;
     } catch (error) {
       console.error("Supabase getDB error:", error);
-      if (requiresPersistentStorage(filename)) {
+      if (requiresPersistentStorage(filename) && !hasMongoConfig() && !hasKVConfig()) {
         throw error instanceof Error ? error : persistentStorageError(filename);
       }
       return readJSON<T>(filename);
@@ -364,7 +364,7 @@ export async function upsertDBRecord<T extends object>(
       throw persistentStorageError(filename);
     }
 
-    const data = await getDB<T>(filename);
+    const data = hasKVConfig() ? await getDB<T>(filename) : readJSON<T>(filename);
     const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
     if (index > -1) data[index] = record;
     else data.push(record);

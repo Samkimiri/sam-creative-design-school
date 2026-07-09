@@ -162,7 +162,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Enrollment error:", error);
-    const message = error instanceof Error ? error.message : "Failed to process enrollment";
+    const rawMessage = error instanceof Error ? error.message : "";
+    const message = rawMessage === "fetch failed" || rawMessage.includes("persistent storage")
+      ? "Enrollment storage is currently unavailable. Please contact the school on WhatsApp before paying."
+      : rawMessage || "Failed to process enrollment";
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

@@ -6,6 +6,24 @@ import { useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { courses as fallbackCourses, type Course } from "@/data/courses";
 
+type EnrollmentResponse = {
+  success?: boolean;
+  message?: string;
+  reviewPending?: boolean;
+  reference?: string;
+  amount?: number | string;
+  paymentLabel?: string;
+  paymentNumber?: string;
+  recipientName?: string;
+  referralApplied?: boolean;
+  referredByName?: string;
+  referralDiscount?: number | string;
+  promoApplied?: boolean;
+  promoDescription?: string;
+  promoDiscount?: number | string;
+  promoMessage?: string;
+};
+
 function EnrollForm() {
   const searchParams = useSearchParams();
   const initialCourse = searchParams.get("course") || "";
@@ -108,9 +126,13 @@ function EnrollForm() {
         }),
       });
 
-      const data = await res.json();
+      const responseText = await res.text();
+      const data = responseText
+        ? JSON.parse(responseText) as EnrollmentResponse
+        : { success: false, message: "Enrollment server returned an empty response." };
+
       if (data.success && data.reviewPending) {
-        setRef(data.reference);
+        setRef(data.reference || "");
         setPaymentAmount(Number(data.amount) || totalAmount);
         setPaymentDetails({
           paymentLabel: data.paymentLabel || "Buy Goods Till",
@@ -122,7 +144,7 @@ function EnrollForm() {
         if (!data.promoApplied && data.promoMessage) setPromoMessage(data.promoMessage);
         setStatus("success");
       } else if (data.success) {
-        setRef(data.reference);
+        setRef(data.reference || "");
         setPaymentAmount(Number(data.amount) || totalAmount);
         if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
         if (data.promoApplied) setPromoMessage(`${data.promoDescription || "Promo code"} applied. Discount: Ksh ${Number(data.promoDiscount || 0).toLocaleString()}.`);
@@ -133,8 +155,11 @@ function EnrollForm() {
         setErrorMessage(data.message || "Enrollment failed.");
         setStatus("failed");
       }
-    } catch {
-      setErrorMessage("An error occurred. Please try again.");
+    } catch (error) {
+      const message = error instanceof Error && error.message === "Failed to fetch"
+        ? "We could not reach the enrollment server. Please check your connection or contact support on WhatsApp before paying."
+        : "Enrollment could not be submitted right now. Please contact support on WhatsApp before paying.";
+      setErrorMessage(message);
       setStatus("failed");
     }
   };
