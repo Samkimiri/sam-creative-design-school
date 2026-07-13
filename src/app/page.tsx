@@ -36,6 +36,14 @@ import {
 
 export const revalidate = 300;
 
+const heroImages = [
+  { src: "/images/hero.png", alt: "Sam Creative Design School creative workspace" },
+  { src: "/images/course-photoshop.png", alt: "Photoshop design training project" },
+  { src: "/images/course-illustrator.png", alt: "Illustrator vector design training project" },
+  { src: "/images/course-vibe-designing-uiux.png", alt: "UI and UX design training project" },
+  { src: "/images/course-capcut.png", alt: "Video editing training project" },
+];
+
 function renderHeroTitle(title: string) {
   const normalizedTitle = title.trim().toLowerCase();
 
@@ -100,14 +108,18 @@ export default async function Home() {
       <section className="relative flex min-h-[88vh] items-center justify-center overflow-hidden bg-dark pt-24">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 z-10 bg-[linear-gradient(105deg,rgba(5,9,20,0.92)_0%,rgba(5,9,20,0.72)_45%,rgba(10,15,30,0.26)_100%)]" />
-          <Image
-            src="/images/hero.png"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-center opacity-70 motion-safe:animate-[hero-image-in_1200ms_ease-out_both]"
-          />
+          {heroImages.map((image, index) => (
+            <Image
+              key={image.src}
+              src={image.src}
+              alt={image.alt}
+              fill
+              priority={index === 0}
+              sizes="100vw"
+              className="hero-slide object-cover object-center opacity-0"
+              style={{ "--hero-slide-index": index } as CSSProperties}
+            />
+          ))}
         </div>
 
         <div className="container relative z-20 mx-auto flex flex-col items-center px-6 py-20 text-center md:items-start md:text-left lg:py-28">
