@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { appendDBRecord, getDB, upsertDBRecord } from "@/lib/db";
+import { appendDBRecord, getDB, hasPersistentStorageConfig, upsertDBRecord } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getManagedCourses } from "@/lib/contentSettings";
 import { courses } from "@/data/courses";
@@ -136,10 +136,14 @@ export async function POST(request: Request) {
 
     await appendDBRecord("enrollments.json", newEnrollment);
     const savedEnrollments = await getDB<Enrollment>("enrollments.json");
-    const savedEnrollment = savedEnrollments.some((enrollment) => enrollment.reference === reference);
+    const savedEnrollment = savedEnrollments.some(
+      (enrollment) => enrollment.id === newEnrollment.id || enrollment.reference === reference
+    );
 
     if (!savedEnrollment) {
-      throw new Error("Enrollment was not saved to admin storage. Please contact the school before paying.");
+      throw new Error(
+        "Enrollment storage verification failed. Configure Supabase, MongoDB, or Vercel KV so requests can appear in the admin dashboard before students pay."
+      );
     }
 
     return NextResponse.json({
@@ -163,8 +167,14 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Enrollment error:", error);
     const rawMessage = error instanceof Error ? error.message : "";
-    const message = rawMessage === "fetch failed" || rawMessage.includes("persistent storage")
-      ? "Enrollment storage is currently unavailable. Please contact the school on WhatsApp before paying."
+    const storageUnavailable =
+      rawMessage === "fetch failed" ||
+      rawMessage.includes("persistent storage") ||
+      rawMessage.includes("storage verification failed");
+    const message = storageUnavailable
+      ? hasPersistentStorageConfig()
+        ? "Enrollment storage is configured but currently unavailable. Check the database connection and schema, then try again. Please contact the school on WhatsApp before paying."
+        : "Enrollment storage is not configured. Add Supabase, MongoDB, or Vercel KV environment variables, redeploy, then try again. Please contact the school on WhatsApp before paying."
       : rawMessage || "Failed to process enrollment";
     return NextResponse.json({ success: false, message }, { status: 500 });
   }

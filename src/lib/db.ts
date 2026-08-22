@@ -40,7 +40,7 @@ export function hasPersistentStorageConfig() {
 }
 
 export function requiresPersistentStorage(filename: string) {
-  return HIGH_WRITE_FILES.has(filename) && Boolean(process.env.VERCEL);
+  return HIGH_WRITE_FILES.has(filename) && (Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production");
 }
 
 export function persistentStorageError(filename: string) {
