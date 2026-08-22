@@ -24,11 +24,13 @@ export async function GET() {
     const normalizedStudent = isAdmin
       ? { ...syncedStudent, enrolledCourses: adminCourseIds() }
       : syncedStudent;
+    const { password: _password, ...safeStudent } = normalizedStudent;
+    void _password;
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       user: session.user,
-      student: normalizedStudent,
+      student: safeStudent,
       progress
     });
   } catch (error) {
