@@ -364,11 +364,7 @@ export async function upsertDBRecord<T extends object>(
       throw persistentStorageError(filename);
     }
 
-    const data = hasKVConfig() ? await getDB<T>(filename) : readJSON<T>(filename);
-    const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
-    if (index > -1) data[index] = record;
-    else data.push(record);
-    await saveDB(filename, data);
+    await upsertIntoArrayStoreWithRetry(filename, record, idKey, recordId, hasKVConfig());
     return;
   }
 
@@ -389,11 +385,42 @@ export async function upsertDBRecord<T extends object>(
     }
   }
 
-  const data = await getDB<T>(filename);
-  const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
-  if (index > -1) data[index] = record;
-  else data.push(record);
-  await saveDB(filename, data);
+  await upsertIntoArrayStoreWithRetry(filename, record, idKey, recordId, true);
+}
+
+/**
+ * The KV/local-file backends store each collection as a single array, so a plain
+ * read-modify-write here can lose a concurrent writer's record (last save wins).
+ * Supabase and MongoDB upsert a single row/document atomically and don't need this;
+ * this path re-reads fresh and retries when another writer clobbered our record.
+ */
+async function upsertIntoArrayStoreWithRetry<T extends object>(
+  filename: string,
+  record: T,
+  idKey: string,
+  recordId: string,
+  useLiveRead: boolean
+): Promise<void> {
+  const attempts = 4;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const data = useLiveRead ? await getDB<T>(filename) : readJSON<T>(filename);
+    const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
+    if (index > -1) data[index] = record;
+    else data.push(record);
+    await saveDB(filename, data);
+
+    const verify = useLiveRead ? await getDB<T>(filename) : readJSON<T>(filename);
+    const stillPresent = verify.some((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
+    if (stillPresent) return;
+    if (attempt < attempts) await delay(75 + Math.floor(Math.random() * 150));
+  }
+
+  throw new Error(`Cannot upsert ${filename}: write was overwritten by a concurrent request after ${attempts} attempts`);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function appendDBRecord<T extends object>(
