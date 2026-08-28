@@ -4,17 +4,19 @@ import { getDB, getDBRecord } from "@/lib/db";
 import { adminCourseIds, attachConfirmedEnrollmentsToStudent } from "@/lib/enrollmentAccess";
 import type { ProgressRecord, Student } from "@/types";
 
+const noStoreHeaders = { "Cache-Control": "no-store, max-age=0" };
+
 export async function GET() {
   try {
     const session = await getSession();
     if (!session) {
-      return NextResponse.json({ success: false }, { status: 401 });
+      return NextResponse.json({ success: false }, { status: 401, headers: noStoreHeaders });
     }
 
     const student = await getDBRecord<Student>("students.json", session.user.id);
-    
+
     if (!student) {
-      return NextResponse.json({ success: false, message: "Student record not found" }, { status: 404 });
+      return NextResponse.json({ success: false, message: "Student record not found" }, { status: 404, headers: noStoreHeaders });
     }
 
     const syncedStudent = await attachConfirmedEnrollmentsToStudent(student);
@@ -32,9 +34,9 @@ export async function GET() {
       user: session.user,
       student: safeStudent,
       progress
-    });
+    }, { headers: noStoreHeaders });
   } catch (error) {
     console.error("Me API Error:", error);
-    return NextResponse.json({ success: false }, { status: 500 });
+    return NextResponse.json({ success: false }, { status: 500, headers: noStoreHeaders });
   }
 }

@@ -39,7 +39,7 @@ export default function Navbar() {
 
   useEffect(() => {
     return runWhenIdle(() => {
-      fetch("/api/auth/me")
+      fetch("/api/auth/me", { cache: "no-store" })
         .then((r) => r.json())
         .then((d) => {
           if (d.success && d.user) setUser(d.user);
