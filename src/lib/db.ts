@@ -198,14 +198,6 @@ export async function findDBRecordByField<T>(
   const cached = findInMemory();
   if (cached) return cached;
 
-  if (filename === "students.json") {
-    const localData = readJSON<T>(filename);
-    const localMatch = localData.find((item) =>
-      String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
-    );
-    if (localMatch) return localMatch;
-  }
-
   if (hasSupabaseConfig()) {
     try {
       const collection = getCollectionName(filename);
