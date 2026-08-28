@@ -153,11 +153,10 @@ export async function getDBRecord<T>(filename: string, recordId: string): Promis
 
   if (hasSupabaseConfig()) {
     try {
-      return await getSupabaseRecord<T>(getCollectionName(filename), recordId.trim());
+      const match = await getSupabaseRecord<T>(getCollectionName(filename), recordId.trim());
+      if (match) return match;
     } catch (error) {
       console.error("Supabase getDBRecord error:", error);
-      const data = readJSON<T>(filename);
-      return data.find((item) => String((item as Record<string, unknown>).id || "") === recordId.trim()) ?? null;
     }
   }
 
