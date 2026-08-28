@@ -75,7 +75,7 @@ export default function AnalyticsTracker() {
 
   useEffect(() => {
     return runWhenIdle(() => {
-      fetch("/api/auth/me")
+      fetch("/api/auth/me", { cache: "no-store" })
         .then((r) => r.json())
         .then((data) => {
           if (data.success && data.student) {
