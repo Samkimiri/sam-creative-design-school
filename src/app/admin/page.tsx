@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
-import type { ContentSettings, CourseContentOverride, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, ProgressRecord, PromoCode } from "@/types";
+import type { ContentSettings, CourseContentOverride, CourseFeedback, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, ProgressRecord, PromoCode } from "@/types";
+import type { LeaderboardEntry } from "@/lib/leaderboard";
 
 interface Student {
   id: string;
@@ -178,6 +179,8 @@ interface AdminDashboardPayload {
   projects?: AdminProject[];
   assignments?: AdminAssignment[];
   progress?: ProgressRecord[];
+  courseFeedback?: CourseFeedback[];
+  leaderboard?: LeaderboardEntry[];
   settings?: AdminSettings;
   analytics?: {
     summary?: AnalyticsSummary;
@@ -389,7 +392,10 @@ export default function AdminDashboard() {
   const [projects, setProjects] = useState<AdminProject[]>([]);
   const [assignments, setAssignments] = useState<AdminAssignment[]>([]);
   const [progress, setProgress] = useState<ProgressRecord[]>([]);
+  const [courseFeedback, setCourseFeedback] = useState<CourseFeedback[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [progressStudentId, setProgressStudentId] = useState<string | null>(null);
+  const [feedbackDraft, setFeedbackDraft] = useState<Record<string, string>>({});
   const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
@@ -446,6 +452,8 @@ export default function AdminDashboard() {
         setProjects(Array.isArray(dashboard.projects) ? dashboard.projects : []);
         setAssignments(Array.isArray(dashboard.assignments) ? dashboard.assignments : []);
         setProgress(Array.isArray(dashboard.progress) ? dashboard.progress : []);
+        setCourseFeedback(Array.isArray(dashboard.courseFeedback) ? dashboard.courseFeedback : []);
+        setLeaderboard(Array.isArray(dashboard.leaderboard) ? dashboard.leaderboard : []);
         setVisitorSessions(Array.isArray(dashboard.analytics?.sessions) ? dashboard.analytics.sessions : []);
         setAnalyticsEvents(Array.isArray(dashboard.analytics?.events) ? dashboard.analytics.events : []);
         setAnalyticsSummary(dashboard.analytics?.summary ?? null);
@@ -624,6 +632,44 @@ export default function AdminDashboard() {
       () => {
         setEnrollments((prev) => prev.filter((e) => e.id !== enrollmentId));
       },
+      "DELETE"
+    );
+  };
+
+  const sendStudentEmail = async (studentId: string, emailType: "inactivity-nudge" | "new-course-suggestion") => {
+    await runMutation<{ sent: boolean; message?: string }>(
+      `student-email-${studentId}-${emailType}`,
+      "/api/admin/students",
+      { password, studentId, emailType },
+      (result) => {
+        setNotice(result.message || (result.sent ? "Email sent." : "Email could not be sent."));
+      }
+    );
+  };
+
+  const saveFeedback = async (studentId: string, studentName: string, courseId: string, courseName: string) => {
+    const message = (feedbackDraft[courseId] || "").trim();
+    if (!message) return;
+
+    await runMutation<CourseFeedback>(
+      `feedback-${studentId}-${courseId}`,
+      "/api/admin/feedback",
+      { password, studentId, studentName, courseId, courseName, message },
+      (created) => {
+        setCourseFeedback((prev) => [created, ...prev]);
+        setFeedbackDraft((prev) => ({ ...prev, [courseId]: "" }));
+      }
+    );
+  };
+
+  const deleteFeedback = async (id: string) => {
+    if (!window.confirm("Delete this feedback entry?")) return;
+
+    await runMutation<CourseFeedback>(
+      `feedback-delete-${id}`,
+      "/api/admin/feedback",
+      { password, id },
+      () => setCourseFeedback((prev) => prev.filter((f) => f.id !== id)),
       "DELETE"
     );
   };
@@ -1510,14 +1556,35 @@ export default function AdminDashboard() {
           const progressStudent = students.find((item) => item.id === progressStudentId);
           if (!progressStudent) return null;
 
-          const studentProgress = progress.filter((p) => p.studentId === progressStudentId);
-          const studentAssignments = assignments.filter((a) => a.studentId === progressStudentId);
+          const studentId = progressStudent.id;
+          const studentProgress = progress.filter((p) => p.studentId === studentId);
+          const studentAssignments = assignments.filter((a) => a.studentId === studentId);
           const studentProjects = projects.filter((p) => p.studentName === progressStudent.name);
+          const studentFeedback = courseFeedback.filter((f) => f.studentId === studentId);
           const enrolledCourseIds = progressStudent.enrolledCourses ?? [];
+
+          const studentSessions = visitorSessions.filter((s) =>
+            s.userId === studentId || (Boolean(s.userEmail) && s.userEmail === progressStudent.email)
+          );
+          const studentEvents = analyticsEvents
+            .filter((e) => Boolean(e.userEmail) && e.userEmail === progressStudent.email)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          const latestSession = [...studentSessions].sort(
+            (a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()
+          )[0];
+          const totalPageViews = studentSessions.reduce((sum, s) => sum + (s.pageViews || 0), 0);
+
+          const leaderboardIndex = leaderboard.findIndex((entry) => entry.studentId === studentId);
+          const leaderboardEntry = leaderboardIndex > -1 ? leaderboard[leaderboardIndex] : null;
+
+          const closeModal = () => {
+            setProgressStudentId(null);
+            setFeedbackDraft({});
+          };
 
           return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
-              <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+              <div className="w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
                 <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-4">
                   <div>
                     <h3 className="text-lg font-black text-dark">{progressStudent.name}&apos;s Progress</h3>
@@ -1525,36 +1592,89 @@ export default function AdminDashboard() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setProgressStudentId(null)}
+                    onClick={closeModal}
                     className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-600 hover:bg-gray-200"
                   >
                     Close
                   </button>
                 </div>
 
-                <div className="mt-4 space-y-5">
+                <div className="mt-4 space-y-6">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      title="Email this student encouraging them to continue their in-progress course(s)"
+                      onClick={() => void sendStudentEmail(studentId, "inactivity-nudge")}
+                      disabled={pendingAction === `student-email-${studentId}-inactivity-nudge`}
+                      className={`rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100 disabled:opacity-50 ${adminActionMotion}`}
+                    >
+                      {pendingAction === `student-email-${studentId}-inactivity-nudge` ? "Sending..." : "Send Inactivity Nudge"}
+                    </button>
+                    <button
+                      type="button"
+                      title="Email this student suggesting a new course, for after they've completed one"
+                      onClick={() => void sendStudentEmail(studentId, "new-course-suggestion")}
+                      disabled={pendingAction === `student-email-${studentId}-new-course-suggestion`}
+                      className={`rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-50 ${adminActionMotion}`}
+                    >
+                      {pendingAction === `student-email-${studentId}-new-course-suggestion` ? "Sending..." : "Suggest New Course"}
+                    </button>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
+                      <p className="text-xs font-black uppercase tracking-wider text-primary">Leaderboard Position</p>
+                      {leaderboardEntry ? (
+                        <>
+                          <p className="mt-1 text-2xl font-black text-dark">#{leaderboardIndex + 1}</p>
+                          <p className="text-xs text-gray-500">{leaderboardEntry.rankLabel} - {leaderboardEntry.score} pts</p>
+                        </>
+                      ) : (
+                        <p className="mt-1 text-sm text-gray-400">Not ranked yet - no LMS activity recorded.</p>
+                      )}
+                    </div>
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                      <p className="text-xs font-black uppercase tracking-wider text-gray-400">Site Activity</p>
+                      {latestSession ? (
+                        <>
+                          <p className="mt-1 text-sm font-bold text-dark">Last seen {new Date(latestSession.lastSeen).toLocaleString()}</p>
+                          <p className="text-xs text-gray-500">
+                            Last page: {latestSession.lastPage || "-"} - {latestSession.device || "Unknown device"} - {totalPageViews} page view(s)
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mt-1 text-sm text-gray-400">No tracked site visits yet.</p>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-2">Course Progress</h4>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-2">Course Progress & Feedback</h4>
                     {enrolledCourseIds.length === 0 ? (
                       <p className="text-sm text-gray-400">Not enrolled in any course yet.</p>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {enrolledCourseIds.map((courseId) => {
                           const course = courses.find((c) => c.id === courseId);
-                          const courseLessons = lessons.filter((l) => l.courseId === courseId);
+                          const courseLessons = [...lessons.filter((l) => l.courseId === courseId)].sort((a, b) => a.order - b.order);
                           const record = studentProgress.find((p) => p.courseId === courseId);
-                          const completed = record?.completedLessons?.length ?? 0;
+                          const completedSet = new Set(record?.completedLessons ?? []);
+                          const completed = completedSet.size;
                           const total = courseLessons.length;
                           const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+                          const currentLesson = courseLessons.find((l) => !completedSet.has(l.id));
                           const quizScores = record?.quizScores ?? [];
                           const avgQuiz = quizScores.length > 0
                             ? Math.round((quizScores.reduce((sum, q) => sum + (q.total > 0 ? q.score / q.total : 0), 0) / quizScores.length) * 100)
                             : null;
+                          const courseFeedbackEntries = studentFeedback.filter((f) => f.courseId === courseId);
+                          const courseTitle = course?.title || courseId;
+                          const feedbackActionKey = `feedback-${studentId}-${courseId}`;
 
                           return (
                             <div key={courseId} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                               <div className="flex items-center justify-between gap-2">
-                                <span className="font-bold text-dark text-sm">{course?.title || courseId}</span>
+                                <span className="font-bold text-dark text-sm">{courseTitle}</span>
                                 <span className="text-xs font-bold text-primary">{percent}% complete</span>
                               </div>
                               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
@@ -1562,10 +1682,70 @@ export default function AdminDashboard() {
                               </div>
                               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                                 <span>{completed} of {total} lessons completed</span>
-                                {avgQuiz !== null && <span>Avg quiz score: {avgQuiz}%</span>}
+                                <span>Currently on: {total === 0 ? "-" : currentLesson ? currentLesson.title : "Course completed"}</span>
                                 {record?.lastAccessed && (
                                   <span>Last accessed: {new Date(record.lastAccessed).toLocaleString()}</span>
                                 )}
+                              </div>
+
+                              {quizScores.length > 0 && (
+                                <div className="mt-3">
+                                  <p className="text-xs font-bold text-gray-500 mb-1">Quiz results (avg {avgQuiz}%)</p>
+                                  <div className="space-y-1">
+                                    {quizScores.map((q, i) => {
+                                      const lesson = lessons.find((l) => l.id === q.lessonId);
+                                      const pct = q.total > 0 ? Math.round((q.score / q.total) * 100) : 0;
+                                      return (
+                                        <div key={`${q.lessonId}-${i}`} className="flex items-center justify-between text-xs text-gray-600">
+                                          <span>{lesson?.title || q.lessonId}</span>
+                                          <span className={`font-bold ${pct >= 70 ? "text-green-700" : pct >= 40 ? "text-amber-700" : "text-red-700"}`}>
+                                            {q.score}/{q.total} ({pct}%)
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="mt-3 border-t border-gray-200 pt-3">
+                                <p className="text-xs font-bold text-gray-500 mb-1">Admin Feedback</p>
+                                {courseFeedbackEntries.length > 0 && (
+                                  <div className="mb-2 space-y-2">
+                                    {courseFeedbackEntries.map((f) => (
+                                      <div key={f.id} className="flex items-start justify-between gap-2 rounded-lg bg-white p-2 text-xs">
+                                        <div>
+                                          <p className="text-gray-700">{f.message}</p>
+                                          <p className="mt-1 text-[10px] text-gray-400">{new Date(f.createdAt).toLocaleString()}</p>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => void deleteFeedback(f.id)}
+                                          className="shrink-0 text-gray-400 hover:text-red-600"
+                                          title="Delete feedback"
+                                        >
+                                          x
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                <textarea
+                                  value={feedbackDraft[courseId] || ""}
+                                  onChange={(e) => setFeedbackDraft((prev) => ({ ...prev, [courseId]: e.target.value }))}
+                                  placeholder={`Write feedback for ${progressStudent.name} on ${courseTitle}...`}
+                                  rows={2}
+                                  maxLength={1000}
+                                  className="w-full rounded-lg border border-gray-200 p-2 text-xs outline-none focus:ring-2 focus:ring-primary"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={!feedbackDraft[courseId]?.trim() || pendingAction === feedbackActionKey}
+                                  onClick={() => void saveFeedback(studentId, progressStudent.name, courseId, courseTitle)}
+                                  className={`mt-2 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white disabled:opacity-40 ${adminActionMotion}`}
+                                >
+                                  {pendingAction === feedbackActionKey ? "Saving..." : "Save Feedback"}
+                                </button>
                               </div>
                             </div>
                           );
@@ -1618,6 +1798,22 @@ export default function AdminDashboard() {
                             }`}>
                               {p.status}
                             </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-2">Recent Site Activity</h4>
+                    {studentEvents.length === 0 ? (
+                      <p className="text-sm text-gray-400">No tracked activity yet. Game play is only saved on the student&apos;s own browser and isn&apos;t tracked here.</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {studentEvents.slice(0, 10).map((ev) => (
+                          <div key={ev.id} className="flex items-center justify-between gap-2 text-xs text-gray-600">
+                            <span>{ev.type.replace(/_/g, " ")} - {ev.path}{ev.label ? ` (${ev.label})` : ""}</span>
+                            <span className="shrink-0 text-gray-400">{new Date(ev.createdAt).toLocaleString()}</span>
                           </div>
                         ))}
                       </div>

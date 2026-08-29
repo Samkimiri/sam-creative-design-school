@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getDB, saveDB } from "@/lib/db";
 import { courses, lessons } from "@/data/courses";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
+import { sendProgressMilestoneEmail } from "@/lib/email";
+import { absoluteUrl } from "@/lib/seo";
 
 interface ProgressRecord {
   studentId: string;
@@ -78,6 +80,7 @@ export async function POST(request: Request) {
       (p) => p.studentId === session.user.id && p.courseId === courseId
     );
     let savedRecord: ProgressRecord;
+    const beforeCompleted = existingIndex > -1 ? progress[existingIndex].completedLessons.length : 0;
 
     if (existingIndex > -1) {
       if (!progress[existingIndex].completedLessons.includes(lessonId)) {
@@ -97,6 +100,32 @@ export async function POST(request: Request) {
     }
 
     await saveDB("progress.json", progress);
+
+    const totalLessons = lessons.filter((item) => item.courseId === courseId).length;
+    if (totalLessons > 0 && student?.email) {
+      const afterCompleted = savedRecord.completedLessons.length;
+      const beforeMilestone = Math.floor((beforeCompleted / totalLessons) * 10);
+      const afterMilestone = Math.floor((afterCompleted / totalLessons) * 10);
+
+      if (afterMilestone > beforeMilestone) {
+        const course = courses.find((item) => item.id === courseId);
+        const studentEmail = student.email;
+        const studentName = student.name || "there";
+        const courseName = course?.title || courseId;
+        const percent = afterMilestone * 10;
+
+        after(() =>
+          sendProgressMilestoneEmail({
+            to: studentEmail,
+            studentName,
+            courseName,
+            percent,
+            lmsUrl: absoluteUrl(`/lms/${courseId}`),
+          }).catch(() => {})
+        );
+      }
+    }
+
     return NextResponse.json({ success: true, data: savedRecord });
   } catch (err) {
     console.error("Progress POST Error:", err);

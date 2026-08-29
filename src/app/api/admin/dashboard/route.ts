@@ -4,10 +4,12 @@ import { buildAnalyticsSummary } from "@/lib/analytics";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 import { getContentSettings } from "@/lib/contentSettings";
 import { getDiscountSettings } from "@/lib/discountSettings";
+import { getLeaderboardEntries } from "@/lib/leaderboard";
 import { requireAdminRequest } from "@/lib/adminAuth";
 import type {
   AnalyticsEvent,
   AssignmentSubmission,
+  CourseFeedback,
   Enrollment,
   ProgressRecord,
   ProjectSubmission,
@@ -29,6 +31,8 @@ export async function POST(request: Request) {
     projectsResult,
     assignmentsResult,
     progressResult,
+    feedbackResult,
+    leaderboardResult,
     intakeResult,
     contentResult,
     discountsResult,
@@ -41,6 +45,8 @@ export async function POST(request: Request) {
     getDB<ProjectSubmission>("projects.json"),
     getDB<AssignmentSubmission>("assignments.json"),
     getDB<ProgressRecord>("progress.json"),
+    getDB<CourseFeedback>("course-feedback.json"),
+    getLeaderboardEntries(),
     getUpcomingIntakeSettings(),
     getContentSettings(),
     getDiscountSettings(),
@@ -62,6 +68,8 @@ export async function POST(request: Request) {
   const projects = fulfilled(projectsResult, []);
   const assignments = fulfilled(assignmentsResult, []);
   const progress = fulfilled(progressResult, []);
+  const courseFeedback = fulfilled(feedbackResult, []);
+  const leaderboard = fulfilled(leaderboardResult, []);
   const intake = fulfilled(intakeResult, undefined);
   const content = fulfilled(contentResult, undefined);
   const discounts = fulfilled(discountsResult, undefined);
@@ -81,6 +89,8 @@ export async function POST(request: Request) {
         projects,
         assignments,
         progress,
+        courseFeedback,
+        leaderboard,
         settings: intake || content || discounts ? { intake, content, discounts } : undefined,
         analytics: {
           summary,
@@ -97,6 +107,8 @@ export async function POST(request: Request) {
         projectsResult,
         assignmentsResult,
         progressResult,
+        feedbackResult,
+        leaderboardResult,
         intakeResult,
         contentResult,
         discountsResult,

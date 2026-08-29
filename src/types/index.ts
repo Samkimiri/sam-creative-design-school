@@ -154,6 +154,16 @@ export interface AssignmentSubmission {
   updatedAt?: string;
 }
 
+export interface CourseFeedback {
+  id: string;
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  courseName: string;
+  message: string;
+  createdAt: string;
+}
+
 export interface AssignmentRubric {
   creativity: number;
   technicalSkill: number;

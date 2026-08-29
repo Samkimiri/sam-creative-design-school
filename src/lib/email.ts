@@ -310,6 +310,162 @@ function disenrollmentHtml(input: SendDisenrollmentEmailInput, courseList: strin
   `);
 }
 
+interface SendInactivityNudgeEmailInput {
+  to: string;
+  studentName: string;
+  courseNames: string[];
+  lmsUrl: string;
+}
+
+export async function sendInactivityNudgeEmail(input: SendInactivityNudgeEmailInput) {
+  const courseList = formatCourseList(input.courseNames);
+  return sendTransactionalEmail({
+    to: input.to,
+    subject: "We miss you at Sam Creative Design School",
+    html: inactivityNudgeHtml(input, courseList),
+    text: inactivityNudgeText(input, courseList),
+  });
+}
+
+function inactivityNudgeText(input: SendInactivityNudgeEmailInput, courseList: string) {
+  return [
+    `Hi ${input.studentName},`,
+    "",
+    `We noticed it's been a little while since you last worked on ${courseList} here at Sam Creative Design School.`,
+    "",
+    "Your progress is saved and waiting for you exactly where you left off. Even 20-30 minutes a week keeps your momentum going and gets you to your certificate faster.",
+    "",
+    "Pick up right where you left off:",
+    input.lmsUrl,
+    "",
+    "If anything is blocking you - a technical issue, a confusing lesson, or just needing a nudge in the right direction - reply to this email or reach us on WhatsApp. We're here to help.",
+    "",
+    "We'd love to see you back in class soon.",
+    "",
+    "Sam Creative Design School",
+  ].join("\n");
+}
+
+function inactivityNudgeHtml(input: SendInactivityNudgeEmailInput, courseList: string) {
+  return emailShell(`
+    <h1 style="margin:0 0 12px;font-size:24px;color:#050914">We miss you!</h1>
+    <p>Hi ${escapeHtml(input.studentName)},</p>
+    <p>We noticed it's been a little while since you last worked on <strong>${escapeHtml(courseList)}</strong> here at Sam Creative Design School.</p>
+    <p>Your progress is saved and waiting for you exactly where you left off. Even 20-30 minutes a week keeps your momentum going and gets you to your certificate faster.</p>
+    ${emailButton("Continue Learning", input.lmsUrl)}
+    <p>If anything is blocking you - a technical issue, a confusing lesson, or just needing a nudge in the right direction - reply to this email or reach us on WhatsApp. We're here to help.</p>
+    <p>We'd love to see you back in class soon.</p>
+  `);
+}
+
+interface SendNewCourseSuggestionEmailInput {
+  to: string;
+  studentName: string;
+  completedCourseNames: string[];
+  suggestedCourseNames: string[];
+  coursesUrl: string;
+}
+
+export async function sendNewCourseSuggestionEmail(input: SendNewCourseSuggestionEmailInput) {
+  const completedList = formatCourseList(input.completedCourseNames);
+  return sendTransactionalEmail({
+    to: input.to,
+    subject: `Congratulations on finishing ${completedList}! What's next?`,
+    html: newCourseSuggestionHtml(input, completedList),
+    text: newCourseSuggestionText(input, completedList),
+  });
+}
+
+function newCourseSuggestionText(input: SendNewCourseSuggestionEmailInput, completedList: string) {
+  const lines = [
+    `Hi ${input.studentName},`,
+    "",
+    `Congratulations on completing ${completedList}! That's a real achievement, and we hope you're proud of the skills and projects you've built along the way.`,
+    "",
+    "Your learning doesn't have to stop here. Many of our students continue building their portfolio and expanding their skill set with another course.",
+  ];
+
+  if (input.suggestedCourseNames.length > 0) {
+    lines.push("", "A few courses you might enjoy next:", ...input.suggestedCourseNames.map((name) => `- ${name}`));
+  }
+
+  lines.push(
+    "",
+    "Browse all courses and enroll here:",
+    input.coursesUrl,
+    "",
+    "Thank you for learning with us - we'd love to continue the adventure with you.",
+    "",
+    "Sam Creative Design School"
+  );
+
+  return lines.join("\n");
+}
+
+function newCourseSuggestionHtml(input: SendNewCourseSuggestionEmailInput, completedList: string) {
+  return emailShell(`
+    <h1 style="margin:0 0 12px;font-size:24px;color:#050914">Congratulations!</h1>
+    <p>Hi ${escapeHtml(input.studentName)},</p>
+    <p>Congratulations on completing <strong>${escapeHtml(completedList)}</strong>! That's a real achievement, and we hope you're proud of the skills and projects you've built along the way.</p>
+    <p>Your learning doesn't have to stop here. Many of our students continue building their portfolio and expanding their skill set with another course.</p>
+    ${input.suggestedCourseNames.length > 0 ? `
+    <div style="background:#F3F4F6;border-radius:12px;padding:16px 18px;margin:16px 0">
+      <p style="margin:0 0 8px;font-size:13px;color:#6B7280">A few courses you might enjoy next</p>
+      <ul style="margin:0;padding-left:18px;color:#050914;font-weight:700">
+        ${input.suggestedCourseNames.map((name) => `<li style="margin-bottom:4px">${escapeHtml(name)}</li>`).join("")}
+      </ul>
+    </div>
+    ` : ""}
+    ${emailButton("Browse Courses", input.coursesUrl)}
+    <p>Thank you for learning with us - we'd love to continue the adventure with you.</p>
+  `);
+}
+
+interface SendProgressMilestoneEmailInput {
+  to: string;
+  studentName: string;
+  courseName: string;
+  percent: number;
+  lmsUrl: string;
+}
+
+export async function sendProgressMilestoneEmail(input: SendProgressMilestoneEmailInput) {
+  return sendTransactionalEmail({
+    to: input.to,
+    subject: `You're ${input.percent}% through ${input.courseName}!`,
+    html: progressMilestoneHtml(input),
+    text: progressMilestoneText(input),
+  });
+}
+
+function progressMilestoneText(input: SendProgressMilestoneEmailInput) {
+  return [
+    `Hi ${input.studentName},`,
+    "",
+    `Great progress! You've just crossed ${input.percent}% completion in ${input.courseName} at Sam Creative Design School.`,
+    "",
+    "Keep this momentum going - you're getting closer to your certificate with every lesson.",
+    "",
+    "Continue learning:",
+    input.lmsUrl,
+    "",
+    "Sam Creative Design School",
+  ].join("\n");
+}
+
+function progressMilestoneHtml(input: SendProgressMilestoneEmailInput) {
+  return emailShell(`
+    <h1 style="margin:0 0 12px;font-size:24px;color:#050914">Great progress!</h1>
+    <p>Hi ${escapeHtml(input.studentName)},</p>
+    <p>You've just crossed <strong>${input.percent}% completion</strong> in <strong>${escapeHtml(input.courseName)}</strong> at Sam Creative Design School.</p>
+    <div style="background:#F3F4F6;border-radius:12px;padding:4px;margin:16px 0">
+      <div style="background:#0056FF;height:14px;border-radius:8px;width:${Math.max(4, Math.min(100, input.percent))}%"></div>
+    </div>
+    <p>Keep this momentum going - you're getting closer to your certificate with every lesson.</p>
+    ${emailButton("Continue Learning", input.lmsUrl)}
+  `);
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
