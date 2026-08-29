@@ -624,6 +624,35 @@ export default function AdminDashboard() {
     );
   };
 
+  const toggleEnrollmentPause = async (enrollment: Enrollment, pause: boolean) => {
+    if (!enrollment.studentId || enrollment.studentId === "guest") {
+      setNotice("This enrollment isn't linked to a registered student account, so access can't be paused.");
+      return;
+    }
+
+    if (pause && !window.confirm(
+      `Pause ${enrollment.studentName}'s access to ${enrollment.courseName} until payment is completed? Their progress is kept, and access resumes as soon as you unpause.`
+    )) return;
+
+    const courseIds = enrollment.courseId.split(",").map((id) => id.trim()).filter(Boolean);
+
+    for (const courseId of courseIds) {
+      await runMutation<{ student: Student; message?: string }>(
+        `pause-enrollment-${enrollment.id}`,
+        "/api/admin/students",
+        { password, studentId: enrollment.studentId, courseId, action: pause ? "pause-course" : "unpause-course" },
+        ({ student, message }) => {
+          setStudents((prev) =>
+            prev.some((s) => s.id === student.id)
+              ? prev.map((s) => (s.id === student.id ? { ...s, ...student } : s))
+              : [...prev, student]
+          );
+          setNotice(message || (pause ? "Course paused." : "Course resumed."));
+        }
+      );
+    }
+  };
+
   const deleteEnrollment = async (enrollmentId: string, studentName: string, courseName: string) => {
     if (!window.confirm(`Permanently delete this ${courseName} enrollment record for ${studentName}? This cannot be undone.`)) return;
 
@@ -1350,6 +1379,11 @@ export default function AdminDashboard() {
                   ) : sortedEnrollments.map((e) => {
                     const isApprovalReady = approvalReadyRequestIds.has(e.id);
                     const isRecentEnrollment = Date.now() - new Date(e.createdAt).getTime() < 24 * 60 * 60 * 1000;
+                    const enrollmentCourseIds = e.courseId.split(",").map((id) => id.trim()).filter(Boolean);
+                    const enrollmentStudent = students.find((s) => s.id === e.studentId);
+                    const isEnrollmentPaused = enrollmentCourseIds.length > 0 && enrollmentCourseIds.every((id) =>
+                      (enrollmentStudent?.pausedCourses ?? []).includes(id)
+                    );
                     return (
                       <tr key={e.id} className={`${adminRowMotion} ${isApprovalReady ? "bg-[#25D366]/5" : ""}`}>
                       <td className="px-6 py-4">
@@ -1487,7 +1521,22 @@ export default function AdminDashboard() {
                         )}
                         {e.status === "confirmed" && (
                           <div className="flex flex-col items-start gap-1.5">
-                            <span className="text-xs font-bold text-green-700">Approved</span>
+                            <span className={`text-xs font-bold ${isEnrollmentPaused ? "text-amber-700" : "text-green-700"}`}>
+                              {isEnrollmentPaused ? "Approved (Paused)" : "Approved"}
+                            </span>
+                            <button
+                              type="button"
+                              title={isEnrollmentPaused
+                                ? "Resume this student's LMS access now that payment is complete."
+                                : "Temporarily pause this student's LMS access if payment is incomplete. Reversible, keeps their progress."}
+                              onClick={() => void toggleEnrollmentPause(e, !isEnrollmentPaused)}
+                              disabled={pendingAction === `pause-enrollment-${e.id}`}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50 ${adminActionMotion} ${
+                                isEnrollmentPaused ? "bg-green-500 text-white hover:bg-green-600" : "bg-amber-50 text-amber-700 hover:bg-amber-100"
+                              }`}
+                            >
+                              {pendingAction === `pause-enrollment-${e.id}` ? "Saving..." : isEnrollmentPaused ? "Resume" : "Pause"}
+                            </button>
                             <button
                               type="button"
                               title="Revoke this student's LMS access for these course(s). They will need to pay and enroll again."
