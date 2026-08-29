@@ -9,6 +9,7 @@ export interface Student {
   avatar?: string;
   interest?: string;
   enrolledCourses?: string[];
+  pausedCourses?: string[];
   createdAt?: string;
 }
 

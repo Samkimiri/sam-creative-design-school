@@ -45,7 +45,7 @@ export default function CoursePlayer() {
   const [assignmentForm, setAssignmentForm] = useState({ fileUrl: "", notes: "" });
   const [assignmentStatus, setAssignmentStatus] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">(isPreview ? "allowed" : "checking");
+  const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied" | "paused">(isPreview ? "allowed" : "checking");
 
   const progressStorageKey = `scds-progress-${courseId}`;
 
@@ -80,8 +80,17 @@ export default function CoursePlayer() {
         if (cancelled) return;
 
         const studentCourses = Array.isArray(data.student?.enrolledCourses) ? data.student.enrolledCourses : [];
+        const pausedCourses = Array.isArray(data.student?.pausedCourses) ? data.student.pausedCourses : [];
         const isAdmin = data.user?.role === "admin" || data.student?.role === "admin";
-        setAccessState(res.ok && data.success && (isAdmin || studentCourses.includes(courseId)) ? "allowed" : "denied");
+        const isEnrolled = res.ok && data.success && (isAdmin || studentCourses.includes(courseId));
+
+        if (!isEnrolled) {
+          setAccessState("denied");
+        } else if (!isAdmin && pausedCourses.includes(courseId)) {
+          setAccessState("paused");
+        } else {
+          setAccessState("allowed");
+        }
       } catch {
         if (!cancelled) setAccessState("denied");
       }
@@ -283,6 +292,33 @@ export default function CoursePlayer() {
             <Link href={`/enroll?course=${courseId}`} className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary/90">
               Request Access
             </Link>
+            <Link href="/lms" className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold text-dark transition hover:border-primary hover:text-primary">
+              Back to LMS
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (accessState === "paused") {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#F5F7FB] px-6 pt-24">
+        <div className="max-w-lg rounded-3xl border border-amber-200 bg-white p-8 text-center shadow-2xl">
+          <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-sm font-black text-amber-700">PAUSE</div>
+          <h1 className="text-2xl font-black text-dark">Course Access Paused</h1>
+          <p className="mt-3 text-sm leading-6 text-gray-600">
+            Your access to this course has been temporarily paused, usually because payment has not been fully completed. Your progress is saved and nothing is lost - access resumes automatically as soon as payment is confirmed.
+          </p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <a
+              href="https://wa.me/254748201131"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary/90"
+            >
+              Contact Us on WhatsApp
+            </a>
             <Link href="/lms" className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold text-dark transition hover:border-primary hover:text-primary">
               Back to LMS
             </Link>

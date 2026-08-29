@@ -157,6 +157,7 @@ export async function getStudentWithConfirmedEnrollmentAccess(studentId: string)
 export function hasCourseAccess(student: Student | null | undefined, courseId: string) {
   if (!student) return false;
   if (student.role === "admin") return true;
+  if (student.pausedCourses?.includes(courseId)) return false;
   return Boolean(student.enrolledCourses?.includes(courseId));
 }
 

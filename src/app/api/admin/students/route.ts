@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getDB } from "@/lib/db";
-import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
+import { getDB, upsertDBRecord } from "@/lib/db";
+import { badRequest, getRequiredString, notFound, requireAdminRequest, type AdminRequestBody } from "@/lib/adminAuth";
 import { courses, lessons } from "@/data/courses";
 import { absoluteUrl } from "@/lib/seo";
 import { sendInactivityNudgeEmail, sendNewCourseSuggestionEmail } from "@/lib/email";
@@ -15,7 +15,53 @@ interface Student {
   avatar?: string | null;
   profileImage?: string | null;
   enrolledCourses: string[];
+  pausedCourses?: string[];
   createdAt: string;
+}
+
+async function handleCoursePauseToggle(body: AdminRequestBody, pause: boolean) {
+  const studentId = getRequiredString(body, "studentId", "Student ID");
+  if ("response" in studentId) return studentId.response;
+
+  const courseId = getRequiredString(body, "courseId", "Course ID");
+  if ("response" in courseId) return courseId.response;
+
+  const students = await getDB<Student>("students.json");
+  const index = students.findIndex((item) => item.id === studentId.value);
+  if (index === -1) {
+    return notFound("Student not found");
+  }
+
+  const student = students[index];
+  if (!(student.enrolledCourses ?? []).includes(courseId.value)) {
+    return badRequest("This student is not enrolled in that course.");
+  }
+
+  const pausedCourses = new Set(student.pausedCourses ?? []);
+  const noChange = pause ? pausedCourses.has(courseId.value) : !pausedCourses.has(courseId.value);
+
+  if (pause) pausedCourses.add(courseId.value);
+  else pausedCourses.delete(courseId.value);
+
+  student.pausedCourses = [...pausedCourses];
+  await upsertDBRecord("students.json", student);
+
+  const { password: _password, avatar: _avatar, profileImage: _profileImage, ...safeStudent } = student;
+  void _password;
+  void _avatar;
+  void _profileImage;
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      student: safeStudent,
+      message: noChange
+        ? `${student.name} was already ${pause ? "paused" : "active"} for this course.`
+        : pause
+          ? `Access paused for ${student.name}. They'll be asked to complete payment, and keep their progress once resumed.`
+          : `Access resumed for ${student.name}. They can continue right where they left off.`,
+    },
+  });
 }
 
 export async function POST(request: Request) {
@@ -36,6 +82,11 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   const auth = await requireAdminRequest(request);
   if ("response" in auth) return auth.response;
+
+  const action = typeof auth.body.action === "string" ? auth.body.action : "";
+  if (action === "pause-course" || action === "unpause-course") {
+    return handleCoursePauseToggle(auth.body, action === "pause-course");
+  }
 
   const studentId = getRequiredString(auth.body, "studentId", "Student ID");
   if ("response" in studentId) return studentId.response;

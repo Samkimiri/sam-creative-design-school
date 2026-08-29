@@ -24,6 +24,7 @@ interface Student {
   phone?: string;
   role?: string;
   enrolledCourses?: string[];
+  pausedCourses?: string[];
   profileImage?: string;
 }
 
@@ -74,6 +75,7 @@ export default async function LMSDashboard() {
     enrolledCourses = [courses[0]];
   }
 
+  const pausedCourseIds = student?.pausedCourses ?? [];
   const courseStats = enrolledCourses.map((course) => {
     const courseLessons = lessons.filter((lesson) => lesson.courseId === course.id).sort((a, b) => a.order - b.order);
     const record = allProgress.find((progress) => progress.courseId === course.id);
@@ -82,7 +84,8 @@ export default async function LMSDashboard() {
       .map((lesson) => lesson.id);
     const progress = courseLessons.length > 0 ? Math.round((completedLessons.length / courseLessons.length) * 100) : 0;
     const nextLesson = courseLessons.find((lesson) => !completedLessons.includes(lesson.id)) || courseLessons[0];
-    return { course, courseLessons, completedLessons, progress, nextLesson, record };
+    const isPaused = pausedCourseIds.includes(course.id);
+    return { course, courseLessons, completedLessons, progress, nextLesson, record, isPaused };
   });
 
   const continueCourse =
@@ -311,8 +314,10 @@ export default async function LMSDashboard() {
           </div>
 
           <div className="grid grid-cols-1 gap-5 md:gap-7 lg:grid-cols-2">
-            {courseStats.map(({ course, courseLessons, progress, completedLessons, nextLesson }, index) => {
-              const meta = getProgressMeta(progress);
+            {courseStats.map(({ course, courseLessons, progress, completedLessons, nextLesson, isPaused }, index) => {
+              const meta = isPaused
+                ? { label: "Payment Pending", tone: "bg-amber-50 text-amber-700 border-amber-200", action: "View Details" }
+                : getProgressMeta(progress);
               const previewLessons = courseLessons.slice(0, 3);
               const visual = getCourseVisual(course.id);
               return (

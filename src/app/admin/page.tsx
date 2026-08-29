@@ -12,6 +12,7 @@ interface Student {
   phone: string;
   profileImage?: string;
   enrolledCourses: string[];
+  pausedCourses?: string[];
   createdAt: string;
 }
 
@@ -648,6 +649,20 @@ export default function AdminDashboard() {
       { password, studentId, emailType, ...(suggestedCourseId ? { suggestedCourseId } : {}) },
       (result) => {
         setNotice(result.message || (result.sent ? "Email sent." : "Email could not be sent."));
+      }
+    );
+  };
+
+  const toggleCoursePause = async (studentId: string, courseId: string, pause: boolean) => {
+    if (pause && !window.confirm("Pause this student's access to the course until payment is completed?")) return;
+
+    await runMutation<{ student: Student; message?: string }>(
+      `pause-${studentId}-${courseId}`,
+      "/api/admin/students",
+      { password, studentId, courseId, action: pause ? "pause-course" : "unpause-course" },
+      ({ student, message }) => {
+        setStudents((prev) => prev.map((s) => (s.id === student.id ? { ...s, ...student } : s)));
+        setNotice(message || (pause ? "Course paused." : "Course resumed."));
       }
     );
   };
@@ -1703,13 +1718,40 @@ export default function AdminDashboard() {
                           const courseFeedbackEntries = studentFeedback.filter((f) => f.courseId === courseId);
                           const courseTitle = course?.title || courseId;
                           const feedbackActionKey = `feedback-${studentId}-${courseId}`;
+                          const isPaused = (progressStudent.pausedCourses ?? []).includes(courseId);
+                          const pauseActionKey = `pause-${studentId}-${courseId}`;
 
                           return (
-                            <div key={courseId} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-bold text-dark text-sm">{courseTitle}</span>
-                                <span className="text-xs font-bold text-primary">{percent}% complete</span>
+                            <div key={courseId} className={`rounded-xl border p-4 ${isPaused ? "border-amber-200 bg-amber-50" : "border-gray-100 bg-gray-50"}`}>
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-dark text-sm">{courseTitle}</span>
+                                  {isPaused && (
+                                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-700">
+                                      Paused
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs font-bold text-primary">{percent}% complete</span>
+                                  <button
+                                    type="button"
+                                    title={isPaused ? "Resume access once payment is completed" : "Pause access while payment is outstanding"}
+                                    onClick={() => void toggleCoursePause(studentId, courseId, !isPaused)}
+                                    disabled={pendingAction === pauseActionKey}
+                                    className={`rounded-lg px-3 py-1 text-xs font-bold disabled:opacity-50 ${adminActionMotion} ${
+                                      isPaused ? "bg-green-500 text-white hover:bg-green-600" : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                                    }`}
+                                  >
+                                    {pendingAction === pauseActionKey ? "Saving..." : isPaused ? "Resume" : "Pause"}
+                                  </button>
+                                </div>
                               </div>
+                              {isPaused && (
+                                <p className="mt-2 text-xs font-semibold text-amber-700">
+                                  This student cannot access lessons, quizzes, or the certificate for this course until an admin resumes it.
+                                </p>
+                              )}
                               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
                                 <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
                               </div>
