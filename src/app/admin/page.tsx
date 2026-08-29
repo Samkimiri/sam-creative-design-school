@@ -48,11 +48,13 @@ interface Enrollment {
   adminReviewRequestedAt?: string;
   adminApprovedAt?: string;
   adminNotificationMessage?: string;
-  status: "pending" | "confirmed" | "failed";
+  status: "pending" | "confirmed" | "revoked" | "failed";
   whatsappConfirmed?: boolean;
   whatsappSentAt?: string;
   accessGrantedAt?: string;
   accessGrantMessage?: string;
+  revokedAt?: string;
+  revokedReason?: string;
   createdAt: string;
 }
 
@@ -563,6 +565,25 @@ export default function AdminDashboard() {
       (updated) => {
         setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, ...updated } : e));
         void refreshEnrollments(password);
+      }
+    );
+  };
+
+  const disenrollEnrollment = async (enrollmentId: string, studentName: string, courseName: string) => {
+    const confirmed = window.confirm(
+      `Disenroll ${studentName} from ${courseName}? They will lose LMS access immediately and must pay and enroll again to regain it.`
+    );
+    if (!confirmed) return;
+
+    const reason = window.prompt("Optional reason for disenrollment (kept in enrollment history):", "") || "";
+
+    await runMutation<Enrollment>(
+      `enrollment-${enrollmentId}`,
+      "/api/admin/enrollments",
+      { password, enrollmentId, status: "revoked", reason },
+      (updated) => {
+        setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, ...updated } : e));
+        void fetchData(password);
       }
     );
   };
@@ -1285,7 +1306,11 @@ export default function AdminDashboard() {
                         <div className="text-xs text-gray-400">{new Date(e.createdAt).toLocaleTimeString()}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${e.status === "confirmed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          e.status === "confirmed" ? "bg-green-100 text-green-700"
+                          : e.status === "revoked" ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                        }`}>
                           {e.status}
                         </span>
                         {e.whatsappConfirmed && (
@@ -1299,8 +1324,13 @@ export default function AdminDashboard() {
                           </span>
                         )}
                         {e.accessGrantMessage && (
-                          <p className={`mt-2 max-w-[220px] text-xs font-semibold ${e.accessGrantedAt ? "text-green-700" : "text-amber-700"}`}>
+                          <p className={`mt-2 max-w-[220px] text-xs font-semibold ${e.accessGrantedAt ? "text-green-700" : e.status === "revoked" ? "text-red-700" : "text-amber-700"}`}>
                             {e.accessGrantMessage}
+                          </p>
+                        )}
+                        {e.revokedReason && (
+                          <p className="mt-2 max-w-[220px] text-xs font-semibold text-red-600">
+                            Reason: {e.revokedReason}
                           </p>
                         )}
                       </td>
@@ -1317,7 +1347,21 @@ export default function AdminDashboard() {
                           </button>
                         )}
                         {e.status === "confirmed" && (
-                          <span className="text-xs font-bold text-green-700">Approved</span>
+                          <div className="flex flex-col items-start gap-1.5">
+                            <span className="text-xs font-bold text-green-700">Approved</span>
+                            <button
+                              type="button"
+                              title="Revoke this student's LMS access for these course(s). They will need to pay and enroll again."
+                              onClick={() => void disenrollEnrollment(e.id, e.studentName, e.courseName)}
+                              disabled={pendingAction === `enrollment-${e.id}`}
+                              className={`bg-red-50 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
+                            >
+                              {pendingAction === `enrollment-${e.id}` ? "Revoking..." : "Disenroll"}
+                            </button>
+                          </div>
+                        )}
+                        {e.status === "revoked" && (
+                          <span className="text-xs font-bold text-red-700">Revoked</span>
                         )}
                       </td>
                       </tr>

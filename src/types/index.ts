@@ -57,11 +57,13 @@ export interface Enrollment {
   adminReviewRequestedAt?: string;
   adminApprovedAt?: string;
   adminNotificationMessage?: string;
-  status: "pending" | "confirmed" | "failed" | string;
+  status: "pending" | "confirmed" | "revoked" | "failed" | string;
   whatsappConfirmed?: boolean;
   whatsappSentAt?: string;
   accessGrantedAt?: string;
   accessGrantMessage?: string;
+  revokedAt?: string;
+  revokedReason?: string;
   createdAt: string;
 }
 

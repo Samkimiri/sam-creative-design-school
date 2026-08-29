@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDB, upsertDBRecord } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
-import { grantEnrollmentAccess } from "@/lib/enrollmentAccess";
+import { grantEnrollmentAccess, revokeEnrollmentAccess } from "@/lib/enrollmentAccess";
 
 interface Enrollment {
   id: string;
@@ -30,6 +30,8 @@ interface Enrollment {
   whatsappSentAt?: string;
   accessGrantedAt?: string;
   accessGrantMessage?: string;
+  revokedAt?: string;
+  revokedReason?: string;
   createdAt: string;
 }
 
@@ -76,13 +78,16 @@ export async function PATCH(request: Request) {
 
   const status = getRequiredString(auth.body, "status", "Status");
   if ("response" in status) return status.response;
-  if (status.value !== "pending" && status.value !== "confirmed") {
-    return badRequest("Status must be pending or confirmed");
+  if (status.value !== "pending" && status.value !== "confirmed" && status.value !== "revoked") {
+    return badRequest("Status must be pending, confirmed, or revoked");
   }
+
+  const reasonField = auth.body.reason;
+  const reason = typeof reasonField === "string" ? reasonField.trim().slice(0, 300) : "";
 
   const enrollments = await getDB<Enrollment>("enrollments.json");
   const index = enrollments.findIndex((e) => e.id === enrollmentId.value);
-  
+
   if (index === -1) {
     return notFound("Enrollment not found");
   }
@@ -94,6 +99,8 @@ export async function PATCH(request: Request) {
     enrollments[index].paymentConfirmedAt = now;
     enrollments[index].adminApprovalStatus = "approved";
     enrollments[index].adminApprovedAt = now;
+    enrollments[index].revokedAt = undefined;
+    enrollments[index].revokedReason = undefined;
 
     const enrollment = enrollments[index];
     const grant = await grantEnrollmentAccess(enrollment);
@@ -106,6 +113,18 @@ export async function PATCH(request: Request) {
     } else {
       enrollments[index].accessGrantMessage = "Payment approved. Student should create or sign in with the same email or phone to receive course access.";
     }
+  } else if (status.value === "revoked") {
+    enrollments[index].adminApprovalStatus = "revoked";
+    enrollments[index].accessGrantedAt = undefined;
+    enrollments[index].revokedAt = now;
+    enrollments[index].revokedReason = reason || undefined;
+
+    const enrollment = enrollments[index];
+    const revoke = await revokeEnrollmentAccess(enrollment);
+
+    enrollments[index].accessGrantMessage = revoke.revoked && revoke.removedCourses.length > 0
+      ? `Access revoked for ${revoke.student?.name || "the student"}. They must enroll and pay again for ${revoke.removedCourses.length} course(s).`
+      : "Enrollment marked as revoked. No matching student record was found to update.";
   } else {
     enrollments[index].adminApprovalStatus = "pending";
     enrollments[index].accessGrantedAt = undefined;

@@ -65,6 +65,31 @@ export async function grantEnrollmentAccess(enrollment: Enrollment) {
   return { granted: true, student: students[studentIndex], addedCourses };
 }
 
+export async function revokeEnrollmentAccess(enrollment: Enrollment) {
+  const students = await getDB<Student>("students.json");
+  const studentIndex = students.findIndex((student) => enrollmentMatchesStudent(enrollment, student));
+
+  if (studentIndex === -1) {
+    return { revoked: false, student: null, removedCourses: [] as string[] };
+  }
+
+  const currentCourses = students[studentIndex].enrolledCourses ?? [];
+  const targetCourseIds = new Set(courseIdsFromEnrollment(enrollment));
+  const removedCourses: string[] = [];
+
+  const remainingCourses = currentCourses.filter((courseId) => {
+    if (!targetCourseIds.has(courseId)) return true;
+    removedCourses.push(courseId);
+    return false;
+  });
+
+  students[studentIndex].enrolledCourses = remainingCourses;
+
+  if (removedCourses.length > 0) await upsertDBRecord("students.json", students[studentIndex]);
+
+  return { revoked: true, student: students[studentIndex], removedCourses };
+}
+
 export async function getConfirmedEnrollmentCourseIdsForStudent(student: Student) {
   let enrollments: Enrollment[] = [];
   try {
