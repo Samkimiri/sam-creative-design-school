@@ -9,6 +9,7 @@ import type {
   AnalyticsEvent,
   AssignmentSubmission,
   Enrollment,
+  ProgressRecord,
   ProjectSubmission,
   Review,
   Student,
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
     reviewsResult,
     projectsResult,
     assignmentsResult,
+    progressResult,
     intakeResult,
     contentResult,
     discountsResult,
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
     getDB<Review>("reviews.json"),
     getDB<ProjectSubmission>("projects.json"),
     getDB<AssignmentSubmission>("assignments.json"),
+    getDB<ProgressRecord>("progress.json"),
     getUpcomingIntakeSettings(),
     getContentSettings(),
     getDiscountSettings(),
@@ -58,6 +61,7 @@ export async function POST(request: Request) {
   const reviews = fulfilled(reviewsResult, []).filter((review) => !review.id.startsWith("seed-"));
   const projects = fulfilled(projectsResult, []);
   const assignments = fulfilled(assignmentsResult, []);
+  const progress = fulfilled(progressResult, []);
   const intake = fulfilled(intakeResult, undefined);
   const content = fulfilled(contentResult, undefined);
   const discounts = fulfilled(discountsResult, undefined);
@@ -76,6 +80,7 @@ export async function POST(request: Request) {
         reviews,
         projects,
         assignments,
+        progress,
         settings: intake || content || discounts ? { intake, content, discounts } : undefined,
         analytics: {
           summary,
@@ -91,6 +96,7 @@ export async function POST(request: Request) {
         reviewsResult,
         projectsResult,
         assignmentsResult,
+        progressResult,
         intakeResult,
         contentResult,
         discountsResult,

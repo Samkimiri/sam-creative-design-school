@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB, upsertDBRecord } from "@/lib/db";
+import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
 import { findStudentForEnrollment, grantEnrollmentAccess, revokeEnrollmentAccess } from "@/lib/enrollmentAccess";
 import { sendDisenrollmentEmail, sendEnrollmentApprovedEmail, sendEnrollmentRejectedEmail } from "@/lib/email";
@@ -203,6 +203,37 @@ export async function PATCH(request: Request) {
 
   return NextResponse.json(
     { success: true, data: enrollments[index] },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    }
+  );
+}
+
+export async function DELETE(request: Request) {
+  const auth = await requireAdminRequest(request);
+  if ("response" in auth) return auth.response;
+
+  const enrollmentId = getRequiredString(auth.body, "enrollmentId", "Enrollment ID");
+  if ("response" in enrollmentId) return enrollmentId.response;
+
+  const enrollments = await getDB<Enrollment>("enrollments.json");
+  const index = enrollments.findIndex((e) => e.id === enrollmentId.value);
+
+  if (index === -1) {
+    return notFound("Enrollment not found");
+  }
+
+  if (enrollments[index].status !== "revoked" && enrollments[index].status !== "rejected") {
+    return badRequest("Only revoked or rejected enrollments can be deleted.");
+  }
+
+  const [deleted] = enrollments.splice(index, 1);
+  await saveDB("enrollments.json", enrollments);
+
+  return NextResponse.json(
+    { success: true, data: deleted, message: "Enrollment record deleted." },
     {
       headers: {
         "Cache-Control": "no-store, max-age=0",

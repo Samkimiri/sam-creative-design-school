@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
-import type { ContentSettings, CourseContentOverride, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, PromoCode } from "@/types";
+import type { ContentSettings, CourseContentOverride, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, ProgressRecord, PromoCode } from "@/types";
 
 interface Student {
   id: string;
@@ -127,6 +127,7 @@ interface AdminProject {
 
 interface AdminAssignment {
   id: string;
+  studentId?: string;
   studentName: string;
   courseName: string;
   lessonTitle: string;
@@ -176,6 +177,7 @@ interface AdminDashboardPayload {
   reviews?: AdminReview[];
   projects?: AdminProject[];
   assignments?: AdminAssignment[];
+  progress?: ProgressRecord[];
   settings?: AdminSettings;
   analytics?: {
     summary?: AnalyticsSummary;
@@ -386,6 +388,8 @@ export default function AdminDashboard() {
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [projects, setProjects] = useState<AdminProject[]>([]);
   const [assignments, setAssignments] = useState<AdminAssignment[]>([]);
+  const [progress, setProgress] = useState<ProgressRecord[]>([]);
+  const [progressStudentId, setProgressStudentId] = useState<string | null>(null);
   const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
@@ -441,6 +445,7 @@ export default function AdminDashboard() {
         setReviews(Array.isArray(dashboard.reviews) ? dashboard.reviews : []);
         setProjects(Array.isArray(dashboard.projects) ? dashboard.projects : []);
         setAssignments(Array.isArray(dashboard.assignments) ? dashboard.assignments : []);
+        setProgress(Array.isArray(dashboard.progress) ? dashboard.progress : []);
         setVisitorSessions(Array.isArray(dashboard.analytics?.sessions) ? dashboard.analytics.sessions : []);
         setAnalyticsEvents(Array.isArray(dashboard.analytics?.events) ? dashboard.analytics.events : []);
         setAnalyticsSummary(dashboard.analytics?.summary ?? null);
@@ -606,6 +611,20 @@ export default function AdminDashboard() {
         setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, ...updated } : e));
         void fetchData(password);
       }
+    );
+  };
+
+  const deleteEnrollment = async (enrollmentId: string, studentName: string, courseName: string) => {
+    if (!window.confirm(`Permanently delete this ${courseName} enrollment record for ${studentName}? This cannot be undone.`)) return;
+
+    await runMutation<Enrollment>(
+      `enrollment-delete-${enrollmentId}`,
+      "/api/admin/enrollments",
+      { password, enrollmentId },
+      () => {
+        setEnrollments((prev) => prev.filter((e) => e.id !== enrollmentId));
+      },
+      "DELETE"
     );
   };
 
@@ -1403,11 +1422,21 @@ export default function AdminDashboard() {
                             </button>
                           </div>
                         )}
-                        {e.status === "revoked" && (
-                          <span className="text-xs font-bold text-red-700">Revoked</span>
-                        )}
-                        {e.status === "rejected" && (
-                          <span className="text-xs font-bold text-gray-600">Rejected</span>
+                        {(e.status === "revoked" || e.status === "rejected") && (
+                          <div className="flex flex-col items-start gap-1.5">
+                            <span className={`text-xs font-bold ${e.status === "revoked" ? "text-red-700" : "text-gray-600"}`}>
+                              {e.status === "revoked" ? "Revoked" : "Rejected"}
+                            </span>
+                            <button
+                              type="button"
+                              title="Permanently delete this enrollment record to keep the list tidy."
+                              onClick={() => void deleteEnrollment(e.id, e.studentName, e.courseName)}
+                              disabled={pendingAction === `enrollment-delete-${e.id}`}
+                              className={`bg-gray-100 text-gray-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 disabled:opacity-50 ${adminActionMotion}`}
+                            >
+                              {pendingAction === `enrollment-delete-${e.id}` ? "Deleting..." : "Delete"}
+                            </button>
+                          </div>
                         )}
                       </td>
                       </tr>
@@ -1432,11 +1461,12 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4 text-left">Phone</th>
                     <th className="px-6 py-4 text-left">Courses</th>
                     <th className="px-6 py-4 text-left">Joined</th>
+                    <th className="px-6 py-4 text-left">Progress</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {students.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center py-12 text-gray-400">No registered students yet</td></tr>
+                    <tr><td colSpan={6} className="text-center py-12 text-gray-400">No registered students yet</td></tr>
                   ) : students.map((s) => (
                     <tr key={s.id} className={adminRowMotion}>
                       <td className="px-6 py-4">
@@ -1459,6 +1489,15 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-500">{new Date(s.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">
+                        <button
+                          type="button"
+                          onClick={() => setProgressStudentId(s.id)}
+                          className={`font-bold text-primary text-xs hover:underline ${adminActionMotion}`}
+                        >
+                          View Progress
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1466,6 +1505,129 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {progressStudentId && (() => {
+          const progressStudent = students.find((item) => item.id === progressStudentId);
+          if (!progressStudent) return null;
+
+          const studentProgress = progress.filter((p) => p.studentId === progressStudentId);
+          const studentAssignments = assignments.filter((a) => a.studentId === progressStudentId);
+          const studentProjects = projects.filter((p) => p.studentName === progressStudent.name);
+          const enrolledCourseIds = progressStudent.enrolledCourses ?? [];
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+              <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+                <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-4">
+                  <div>
+                    <h3 className="text-lg font-black text-dark">{progressStudent.name}&apos;s Progress</h3>
+                    <p className="text-xs text-gray-500">{progressStudent.email} - {progressStudent.phone}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setProgressStudentId(null)}
+                    className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-600 hover:bg-gray-200"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-5">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-2">Course Progress</h4>
+                    {enrolledCourseIds.length === 0 ? (
+                      <p className="text-sm text-gray-400">Not enrolled in any course yet.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {enrolledCourseIds.map((courseId) => {
+                          const course = courses.find((c) => c.id === courseId);
+                          const courseLessons = lessons.filter((l) => l.courseId === courseId);
+                          const record = studentProgress.find((p) => p.courseId === courseId);
+                          const completed = record?.completedLessons?.length ?? 0;
+                          const total = courseLessons.length;
+                          const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+                          const quizScores = record?.quizScores ?? [];
+                          const avgQuiz = quizScores.length > 0
+                            ? Math.round((quizScores.reduce((sum, q) => sum + (q.total > 0 ? q.score / q.total : 0), 0) / quizScores.length) * 100)
+                            : null;
+
+                          return (
+                            <div key={courseId} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-bold text-dark text-sm">{course?.title || courseId}</span>
+                                <span className="text-xs font-bold text-primary">{percent}% complete</span>
+                              </div>
+                              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                                <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                                <span>{completed} of {total} lessons completed</span>
+                                {avgQuiz !== null && <span>Avg quiz score: {avgQuiz}%</span>}
+                                {record?.lastAccessed && (
+                                  <span>Last accessed: {new Date(record.lastAccessed).toLocaleString()}</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-2">Assignment Submissions</h4>
+                    {studentAssignments.length === 0 ? (
+                      <p className="text-sm text-gray-400">No assignments submitted yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {studentAssignments.map((a) => (
+                          <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-gray-100 px-3 py-2 text-xs">
+                            <div>
+                              <span className="font-bold text-dark">{a.lessonTitle}</span>
+                              <span className="text-gray-400"> - {a.courseName}</span>
+                            </div>
+                            <span className={`rounded-full px-2 py-1 font-bold ${
+                              a.status === "reviewed" ? "bg-green-100 text-green-700"
+                              : a.status === "revision" ? "bg-amber-100 text-amber-700"
+                              : "bg-blue-100 text-blue-700"
+                            }`}>
+                              {a.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-2">Project Gallery Submissions</h4>
+                    {studentProjects.length === 0 ? (
+                      <p className="text-sm text-gray-400">No projects submitted yet.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {studentProjects.map((p) => (
+                          <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg border border-gray-100 px-3 py-2 text-xs">
+                            <div>
+                              <span className="font-bold text-dark">{p.title}</span>
+                              <span className="text-gray-400"> - {p.courseName}</span>
+                            </div>
+                            <span className={`rounded-full px-2 py-1 font-bold ${
+                              p.status === "approved" ? "bg-green-100 text-green-700"
+                              : p.status === "rejected" ? "bg-red-100 text-red-700"
+                              : "bg-yellow-100 text-yellow-700"
+                            }`}>
+                              {p.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {tab === "reviews" && (
           <div key="reviews-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
