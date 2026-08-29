@@ -15,6 +15,7 @@ async function sendTransactionalEmail(input: {
   }
 
   const from = process.env.SCDS_EMAIL_FROM || "Sam Creative Design School <onboarding@resend.dev>";
+  const replyTo = process.env.SCDS_EMAIL_REPLY_TO || "samcreativedesignschool@gmail.com";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
 
@@ -32,6 +33,7 @@ async function sendTransactionalEmail(input: {
         subject: input.subject,
         html: input.html,
         text: input.text,
+        reply_to: replyTo,
       }),
       signal: controller.signal,
     });
