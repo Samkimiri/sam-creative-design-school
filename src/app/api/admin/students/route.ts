@@ -95,10 +95,19 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: true, data: { sent: false, message: "This student hasn't completed a course yet, so a new-course suggestion wouldn't make sense." } });
   }
 
-  const suggestedCourseNames = courses
-    .filter((c) => !enrolledCourseIds.includes(c.id))
-    .slice(0, 3)
-    .map((c) => c.title);
+  const availableCourses = courses.filter((c) => !enrolledCourseIds.includes(c.id));
+  const suggestedCourseIdField = auth.body.suggestedCourseId;
+  let suggestedCourseNames: string[];
+
+  if (typeof suggestedCourseIdField === "string" && suggestedCourseIdField.trim()) {
+    const chosenCourse = availableCourses.find((c) => c.id === suggestedCourseIdField.trim());
+    if (!chosenCourse) {
+      return badRequest("Choose a course the student isn't already enrolled in.");
+    }
+    suggestedCourseNames = [chosenCourse.title];
+  } else {
+    suggestedCourseNames = availableCourses.slice(0, 3).map((c) => c.title);
+  }
 
   const result = await sendNewCourseSuggestionEmail({
     to: student.email,

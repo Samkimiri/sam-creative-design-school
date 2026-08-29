@@ -396,6 +396,7 @@ export default function AdminDashboard() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [progressStudentId, setProgressStudentId] = useState<string | null>(null);
   const [feedbackDraft, setFeedbackDraft] = useState<Record<string, string>>({});
+  const [suggestedCourseByStudent, setSuggestedCourseByStudent] = useState<Record<string, string>>({});
   const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
@@ -636,11 +637,15 @@ export default function AdminDashboard() {
     );
   };
 
-  const sendStudentEmail = async (studentId: string, emailType: "inactivity-nudge" | "new-course-suggestion") => {
+  const sendStudentEmail = async (
+    studentId: string,
+    emailType: "inactivity-nudge" | "new-course-suggestion",
+    suggestedCourseId?: string
+  ) => {
     await runMutation<{ sent: boolean; message?: string }>(
       `student-email-${studentId}-${emailType}`,
       "/api/admin/students",
-      { password, studentId, emailType },
+      { password, studentId, emailType, ...(suggestedCourseId ? { suggestedCourseId } : {}) },
       (result) => {
         setNotice(result.message || (result.sent ? "Email sent." : "Email could not be sent."));
       }
@@ -1577,9 +1582,13 @@ export default function AdminDashboard() {
           const leaderboardIndex = leaderboard.findIndex((entry) => entry.studentId === studentId);
           const leaderboardEntry = leaderboardIndex > -1 ? leaderboard[leaderboardIndex] : null;
 
+          const availableCourses = courses.filter((c) => !enrolledCourseIds.includes(c.id));
+          const selectedSuggestedCourseId = suggestedCourseByStudent[studentId] || availableCourses[0]?.id || "";
+
           const closeModal = () => {
             setProgressStudentId(null);
             setFeedbackDraft({});
+            setSuggestedCourseByStudent({});
           };
 
           return (
@@ -1610,15 +1619,28 @@ export default function AdminDashboard() {
                     >
                       {pendingAction === `student-email-${studentId}-inactivity-nudge` ? "Sending..." : "Send Inactivity Nudge"}
                     </button>
-                    <button
-                      type="button"
-                      title="Email this student suggesting a new course, for after they've completed one"
-                      onClick={() => void sendStudentEmail(studentId, "new-course-suggestion")}
-                      disabled={pendingAction === `student-email-${studentId}-new-course-suggestion`}
-                      className={`rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-50 ${adminActionMotion}`}
-                    >
-                      {pendingAction === `student-email-${studentId}-new-course-suggestion` ? "Sending..." : "Suggest New Course"}
-                    </button>
+                    {availableCourses.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={selectedSuggestedCourseId}
+                          onChange={(e) => setSuggestedCourseByStudent((prev) => ({ ...prev, [studentId]: e.target.value }))}
+                          className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs font-bold text-blue-700 outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          {availableCourses.map((c) => (
+                            <option key={c.id} value={c.id}>{c.title}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          title="Email this student suggesting the selected course, for after they've completed one"
+                          onClick={() => void sendStudentEmail(studentId, "new-course-suggestion", selectedSuggestedCourseId)}
+                          disabled={pendingAction === `student-email-${studentId}-new-course-suggestion` || !selectedSuggestedCourseId}
+                          className={`rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-50 ${adminActionMotion}`}
+                        >
+                          {pendingAction === `student-email-${studentId}-new-course-suggestion` ? "Sending..." : "Suggest This Course"}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
