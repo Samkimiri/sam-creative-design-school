@@ -11,7 +11,10 @@ const imageDataRegex = /^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$
 export async function GET() {
   const projects = await getDB<ProjectSubmission>("projects.json");
   const approved = projects.filter((project) => project.status === "approved");
-  return NextResponse.json({ success: true, data: [...approved, ...seedProjects].slice(0, 24) });
+  return NextResponse.json(
+    { success: true, data: [...approved, ...seedProjects].slice(0, 24) },
+    { headers: { "Cache-Control": "no-store, max-age=0" } }
+  );
 }
 
 export async function POST(request: Request) {

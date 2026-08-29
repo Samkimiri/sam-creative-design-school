@@ -14,7 +14,7 @@ export default function StudentProjects() {
   const approvedProjects = useMemo(() => projects.filter((project) => project.status === "approved"), [projects]);
 
   useEffect(() => {
-    fetch("/api/projects")
+    fetch("/api/projects", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setProjects(data.data);

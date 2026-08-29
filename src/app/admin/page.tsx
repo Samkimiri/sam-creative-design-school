@@ -1702,11 +1702,21 @@ export default function AdminDashboard() {
                               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
                                 <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
                               </div>
-                              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
                                 <span>{completed} of {total} lessons completed</span>
                                 <span>Currently on: {total === 0 ? "-" : currentLesson ? currentLesson.title : "Course completed"}</span>
                                 {record?.lastAccessed && (
                                   <span>Last accessed: {new Date(record.lastAccessed).toLocaleString()}</span>
+                                )}
+                                {total > 0 && completed >= total && (
+                                  <a
+                                    href={`/api/certificates/${courseId}?studentId=${studentId}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="font-bold text-primary hover:underline"
+                                  >
+                                    View Certificate
+                                  </a>
                                 )}
                               </div>
 
