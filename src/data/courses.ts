@@ -147,6 +147,7 @@ export interface Lesson {
   image?: string;
   imageAlt?: string;
   content: string;
+  keyPoints?: string[];
   resources: { name: string; url: string; type: "pdf" | "zip" | "link" }[];
   quiz?: { questions: QuizQuestion[] };
   order: number;
@@ -159,7 +160,13 @@ const baseLessons: Lesson[] = [
     title: "Introduction to the Photoshop Workspace",
     duration: "18:30",
     videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
-    content: "Welcome to SCDS! Photoshop is a Raster-based image editor. Lesson Key Points: 1. Workspace: The Toolbar (V for Move, B for Brush), Options Bar (contextual settings), and Panels (Layers, History). 2. Pixels vs Vectors: Photoshop deals with pixels—tiny squares of color. 3. DPI Standards: Use 72 DPI for web/social media. Use 300 DPI for high-quality printing (Flyers, Posters, Banners). 4. New Document: Press Ctrl+N to start. Always name your files properly from the start.",
+    content: "Overview: Welcome to Sam Creative Design School! Photoshop is a raster-based image editor, which means it works with pixels rather than mathematical paths. This first lesson orients you in the workspace so every later lesson builds on solid footing.\n\nWhy it matters: Understanding pixels versus vectors and choosing the right resolution from day one prevents blurry exports and wasted rework later in the course.",
+    keyPoints: [
+      "Workspace: the Toolbar (V for Move, B for Brush), the Options Bar for contextual settings, and Panels like Layers and History.",
+      "Pixels vs vectors: Photoshop deals with pixels - tiny squares of color that can blur when scaled up too far.",
+      "DPI standards: use 72 DPI for web and social media, and 300 DPI for high-quality printing such as flyers, posters, and banners.",
+      "New document: press Ctrl+N to start, and always name your files properly from the start.",
+    ],
     resources: [{ name: "Workspace Cheatsheet.pdf", url: "#", type: "pdf" }],
     quiz: {
       questions: [
@@ -173,7 +180,13 @@ const baseLessons: Lesson[] = [
     title: "Mastering Layers & Blending Modes",
     duration: "22:15",
     videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
-    content: "Layers are the foundation of non-destructive editing. 1. Layer Order: Elements on top in the panel appear in front on the canvas. 2. Blending Modes: 'Multiply' removes whites (great for textures), 'Screen' removes blacks (great for light effects), and 'Overlay' adds contrast. 3. Opacity vs Fill: Opacity affects the whole layer; Fill doesn't affect layer styles like drop shadows. 4. Organization: Always Group (Ctrl+G) your layers to stay organized.",
+    content: "Overview: Layers are the foundation of non-destructive editing in Photoshop. Instead of editing pixels directly, you stack independent pieces on top of each other so any change can be undone or adjusted later.\n\nWhy it matters: Understanding layer order and blending modes early means you will not have to redo work when a client asks for a change - you simply adjust the relevant layer.",
+    keyPoints: [
+      "Layer order: elements higher in the panel appear in front on the canvas.",
+      "Blending modes: Multiply removes whites (great for textures), Screen removes blacks (great for light effects), and Overlay adds contrast.",
+      "Opacity vs Fill: Opacity affects the whole layer, while Fill does not affect layer styles like drop shadows.",
+      "Organization: group your layers with Ctrl+G to stay organized as a file grows.",
+    ],
     resources: [{ name: "Layer Exercise Assets.zip", url: "#", type: "zip" }],
     quiz: {
       questions: [
@@ -187,7 +200,13 @@ const baseLessons: Lesson[] = [
     title: "Selections & Advanced Masking",
     duration: "25:00",
     videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
-    content: "Cutting out subjects is a core skill. 1. Quick Selection Tool (W): Fast for simple backgrounds. 2. Pen Tool (P): The most precise for smooth edges. 3. Select & Mask Workspace: Use 'Refine Edge' for complex things like hair or fur. 4. Layer Masks: Never use the Eraser tool! Use a mask—White reveals, Black hides. This allows you to bring back parts you've hidden later if you make a mistake.",
+    content: "Overview: Cutting a subject cleanly out of its background is one of the most requested Photoshop skills, from product photography to social media graphics.\n\nWhy it matters: Using layer masks instead of the Eraser tool keeps your edit reversible, so a mistake never means starting over.",
+    keyPoints: [
+      "Quick Selection Tool (W): fast for simple, high-contrast backgrounds.",
+      "Pen Tool (P): the most precise option for smooth, clean edges.",
+      "Select and Mask workspace: use Refine Edge for complex details like hair or fur.",
+      "Layer masks: never use the Eraser tool - a mask lets white reveal and black hide, so you can bring back hidden areas later.",
+    ],
     resources: [{ name: "Cutout Practice Photos.zip", url: "#", type: "zip" }],
     quiz: {
       questions: [
@@ -200,7 +219,13 @@ const baseLessons: Lesson[] = [
     title: "Professional Skin Retouching",
     duration: "28:45",
     videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
-    content: "Learn the secrets of high-end beauty retouching. 1. Spot Healing Brush: Best for quick blemish removal. 2. Clone Stamp (S): Copying pixels from one area to another. 3. Frequency Separation: Splitting the image into Texture (High) and Color (Low) layers. This lets you smooth skin tones without losing the natural texture. 4. Dodge & Burn: Adding highlights and shadows to give the face more depth and structure.",
+    content: "Overview: Professional beauty retouching goes far beyond a simple blur - it separates texture from tone so skin looks natural, not plastic.\n\nWhy it matters: Frequency separation is the single technique that distinguishes amateur retouching from professional beauty work, and it is a skill clients specifically pay for.",
+    keyPoints: [
+      "Spot Healing Brush: best for quick blemish removal.",
+      "Clone Stamp (S): copies pixels from one area of the image to another.",
+      "Frequency separation: splits the image into a texture layer and a color layer, so skin can be smoothed without losing natural detail.",
+      "Dodge and Burn: adds highlights and shadows to give the face more depth and structure.",
+    ],
     resources: [{ name: "Retouching Workflow.pdf", url: "#", type: "pdf" }],
   },
   {
@@ -208,7 +233,13 @@ const baseLessons: Lesson[] = [
     title: "Dynamic Typography & Poster Design",
     duration: "31:20",
     videoUrl: "https://www.youtube.com/embed/IyR_uYsRdPs",
-    content: "Design 101: Hierarchy and Balance. 1. Tracking and Kerning: Adjusting space between letters for better readability. 2. Layer Styles: Using Drop Shadows, Glows, and Inner Shadows to make text pop. 3. Clipping Masks: Putting an image inside your text (Ctrl+Alt+G). 4. Layout: Using the Rule of Thirds to place your elements in a way that catches the eye immediately.",
+    content: "Overview: Strong poster design comes down to two things: hierarchy (what the eye sees first) and balance (how elements sit together on the page).\n\nWhy it matters: A poster with confusing hierarchy loses its message no matter how nice the individual graphics look, so typography and layout decisions matter as much as imagery.",
+    keyPoints: [
+      "Tracking and kerning: adjusting the space between letters for better readability.",
+      "Layer styles: use drop shadows, glows, and inner shadows to make text pop off the background.",
+      "Clipping masks: place an image inside text with Ctrl+Alt+G for a bold editorial effect.",
+      "Layout: use the rule of thirds to place elements where the eye naturally looks first.",
+    ],
     resources: [{ name: "Poster Templates.zip", url: "#", type: "zip" }],
   },
 
@@ -218,7 +249,13 @@ const baseLessons: Lesson[] = [
     title: "Vector vs Raster & UI Layout",
     duration: "16:40",
     videoUrl: "https://www.youtube.com/embed/Ib8UBwu3yGA",
-    content: "Illustrator is the king of branding. 1. Vectors: Made of points and paths. They never pixelate, no matter how big you scale them. 2. Artboards: Like separate pages in one file. 3. Selection (V) vs Direct Selection (A): Use A to select individual points on a path. 4. Print vs Web: Always use CMYK color mode for logos that will be printed in Kenya. RGB is for screens only.",
+    content: "Overview: Illustrator is built for branding work because vector artwork stays crisp at any size - from a business card to a billboard.\n\nWhy it matters: Choosing the correct color mode and understanding vectors from lesson one avoids the most common beginner mistake: designing a logo that looks blurry once it is printed large.",
+    keyPoints: [
+      "Vectors: made of points and paths, so they never pixelate no matter how large you scale them.",
+      "Artboards: work like separate pages inside one Illustrator file.",
+      "Selection (V) vs Direct Selection (A): use Direct Selection to edit individual points on a path.",
+      "Print vs web: use CMYK color mode for logos that will be printed, and RGB only for screens.",
+    ],
     resources: [{ name: "Vector Basics.pdf", url: "#", type: "pdf" }],
     quiz: {
       questions: [
@@ -231,7 +268,13 @@ const baseLessons: Lesson[] = [
     title: "The Holy Grail: Pen Tool Mastery",
     duration: "29:15",
     videoUrl: "https://www.youtube.com/embed/Ib8UBwu3yGA",
-    content: "If you master the Pen Tool, you can design anything. 1. Anchor Points: Click for sharp corners, Click and Drag for curves. 2. Handle Management: Hold Alt to break a handle for a sharp change in direction. 3. Curvature Tool: A faster way to make smooth curves for beginners. 4. Practice: Tracing logos is the best way to train your hand and eye for precision.",
+    content: "Overview: The Pen Tool is the single most important tool in Illustrator - once you can control it confidently, you can draw almost any shape you can imagine.\n\nWhy it matters: Clean, minimal anchor points are what separate a professional vector file from a messy one that is hard to edit later.",
+    keyPoints: [
+      "Anchor points: click for sharp corners, or click and drag for smooth curves.",
+      "Handle management: hold Alt to break a handle when you need a sharp change in direction.",
+      "Curvature Tool: a faster, beginner-friendly way to draw smooth curves.",
+      "Practice: tracing existing logos is one of the fastest ways to train your hand and eye for precision.",
+    ],
     resources: [{ name: "Pen Tool Tracing Pack.pdf", url: "#", type: "pdf" }],
   },
   {
@@ -239,7 +282,13 @@ const baseLessons: Lesson[] = [
     title: "Shape Builder & Logo Construction",
     duration: "25:30",
     videoUrl: "https://www.youtube.com/embed/Ib8UBwu3yGA",
-    content: "Most great logos are just simple shapes combined. 1. Shape Builder (Shift+M): Drag over parts of shapes to join them, or Alt+Click to delete them. 2. Pathfinder: A panel version of the shape builder—Unite, Minus Front, Intersect. 3. Grids: Using circles and lines to create a balanced 'Golden Ratio' logo. 4. Expanding: Turning strokes into shapes so they scale correctly.",
+    content: "Overview: Many iconic logos are built from a handful of simple shapes combined cleverly, not complex illustration.\n\nWhy it matters: Learning Shape Builder and Pathfinder means you can construct clean, geometric logos quickly instead of hand-drawing every curve.",
+    keyPoints: [
+      "Shape Builder (Shift+M): drag over shapes to join them, or Alt+click to remove parts.",
+      "Pathfinder: a panel-based alternative for uniting, subtracting, or intersecting shapes.",
+      "Grids: use circles and lines to build a balanced, golden-ratio-style logo structure.",
+      "Expanding: convert strokes into filled shapes so the logo scales correctly everywhere.",
+    ],
     resources: [{ name: "Logo Grid Template.zip", url: "#", type: "zip" }],
   },
 
@@ -249,7 +298,13 @@ const baseLessons: Lesson[] = [
     title: "Viral Video Foundations",
     duration: "14:20",
     videoUrl: "https://www.youtube.com/embed/nEwHL9GRuFk",
-    content: "TikTok and Reels are taking over. 1. Aspect Ratios: 9:16 is for mobile (Shorts/Reels). 16:9 is for YouTube/TV. 2. The Timeline: Scrubbing, cutting, and trimming. 3. Audio Extraction: Taking music from one video and using it on yours. 4. Smooth Cuts: Removing gaps between words to keep the energy high and the audience watching.",
+    content: "Overview: Short-form video on TikTok, Reels, and Shorts has become one of the most important skills for any creator or small business to have.\n\nWhy it matters: Getting the basics right - the correct aspect ratio, a clean timeline, and tight cuts - matters more to viewer retention than any fancy effect.",
+    keyPoints: [
+      "Aspect ratios: use 9:16 for mobile-first platforms like Reels and Shorts, and 16:9 for YouTube or TV.",
+      "The timeline: get comfortable scrubbing, cutting, and trimming clips precisely.",
+      "Audio extraction: pull the audio track from one video to reuse on another.",
+      "Smooth cuts: remove gaps and dead air between words to keep the energy high and viewers watching.",
+    ],
     resources: [{ name: "Practice Clips.zip", url: "#", type: "zip" }],
     quiz: {
       questions: [
@@ -262,7 +317,13 @@ const baseLessons: Lesson[] = [
     title: "Transitions & Keyframe Animation",
     duration: "22:10",
     videoUrl: "https://www.youtube.com/embed/nEwHL9GRuFk",
-    content: "Motion is emotion. 1. Keyframes: Setting a 'Start' and 'End' point for an effect. Use them for custom zooms and sliding text. 2. Overlays: Putting one video on top of another. 3. Blending: Making overlays look like they are part of the original scene. 4. Velocity Editing: Speeding up and slowing down clips for dramatic impact.",
+    content: "Overview: Motion carries emotion in video - a well-timed zoom or slide can make a moment feel exciting, while a static shot can feel flat.\n\nWhy it matters: Keyframes and velocity editing are what separate a scroll-stopping edit from a plain one, and both are core CapCut skills used constantly by professional editors.",
+    keyPoints: [
+      "Keyframes: set a start and end point for an effect, useful for custom zooms and sliding text.",
+      "Overlays: layer one video on top of another for creative effects.",
+      "Blending: adjust overlays so they look like a natural part of the original scene.",
+      "Velocity editing: speed up or slow down clips for dramatic impact.",
+    ],
     resources: [],
   },
 
@@ -272,7 +333,13 @@ const baseLessons: Lesson[] = [
     title: "Precision Sketching & Smart Dimensions",
     duration: "26:00",
     videoUrl: "https://www.youtube.com/embed/1du6w97Rsm4",
-    content: "Engineering requires 100% accuracy. 1. Relations: Horizontal, Vertical, Tangent, and Coincident. These tell lines how to behave. 2. Smart Dimensions: Driving the size of your sketch with numbers. 3. Fully Defined Sketches: When your lines turn Black, it means they can't move accidentally. Blue lines are dangerous in engineering! 4. Mirror Entities: Designing one half and mirroring it to save time and ensure symmetry.",
+    content: "Overview: Engineering design demands precision, and SolidWorks gives you the tools to describe exact geometry rather than approximate shapes.\n\nWhy it matters: A sketch that is not fully defined can shift unexpectedly when you change a dimension later, which is one of the most common causes of broken CAD models.",
+    keyPoints: [
+      "Relations: horizontal, vertical, tangent, and coincident relations tell lines how to behave.",
+      "Smart Dimensions: drive the size of your sketch using numeric values instead of dragging by eye.",
+      "Fully defined sketches: black lines mean geometry cannot move accidentally - blue lines are a warning sign in engineering.",
+      "Mirror Entities: design one half of a symmetric part and mirror it to save time and guarantee symmetry.",
+    ],
     resources: [{ name: "Sketch Exercises.pdf", url: "#", type: "pdf" }],
     quiz: {
       questions: [
@@ -286,7 +353,13 @@ const baseLessons: Lesson[] = [
     title: "3D Extrusions & Revolves",
     duration: "31:15",
     videoUrl: "https://www.youtube.com/embed/cIKOwZhzh6Q",
-    content: "Turning 2D into 3D. 1. Extrude Boss/Base: Giving thickness to a sketch. 2. Revolve: Spinning a profile around an axis (great for bottles, wheels, and gears). 3. Extrude Cut: Removing material. 4. Fillet & Chamfer: Rounding or flattening edges for safety and aesthetics in manufacturing.",
+    content: "Overview: Once a 2D sketch is fully defined, SolidWorks lets you turn it into real 3D geometry using a small set of core features.\n\nWhy it matters: Extrude, Revolve, and Cut are used in almost every part you will ever model, so mastering them here makes every later lesson faster.",
+    keyPoints: [
+      "Extrude Boss/Base: gives a flat sketch real thickness.",
+      "Revolve: spins a profile around an axis - ideal for bottles, wheels, and gears.",
+      "Extrude Cut: removes material from an existing solid.",
+      "Fillet and Chamfer: round or flatten edges for safety and manufacturing quality.",
+    ],
     resources: [{ name: "Part Design Brief.pdf", url: "#", type: "pdf" }],
   }
 ];
@@ -349,6 +422,13 @@ type CourseModuleVoice = {
   workflow: string;
 };
 
+function splitIntoSentences(text: string): string[] {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+}
+
 function createModuleLessons(
   courseId: string,
   prefix: string,
@@ -391,6 +471,9 @@ ${bridge} ${module.theme}
 ${voice.expertNotes}
 
 ${voice.workflow}${checkpointRecap}`,
+        keyPoints: isModuleCheckpoint
+          ? [`Review checkpoint covering: ${module.lessons.slice(0, -1).join(", ")}.`, ...splitIntoSentences(module.theme)]
+          : [`This lesson's focus: ${lessonTitle}.`, ...splitIntoSentences(module.theme)],
         resources: [{ name: `${courseLabel} ${module.title} Workbook.pdf`, url: "#", type: "pdf" }],
         ...(isModuleCheckpoint
           ? {
@@ -550,6 +633,7 @@ Production workflow: define the objective and audience, assemble a rough version
 Practice task: ${plan.practice}
 
 Portfolio checkpoint: save the final export, one timeline screenshot, one before-after comparison where relevant, and three notes explaining what improved in this lesson compared to the previous one.`,
+    keyPoints: [...splitIntoSentences(plan.theme), `Practice focus: ${plan.practice}`],
     resources: [{ name: `${plan.title} Workbook.pdf`, url: "#", type: "pdf" }],
     quiz: {
       questions: [
@@ -632,6 +716,7 @@ ${plan.voice.workflow}
 Practice task: ${lesson.practice}
 
 Portfolio checkpoint: ${plan.voice.checkpointClosing}`,
+      keyPoints: [...splitIntoSentences(lesson.theme), `Practice focus: ${lesson.practice}`],
       resources: [{ name: `${lesson.title} Workbook.pdf`, url: "#", type: "pdf" }],
       quiz: {
         questions: [
@@ -1052,122 +1137,122 @@ const aiPromptLessons = createModuleLessons(
 );
 
 const enhancedContent: Record<string, string> = {
-  "ps-1": `Photoshop is a raster image editor, which means it builds images using pixels. This is perfect for photo editing, posters, banners, mockups, social media graphics, and digital artwork. The most important idea in this lesson is workspace control: when you know where tools, panels, and document settings live, you stop guessing and start working like a designer.
+  "ps-1": `Overview: Photoshop is a raster image editor, which means it builds images using pixels. This is perfect for photo editing, posters, banners, mockups, social media graphics, and digital artwork. The most important idea in this lesson is workspace control: when you know where tools, panels, and document settings live, you stop guessing and start working like a designer.
 
-The Toolbar holds the tools you use directly on the canvas. The Move Tool (V) positions layers, the Brush Tool (B) paints, the Type Tool (T) creates text, and selection tools help isolate parts of an image. The Options Bar changes depending on the selected tool, so always check it before assuming a tool is not working.
+Toolbar and options bar: The Toolbar holds the tools you use directly on the canvas. The Move Tool (V) positions layers, the Brush Tool (B) paints, the Type Tool (T) creates text, and selection tools help isolate parts of an image. The Options Bar changes depending on the selected tool, so always check it before assuming a tool is not working.
 
-The Layers panel is where professional Photoshop work happens. Each image, text object, shape, or adjustment can sit on its own layer. This allows you to edit one part without damaging the rest of the design. The History panel helps you step backward, but good designers rely more on layers, masks, and smart objects than on undo.
+Layers panel: The Layers panel is where professional Photoshop work happens. Each image, text object, shape, or adjustment can sit on its own layer. This allows you to edit one part without damaging the rest of the design. The History panel helps you step backward, but good designers rely more on layers, masks, and smart objects than on undo.
 
-Document setup matters before design begins. Use 72 DPI for screen graphics like WhatsApp posters and social media posts. Use 300 DPI for print work such as flyers, certificates, posters, banners, and business cards. RGB is normally for screens; CMYK is safer for print. Always name your file properly and save a PSD copy so you can edit layers later.
+Document setup: Document setup matters before design begins. Use 72 DPI for screen graphics like WhatsApp posters and social media posts. Use 300 DPI for print work such as flyers, certificates, posters, banners, and business cards. RGB is normally for screens; CMYK is safer for print. Always name your file properly and save a PSD copy so you can edit layers later.
 
-From the full Photoshop Masterclass notes, remember that graphic design is not just decoration. It communicates, persuades, builds identity, and captures attention. A poster, flyer, or social media advert should have a clear message, a target audience, and a reason for every visual decision.
+Why design matters: Graphic design is not just decoration. It communicates, persuades, builds identity, and captures attention. A poster, flyer, or social media advert should have a clear message, a target audience, and a reason for every visual decision.
 
-The main design elements are line, shape, color, typography, texture, and space. Lines guide the eye, shapes structure information, color creates emotion, typography controls readability, texture adds feeling, and white space gives the design breathing room. The core principles are balance, contrast, emphasis, alignment, proximity, repetition, movement, and unity. Before opening Photoshop, ask: What should the viewer notice first? What should they do after seeing the design?
+Design elements and principles: The main design elements are line, shape, color, typography, texture, and space. Lines guide the eye, shapes structure information, color creates emotion, typography controls readability, texture adds feeling, and white space gives the design breathing room. The core principles are balance, contrast, emphasis, alignment, proximity, repetition, movement, and unity. Before opening Photoshop, ask: What should the viewer notice first? What should they do after seeing the design?
 
-File formats matter in professional delivery. Save editable work as PSD. Export JPEG for photos and online sharing, PNG for transparent graphics and logos, PDF/TIFF for print, GIF for simple animation, and SVG only when preserving vector-style web graphics. A good workflow is: save the PSD first, then export the final version required by the client or platform.`,
-  "ps-2": `Layers are the foundation of non-destructive editing. A layer is like a transparent sheet placed above or below other sheets. The order matters: layers at the top of the panel appear in front on the canvas, while layers below appear behind.
+File formats: File formats matter in professional delivery. Save editable work as PSD. Export JPEG for photos and online sharing, PNG for transparent graphics and logos, PDF/TIFF for print, GIF for simple animation, and SVG only when preserving vector-style web graphics. A good workflow is: save the PSD first, then export the final version required by the client or platform.`,
+  "ps-2": `Overview: Layers are the foundation of non-destructive editing. A layer is like a transparent sheet placed above or below other sheets. The order matters: layers at the top of the panel appear in front on the canvas, while layers below appear behind.
 
-Good layer habits make your work faster and cleaner. Rename important layers, group related items with Ctrl+G, and keep text, images, backgrounds, and effects separated. When a client asks for changes, organized layers save time and make you look professional.
+Good habits: Good layer habits make your work faster and cleaner. Rename important layers, group related items with Ctrl+G, and keep text, images, backgrounds, and effects separated. When a client asks for changes, organized layers save time and make you look professional.
 
-Blending modes change how a layer interacts with the layers underneath it. Multiply is useful when you want to darken or remove white areas, such as adding paper texture or shadows. Screen is useful for removing black areas, especially light leaks, sparks, glows, and lens effects. Overlay increases contrast by combining light and dark information.
+Blending modes: Blending modes change how a layer interacts with the layers underneath it. Multiply is useful when you want to darken or remove white areas, such as adding paper texture or shadows. Screen is useful for removing black areas, especially light leaks, sparks, glows, and lens effects. Overlay increases contrast by combining light and dark information.
 
-Opacity affects the whole layer, including effects. Fill affects the layer content but can leave layer styles such as shadows or strokes visible. This difference is useful when creating advanced text effects, watermarks, and subtle overlays.
+Opacity vs fill: Opacity affects the whole layer, including effects. Fill affects the layer content but can leave layer styles such as shadows or strokes visible. This difference is useful when creating advanced text effects, watermarks, and subtle overlays.
 
-Layer types include normal raster layers, text layers, shape layers, adjustment layers, fill layers, smart objects, and the locked background layer. Text and shape layers remain editable until rasterized. Adjustment layers are especially important because they change brightness, contrast, hue, saturation, and tone without permanently damaging the image.
+Layer types: Layer types include normal raster layers, text layers, shape layers, adjustment layers, fill layers, smart objects, and the locked background layer. Text and shape layers remain editable until rasterized. Adjustment layers are especially important because they change brightness, contrast, hue, saturation, and tone without permanently damaging the image.
 
-Layer styles are non-destructive effects added from the fx button or Blending Options. Drop Shadow separates an object from the background. Inner Shadow creates an engraved feeling. Outer Glow and Inner Glow help with neon, light, and emphasis. Stroke adds an outline. Gradient Overlay and Pattern Overlay add stylish fills. Bevel and Emboss can create a raised or carved 3D look, but should be used carefully so the design does not look cheap.
+Layer styles: Layer styles are non-destructive effects added from the fx button or Blending Options. Drop Shadow separates an object from the background. Inner Shadow creates an engraved feeling. Outer Glow and Inner Glow help with neon, light, and emphasis. Stroke adds an outline. Gradient Overlay and Pattern Overlay add stylish fills. Bevel and Emboss can create a raised or carved 3D look, but should be used carefully so the design does not look cheap.
 
-Use layer groups when a design becomes complex. Group backgrounds, images, text, effects, and call-to-action elements separately. Copy and paste layer styles when several elements need the same visual treatment. This keeps posters, mockups, and social media templates consistent and easier to edit.`,
-  "ps-3": `Selections allow you to work on one part of an image without affecting everything else. A strong designer knows when to use fast tools and when to use precise tools. Quick Selection is useful for simple subjects with clear edges. The Pen Tool is better for products, logos, hard edges, and professional cutouts.
+Organization tip: Use layer groups when a design becomes complex. Group backgrounds, images, text, effects, and call-to-action elements separately. Copy and paste layer styles when several elements need the same visual treatment. This keeps posters, mockups, and social media templates consistent and easier to edit.`,
+  "ps-3": `Overview: Selections allow you to work on one part of an image without affecting everything else. A strong designer knows when to use fast tools and when to use precise tools. Quick Selection is useful for simple subjects with clear edges. The Pen Tool is better for products, logos, hard edges, and professional cutouts.
 
-Masking is better than erasing. When you erase, pixels are destroyed. When you mask, pixels are only hidden. In a layer mask, white reveals and black hides. Gray partially hides. This means you can correct mistakes later, soften edges, and blend images naturally.
+Masking vs erasing: Masking is better than erasing. When you erase, pixels are destroyed. When you mask, pixels are only hidden. In a layer mask, white reveals and black hides. Gray partially hides. This means you can correct mistakes later, soften edges, and blend images naturally.
 
-Select and Mask is especially important for hair, fur, fabric, and soft edges. Tools like Refine Edge help Photoshop detect fine details that normal selections miss. After cutting out a subject, check the edges against both light and dark backgrounds because mistakes often hide on one background but show on another.
+Select and Mask workspace: Select and Mask is especially important for hair, fur, fabric, and soft edges. Tools like Refine Edge help Photoshop detect fine details that normal selections miss. After cutting out a subject, check the edges against both light and dark backgrounds because mistakes often hide on one background but show on another.
 
-A clean cutout should match the lighting, color, sharpness, and shadows of the new background. Selection is only the first step; believable compositing also needs adjustment layers, shadows, and edge cleanup.
+Believable compositing: A clean cutout should match the lighting, color, sharpness, and shadows of the new background. Selection is only the first step; believable compositing also needs adjustment layers, shadows, and edge cleanup.
 
-Selections can be modified after creation. Feather softens the edge, invert selects the opposite area, and expand or contract adjusts the selection boundary. Ctrl+T opens Free Transform, where you can resize, rotate, flip, warp, distort, and change perspective. These tools are useful when placing products, people, or text into a composition.
+Modifying selections: Selections can be modified after creation. Feather softens the edge, invert selects the opposite area, and expand or contract adjusts the selection boundary. Ctrl+T opens Free Transform, where you can resize, rotate, flip, warp, distort, and change perspective. These tools are useful when placing products, people, or text into a composition.
 
-Content-Aware Fill, Healing Brush, Spot Healing Brush, and Patch Tool help remove unwanted objects and repair image areas. Spot Healing automatically blends small marks. Healing Brush lets you choose a clean source area. Patch Tool is useful for larger repairs where texture must match the surrounding area.
+Repair tools: Content-Aware Fill, Healing Brush, Spot Healing Brush, and Patch Tool help remove unwanted objects and repair image areas. Spot Healing automatically blends small marks. Healing Brush lets you choose a clean source area. Patch Tool is useful for larger repairs where texture must match the surrounding area.
 
-Filters are creative and corrective tools. Gaussian Blur softens backgrounds and shadows. Motion Blur creates speed. Smart Sharpen and High Pass improve detail. Add Noise adds grain or realism. Reduce Noise cleans low-light photos. Emboss, Oil Paint, Lens Flare, Clouds, Lighting Effects, and Displace can create special visual styles. Convert a layer to a Smart Object before applying filters so the effect stays editable as a Smart Filter.`,
-  "ps-4": `Professional skin retouching is about improving a portrait while keeping the person natural. The goal is not to remove all texture. Real skin has pores, small lines, and tone variation. Over-smoothing makes a face look plastic and unprofessional.
+Filters: Filters are creative and corrective tools. Gaussian Blur softens backgrounds and shadows. Motion Blur creates speed. Smart Sharpen and High Pass improve detail. Add Noise adds grain or realism. Reduce Noise cleans low-light photos. Emboss, Oil Paint, Lens Flare, Clouds, Lighting Effects, and Displace can create special visual styles. Convert a layer to a Smart Object before applying filters so the effect stays editable as a Smart Filter.`,
+  "ps-4": `Overview: Professional skin retouching is about improving a portrait while keeping the person natural. The goal is not to remove all texture. Real skin has pores, small lines, and tone variation. Over-smoothing makes a face look plastic and unprofessional.
 
-Start with basic cleanup. Use Spot Healing Brush for small blemishes, dust, or temporary marks. Use Clone Stamp when you need more control over the source area. Work on a separate empty layer where possible so the original photo remains safe.
+Basic cleanup: Start with basic cleanup. Use Spot Healing Brush for small blemishes, dust, or temporary marks. Use Clone Stamp when you need more control over the source area. Work on a separate empty layer where possible so the original photo remains safe.
 
-Frequency separation separates texture from color and tone. The high-frequency layer keeps pores and fine details. The low-frequency layer holds color transitions and smoothness. This allows you to even out blotchy tones without destroying natural texture.
+Frequency separation: Frequency separation separates texture from color and tone. The high-frequency layer keeps pores and fine details. The low-frequency layer holds color transitions and smoothness. This allows you to even out blotchy tones without destroying natural texture.
 
-Dodge and Burn is used to shape light. Dodging brightens; burning darkens. With careful low-opacity strokes, you can reduce harsh shadows, enhance cheekbones, and guide attention to the face. Always zoom out often to avoid over-editing.
+Dodge and burn: Dodge and Burn is used to shape light. Dodging brightens; burning darkens. With careful low-opacity strokes, you can reduce harsh shadows, enhance cheekbones, and guide attention to the face. Always zoom out often to avoid over-editing.
 
-The masterclass notes connect retouching to blending modes and filters. Soft Light and Overlay are useful for subtle skin tone enhancement, while Gaussian Blur can support controlled softening when applied carefully through masks or Smart Filters. Avoid applying blur directly to the whole face; protect eyes, lips, eyebrows, hair, and important texture.
+Blending modes and filters: Retouching connects to blending modes and filters. Soft Light and Overlay are useful for subtle skin tone enhancement, while Gaussian Blur can support controlled softening when applied carefully through masks or Smart Filters. Avoid applying blur directly to the whole face; protect eyes, lips, eyebrows, hair, and important texture.
 
-A clean retouching workflow is: duplicate or create a safe working layer, remove temporary marks with healing tools, correct tone with adjustment layers, refine texture carefully, then shape light with Dodge and Burn. Work at low opacity, compare before and after often, and stop before the person starts looking artificial.
+Retouching workflow: A clean retouching workflow is: duplicate or create a safe working layer, remove temporary marks with healing tools, correct tone with adjustment layers, refine texture carefully, then shape light with Dodge and Burn. Work at low opacity, compare before and after often, and stop before the person starts looking artificial.
 
-For product or portrait work, final sharpening should be selective. High Pass with Overlay or Soft Light can sharpen important details, but too much sharpening creates halos and rough skin. The goal is clean, believable improvement, not an obvious filter effect.`,
-  "ps-5": `Typography is visual communication. A poster can have beautiful images and still fail if the text is hard to read. Good type design uses hierarchy: the most important message should be seen first, then supporting information, then details.
+Final sharpening: For product or portrait work, final sharpening should be selective. High Pass with Overlay or Soft Light can sharpen important details, but too much sharpening creates halos and rough skin. The goal is clean, believable improvement, not an obvious filter effect.`,
+  "ps-5": `Overview: Typography is visual communication. A poster can have beautiful images and still fail if the text is hard to read. Good type design uses hierarchy: the most important message should be seen first, then supporting information, then details.
 
-Tracking controls space across a group of letters. Kerning controls space between individual letter pairs. Leading controls space between lines. Adjust these carefully to make headlines feel polished and body text comfortable to read.
+Tracking, kerning, and leading: Tracking controls space across a group of letters. Kerning controls space between individual letter pairs. Leading controls space between lines. Adjust these carefully to make headlines feel polished and body text comfortable to read.
 
-Layer styles can help text stand out, but they must be controlled. Drop shadows, strokes, glows, and gradients should support readability, not distract from it. If the background is busy, add contrast with a dark overlay, a soft shadow, or a simple shape behind the text.
+Layer styles for text: Layer styles can help text stand out, but they must be controlled. Drop shadows, strokes, glows, and gradients should support readability, not distract from it. If the background is busy, add contrast with a dark overlay, a soft shadow, or a simple shape behind the text.
 
-Poster layout depends on balance and alignment. Use grids, margins, and the rule of thirds to position elements. Keep related information close together, leave breathing space, and avoid putting every element at the same size. A strong poster guides the eye deliberately.
+Layout and balance: Poster layout depends on balance and alignment. Use grids, margins, and the rule of thirds to position elements. Keep related information close together, leave breathing space, and avoid putting every element at the same size. A strong poster guides the eye deliberately.
 
-Text spacing is part of professional typography. Kerning adjusts space between two specific letters, tracking adjusts spacing across a word or phrase, leading controls line spacing, and paragraph spacing controls the gap before or after text blocks. Baseline shift moves selected characters up or down for special effects such as superscripts, subscripts, or stylized titles.
+Typography detail: Text spacing is part of professional typography. Kerning adjusts space between two specific letters, tracking adjusts spacing across a word or phrase, leading controls line spacing, and paragraph spacing controls the gap before or after text blocks. Baseline shift moves selected characters up or down for special effects such as superscripts, subscripts, or stylized titles.
 
-For logo and brand projects, begin with research, rough sketches, color psychology, and font pairing before designing in Photoshop. Keep logos simple, memorable, versatile, relevant, and original. Test the logo in black and white first, then apply color. Use guides, rulers, shape tools, the Pen Tool, Smart Objects, and layer styles carefully.
+Logo and brand projects: For logo and brand projects, begin with research, rough sketches, color psychology, and font pairing before designing in Photoshop. Keep logos simple, memorable, versatile, relevant, and original. Test the logo in black and white first, then apply color. Use guides, rulers, shape tools, the Pen Tool, Smart Objects, and layer styles carefully.
 
-Poster and social media work should use the correct size and export settings. Instagram square posts are commonly 1080x1080, stories and vertical reels are 1080x1920, and print posters need 300 DPI with safe margins. Use high-quality images, readable fonts, a clear focal point, and enough spacing. For mockups, place artwork into Smart Objects so the design updates naturally on t-shirts, business cards, billboards, or phone screens.
+Export sizes: Poster and social media work should use the correct size and export settings. Instagram square posts are commonly 1080x1080, stories and vertical reels are 1080x1920, and print posters need 300 DPI with safe margins. Use high-quality images, readable fonts, a clear focal point, and enough spacing. For mockups, place artwork into Smart Objects so the design updates naturally on t-shirts, business cards, billboards, or phone screens.
 
 Final project workflow: create the logo, poster, and social media design in organized folders; save PSD files for future editing; export PNG for transparent designs, JPG for photos, and PDF/TIFF for print. Keep separate folders for project files, assets, and final exports so client work stays professional.`,
-  "ai-1": `Illustrator is a vector design tool. Vector artwork is built from paths, anchor points, curves, and fills instead of pixels. This means a logo can scale from a small social media icon to a billboard without becoming blurry.
+  "ai-1": `Overview: Illustrator is a vector design tool. Vector artwork is built from paths, anchor points, curves, and fills instead of pixels. This means a logo can scale from a small social media icon to a billboard without becoming blurry.
 
-Raster images depend on resolution. If you enlarge a small raster image too much, it pixelates. Vector artwork stays sharp because Illustrator recalculates the shape mathematically. This is why logos, icons, typography, packaging marks, and brand assets are usually created in Illustrator.
+Why vectors matter: Raster images depend on resolution. If you enlarge a small raster image too much, it pixelates. Vector artwork stays sharp because Illustrator recalculates the shape mathematically. This is why logos, icons, typography, packaging marks, and brand assets are usually created in Illustrator.
 
-Artboards work like separate pages inside one document. You can create a logo, business card, letterhead, and social media layout in the same file using different artboards. This keeps a brand project organized.
+Artboards: Artboards work like separate pages inside one document. You can create a logo, business card, letterhead, and social media layout in the same file using different artboards. This keeps a brand project organized.
 
-Use RGB for screen work and CMYK for print work. RGB is built for light on screens, while CMYK is built for ink. For logos that will be printed in Kenya, CMYK setup helps reduce unexpected color shifts.`,
-  "ai-2": `The Pen Tool is one of the most powerful tools in Illustrator because it gives exact control over paths. Clicking creates corner points. Clicking and dragging creates curved points with handles. The direction and length of handles control the smoothness of a curve.
+Color modes: Use RGB for screen work and CMYK for print work. RGB is built for light on screens, while CMYK is built for ink. For logos that will be printed in Kenya, CMYK setup helps reduce unexpected color shifts.`,
+  "ai-2": `Overview: The Pen Tool is one of the most powerful tools in Illustrator because it gives exact control over paths. Clicking creates corner points. Clicking and dragging creates curved points with handles. The direction and length of handles control the smoothness of a curve.
 
-Good Pen Tool work uses fewer points, not more. Too many points create bumpy curves and make editing difficult. Place anchor points at major direction changes, then use handles to shape the curve between them.
+Fewer points, cleaner curves: Good Pen Tool work uses fewer points, not more. Too many points create bumpy curves and make editing difficult. Place anchor points at major direction changes, then use handles to shape the curve between them.
 
-Holding Alt lets you break or adjust handles when a path needs to change direction sharply. Direct Selection (A) lets you move individual anchor points and handles after drawing. This is how you refine rough paths into clean professional shapes.
+Handle control: Holding Alt lets you break or adjust handles when a path needs to change direction sharply. Direct Selection (A) lets you move individual anchor points and handles after drawing. This is how you refine rough paths into clean professional shapes.
 
-Tracing logos is excellent practice because it trains your eye to see curves, corners, spacing, and symmetry. Start slowly. Accuracy matters more than speed. With time, your hand becomes faster because your eye understands the shape.`,
-  "ai-3": `Most strong logos are built from simple shapes. Circles, rectangles, triangles, and lines can combine into memorable marks when spacing, proportion, and alignment are controlled.
+Practice tip: Tracing logos is excellent practice because it trains your eye to see curves, corners, spacing, and symmetry. Start slowly. Accuracy matters more than speed. With time, your hand becomes faster because your eye understands the shape.`,
+  "ai-3": `Overview: Most strong logos are built from simple shapes. Circles, rectangles, triangles, and lines can combine into memorable marks when spacing, proportion, and alignment are controlled.
 
-Shape Builder (Shift+M) lets you merge or remove overlapping shapes visually. Drag through regions to combine them. Hold Alt and click to delete unwanted parts. It is often faster and more intuitive than using Pathfinder buttons.
+Shape Builder: Shape Builder (Shift+M) lets you merge or remove overlapping shapes visually. Drag through regions to combine them. Hold Alt and click to delete unwanted parts. It is often faster and more intuitive than using Pathfinder buttons.
 
-Pathfinder performs similar operations through commands such as Unite, Minus Front, Intersect, and Divide. Use it when you need precise boolean operations. After combining shapes, inspect anchor points and clean any unnecessary complexity.
+Pathfinder: Pathfinder performs similar operations through commands such as Unite, Minus Front, Intersect, and Divide. Use it when you need precise boolean operations. After combining shapes, inspect anchor points and clean any unnecessary complexity.
 
-Logo construction should consider balance, readability, and scalability. A logo must work in one color, at small sizes, and on different backgrounds. Before adding color effects, test the mark in black and white.`,
-  "cc-1": `Short-form video succeeds when the viewer understands the message quickly. The first few seconds matter most. A strong opening hook, clear subject, and fast rhythm help keep people watching.
+Logo construction checklist: Logo construction should consider balance, readability, and scalability. A logo must work in one color, at small sizes, and on different backgrounds. Before adding color effects, test the mark in black and white.`,
+  "cc-1": `Overview: Short-form video succeeds when the viewer understands the message quickly. The first few seconds matter most. A strong opening hook, clear subject, and fast rhythm help keep people watching.
 
-Aspect ratio controls where the video fits. Use 9:16 for TikTok, Instagram Reels, YouTube Shorts, and WhatsApp Status. Use 16:9 for YouTube landscape, presentations, and TV-style content. Choosing the wrong ratio can crop important details.
+Aspect ratio: Aspect ratio controls where the video fits. Use 9:16 for TikTok, Instagram Reels, YouTube Shorts, and WhatsApp Status. Use 16:9 for YouTube landscape, presentations, and TV-style content. Choosing the wrong ratio can crop important details.
 
-Good timeline editing removes dead space. Cut pauses, repeated words, and weak moments. Keep the strongest clips and arrange them so the video keeps moving. Audio also matters: clean sound, beat timing, and captions can make a simple edit feel professional.
+Timeline editing: Good timeline editing removes dead space. Cut pauses, repeated words, and weak moments. Keep the strongest clips and arrange them so the video keeps moving. Audio also matters: clean sound, beat timing, and captions can make a simple edit feel professional.
 
-Captions help viewers understand even when sound is off. Use readable fonts, strong contrast, and short caption lines. Avoid covering faces, products, or important action with text.`,
-  "cc-2": `Keyframes create motion over time. You set a starting value and an ending value, and CapCut animates the change between them. This can control position, scale, rotation, opacity, and other effects.
+Captions: Captions help viewers understand even when sound is off. Use readable fonts, strong contrast, and short caption lines. Avoid covering faces, products, or important action with text.`,
+  "cc-2": `Overview: Keyframes create motion over time. You set a starting value and an ending value, and CapCut animates the change between them. This can control position, scale, rotation, opacity, and other effects.
 
-Simple keyframe moves often look more professional than random transitions. A slow zoom can add focus. A small slide can introduce text. A controlled opacity change can reveal information cleanly.
+Simple over complex: Simple keyframe moves often look more professional than random transitions. A slow zoom can add focus. A small slide can introduce text. A controlled opacity change can reveal information cleanly.
 
-Overlays place one video, image, or graphic above another. They are useful for reaction clips, logos, screenshots, subtitles, texture effects, and before-after comparisons. Blending modes and opacity help overlays feel integrated instead of pasted on.
+Overlays: Overlays place one video, image, or graphic above another. They are useful for reaction clips, logos, screenshots, subtitles, texture effects, and before-after comparisons. Blending modes and opacity help overlays feel integrated instead of pasted on.
 
-Velocity editing changes clip speed for impact. Speed ramps can emphasize action, music beats, or transitions. Use them carefully: too much speed change can confuse the viewer. The best edits support the story.`,
-  "sw-1": `SolidWorks sketching is the base of accurate 3D modeling. A weak sketch creates weak parts. A strong sketch is clear, fully defined, and controlled by dimensions and relations.
+Velocity editing: Velocity editing changes clip speed for impact. Speed ramps can emphasize action, music beats, or transitions. Use them carefully: too much speed change can confuse the viewer. The best edits support the story.`,
+  "sw-1": `Overview: SolidWorks sketching is the base of accurate 3D modeling. A weak sketch creates weak parts. A strong sketch is clear, fully defined, and controlled by dimensions and relations.
 
-Relations describe how sketch entities behave. Horizontal and vertical relations control direction. Tangent relations create smooth contact between curves and lines. Coincident relations connect points. Concentric relations make circles share the same center.
+Relations: Relations describe how sketch entities behave. Horizontal and vertical relations control direction. Tangent relations create smooth contact between curves and lines. Coincident relations connect points. Concentric relations make circles share the same center.
 
-Smart Dimensions give exact size to geometry. A professional model should not depend on dragging shapes by eye. Dimensions make the design repeatable, editable, and ready for manufacturing.
+Smart Dimensions: Smart Dimensions give exact size to geometry. A professional model should not depend on dragging shapes by eye. Dimensions make the design repeatable, editable, and ready for manufacturing.
 
-A fully defined sketch turns black, meaning its size and position are controlled. Blue geometry is under-defined and can move unexpectedly. Before creating 3D features, make sure important sketches are fully defined so later changes do not break the model.`,
-  "sw-2": `Extrude Boss/Base turns a 2D sketch into a 3D solid by adding depth. It is one of the most common features in SolidWorks. The sketch profile controls the shape, and the extrusion distance controls thickness.
+Fully defined sketches: A fully defined sketch turns black, meaning its size and position are controlled. Blue geometry is under-defined and can move unexpectedly. Before creating 3D features, make sure important sketches are fully defined so later changes do not break the model.`,
+  "sw-2": `Overview: Extrude Boss/Base turns a 2D sketch into a 3D solid by adding depth. It is one of the most common features in SolidWorks. The sketch profile controls the shape, and the extrusion distance controls thickness.
 
-Revolve creates a 3D shape by rotating a sketch around an axis. This is ideal for circular or cylindrical objects such as bottles, shafts, wheels, pulleys, and knobs. The axis must be chosen carefully because it controls the center of rotation.
+Revolve: Revolve creates a 3D shape by rotating a sketch around an axis. This is ideal for circular or cylindrical objects such as bottles, shafts, wheels, pulleys, and knobs. The axis must be chosen carefully because it controls the center of rotation.
 
-Extrude Cut removes material from a part. It is used for holes, slots, pockets, vents, and clearances. Cuts should be dimensioned properly so they match the design requirement rather than being placed by guesswork.
+Extrude Cut: Extrude Cut removes material from a part. It is used for holes, slots, pockets, vents, and clearances. Cuts should be dimensioned properly so they match the design requirement rather than being placed by guesswork.
 
-Fillets and chamfers improve both appearance and function. Fillets round edges, while chamfers create angled edges. In engineering, these features can reduce sharp edges, improve manufacturability, and help parts assemble smoothly.`
+Fillets and chamfers: Fillets and chamfers improve both appearance and function. Fillets round edges, while chamfers create angled edges. In engineering, these features can reduce sharp edges, improve manufacturability, and help parts assemble smoothly.`
 };
 
 const quizEnhancements: Record<string, NonNullable<Lesson["quiz"]>> = {

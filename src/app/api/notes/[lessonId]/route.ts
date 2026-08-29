@@ -3,6 +3,17 @@ import { getManagedCourses, getManagedLessons } from "@/lib/contentSettings";
 
 export const runtime = "nodejs";
 
+const PAGE_WIDTH = 612;
+const PAGE_HEIGHT = 792;
+const MARGIN = 56;
+const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+const ACCENT_COLOR = "0.05 0.35 0.85";
+const TEXT_COLOR = "0.16 0.18 0.22";
+const MUTED_COLOR = "0.45 0.47 0.52";
+const HEADING_GAP = 20;
+const PARAGRAPH_LINE_HEIGHT = 15.5;
+const BULLET_LINE_HEIGHT = 15.5;
+
 function cleanText(value: string): string {
   return value
     .replace(/[“”]/g, '"')
@@ -15,59 +26,179 @@ function escapePdfText(value: string): string {
   return cleanText(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
 
-function wrapText(text: string, maxChars: number): string[] {
+function wrapLine(text: string, fontSize: number, bold: boolean, maxWidth: number, indent = 0): string[] {
+  const charWidth = fontSize * (bold ? 0.58 : 0.51);
+  const maxChars = Math.max(10, Math.floor((maxWidth - indent) / charWidth));
+  const words = cleanText(text).split(/\s+/).filter(Boolean);
   const lines: string[] = [];
-  for (const paragraph of cleanText(text).split("\n\n")) {
-    const words = paragraph.split(/\s+/).filter(Boolean);
-    let line = "";
+  let line = "";
 
-    for (const word of words) {
-      const next = line ? `${line} ${word}` : word;
-      if (next.length > maxChars) {
-        if (line) lines.push(line);
-        line = word;
-      } else {
-        line = next;
-      }
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (next.length > maxChars && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.length > 0 ? lines : [""];
+}
+
+type ContentBlock =
+  | { type: "heading"; text: string }
+  | { type: "paragraph"; text: string }
+  | { type: "bullets"; items: string[] };
+
+function parseContentBlocks(content: string): ContentBlock[] {
+  const blocks: ContentBlock[] = [];
+  const paragraphs = content.split("\n\n").map((p) => p.trim()).filter(Boolean);
+
+  paragraphs.forEach((paragraph, index) => {
+    // The first paragraph is always the course/module/lesson title restatement line,
+    // never an actual "Label: content" section - skip heading detection for it.
+    const match = index > 0 ? paragraph.match(/^([^:]{3,45}):\s+([\s\S]+)$/) : null;
+    if (match) {
+      blocks.push({ type: "heading", text: match[1] });
+      blocks.push({ type: "paragraph", text: match[2] });
+    } else {
+      blocks.push({ type: "paragraph", text: paragraph });
+    }
+  });
+
+  return blocks;
+}
+
+type DrawLine = {
+  text: string;
+  font: "F1" | "F2";
+  size: number;
+  color: string;
+  height: number;
+  gapBefore: number;
+};
+
+function buildDrawLines(blocks: ContentBlock[]): DrawLine[] {
+  const lines: DrawLine[] = [];
+
+  blocks.forEach((block, blockIndex) => {
+    if (block.type === "heading") {
+      lines.push({
+        text: block.text.toUpperCase(),
+        font: "F2",
+        size: 11.5,
+        color: ACCENT_COLOR,
+        height: 16,
+        gapBefore: blockIndex === 0 ? 0 : HEADING_GAP,
+      });
+      return;
     }
 
-    if (line) lines.push(line);
-    lines.push("");
-  }
+    if (block.type === "paragraph") {
+      const wrapped = wrapLine(block.text, 10.5, false, CONTENT_WIDTH);
+      wrapped.forEach((line, index) => {
+        lines.push({
+          text: line,
+          font: "F1",
+          size: 10.5,
+          color: TEXT_COLOR,
+          height: PARAGRAPH_LINE_HEIGHT,
+          gapBefore: index === 0 ? 6 : 0,
+        });
+      });
+      return;
+    }
+
+    block.items.forEach((item, itemIndex) => {
+      const wrapped = wrapLine(item, 10.5, false, CONTENT_WIDTH, 22);
+      wrapped.forEach((line, lineIndex) => {
+        lines.push({
+          text: lineIndex === 0 ? `${itemIndex + 1}.  ${line}` : `     ${line}`,
+          font: "F1",
+          size: 10.5,
+          color: TEXT_COLOR,
+          height: BULLET_LINE_HEIGHT,
+          gapBefore: lineIndex === 0 ? (itemIndex === 0 ? 6 : 5) : 0,
+        });
+      });
+    });
+  });
+
   return lines;
 }
 
-function buildPdf(title: string, subtitle: string, body: string): Buffer {
-  const pageWidth = 612;
-  const pageHeight = 792;
-  const margin = 56;
-  const lineHeight = 15;
-  const maxLinesPerPage = 42;
-  const bodyLines = wrapText(body, 88);
-  const pages: string[] = [];
+function textCommand(text: string, x: number, y: number, size: number, font: "F1" | "F2", color: string): string {
+  return ["BT", `/${font} ${size} Tf`, `${color} rg`, `${x.toFixed(2)} ${y.toFixed(2)} Td`, `(${escapePdfText(text)}) Tj`, "ET"].join("\n");
+}
 
-  for (let start = 0; start < bodyLines.length; start += maxLinesPerPage) {
-    const pageLines = bodyLines.slice(start, start + maxLinesPerPage);
-    const commands = [
-      "BT",
-      "/F1 18 Tf",
-      `${margin} ${pageHeight - margin} Td`,
-      `(${escapePdfText(title)}) Tj`,
-      "0 -24 Td",
-      "/F1 11 Tf",
-      `(${escapePdfText(subtitle)}) Tj`,
-      "0 -28 Td",
-      "/F1 10 Tf",
-    ];
+function buildPdf(input: { title: string; subtitle: string; content: string; keyPoints: string[] }): Buffer {
+  const blocks = parseContentBlocks(input.content);
+  if (input.keyPoints.length > 0) {
+    blocks.push({ type: "heading", text: "Key Takeaways From This Class" });
+    blocks.push({ type: "bullets", items: input.keyPoints });
+  }
 
-    pageLines.forEach((line, index) => {
-      if (index > 0) commands.push(`0 -${lineHeight} Td`);
-      commands.push(`(${escapePdfText(line)}) Tj`);
+  const drawLines = buildDrawLines(blocks);
+  const headerHeight = 96;
+  const footerHeight = 34;
+  const firstPageUsableHeight = PAGE_HEIGHT - MARGIN * 2 - headerHeight - footerHeight;
+  const otherPageUsableHeight = PAGE_HEIGHT - MARGIN * 2 - footerHeight;
+
+  const pages: DrawLine[][] = [];
+  let current: DrawLine[] = [];
+  let consumed = 0;
+
+  drawLines.forEach((line, index) => {
+    const usable = pages.length === 0 ? firstPageUsableHeight : otherPageUsableHeight;
+    let lineSpace = line.height + line.gapBefore;
+
+    if (line.font === "F2") {
+      const nextLine = drawLines[index + 1];
+      if (nextLine) lineSpace += nextLine.height + nextLine.gapBefore;
+    }
+
+    if (consumed + lineSpace > usable && current.length > 0) {
+      pages.push(current);
+      current = [];
+      consumed = 0;
+    }
+    current.push(line);
+    consumed += line.height + line.gapBefore;
+  });
+  if (current.length > 0 || pages.length === 0) pages.push(current);
+
+  const totalPages = pages.length;
+  const pageContents = pages.map((lines, pageIndex) => {
+    const commands: string[] = [];
+    const isFirstPage = pageIndex === 0;
+
+    commands.push(`${ACCENT_COLOR} rg 0 ${PAGE_HEIGHT - 10} ${PAGE_WIDTH} 10 re f`);
+
+    let y = PAGE_HEIGHT - MARGIN;
+
+    if (isFirstPage) {
+      commands.push(textCommand(input.title, MARGIN, y, 18, "F2", "0.05 0.08 0.18"));
+      y -= 24;
+      commands.push(textCommand(input.subtitle, MARGIN, y, 11, "F1", MUTED_COLOR));
+      y -= 14;
+      commands.push(`${ACCENT_COLOR} RG 1 w ${MARGIN} ${y} m ${PAGE_WIDTH - MARGIN} ${y} l S`);
+      y -= 26;
+    } else {
+      y -= 8;
+    }
+
+    lines.forEach((line) => {
+      y -= line.gapBefore + line.height;
+      commands.push(textCommand(line.text, MARGIN, y, line.size, line.font, line.color));
     });
 
-    commands.push("ET");
-    pages.push(commands.join("\n"));
-  }
+    commands.push(`0.85 0.87 0.90 RG 0.75 w ${MARGIN} ${footerHeight - 10} m ${PAGE_WIDTH - MARGIN} ${footerHeight - 10} l S`);
+    commands.push(textCommand("Sam Creative Design School", MARGIN, footerHeight - 22, 8, "F1", MUTED_COLOR));
+    commands.push(textCommand(`Page ${pageIndex + 1} of ${totalPages}`, PAGE_WIDTH - MARGIN - 70, footerHeight - 22, 8, "F1", MUTED_COLOR));
+
+    return commands.join("\n");
+  });
 
   const objects: string[] = [];
   const addObject = (content: string) => {
@@ -75,16 +206,16 @@ function buildPdf(title: string, subtitle: string, body: string): Buffer {
     return objects.length;
   };
 
-  const catalogId = addObject("<< /Type /Catalog /Pages 2 0 R >>");
-  void catalogId;
+  addObject("<< /Type /Catalog /Pages 2 0 R >>");
   objects.push("");
-  const fontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const regularFontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+  const boldFontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
   const pageIds: number[] = [];
 
-  pages.forEach((content) => {
+  pageContents.forEach((content) => {
     const streamId = addObject(`<< /Length ${Buffer.byteLength(content, "latin1")} >>\nstream\n${content}\nendstream`);
     const pageId = addObject(
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${streamId} 0 R >>`
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}] /Resources << /Font << /F1 ${regularFontId} 0 R /F2 ${boldFontId} 0 R >> >> /Contents ${streamId} 0 R >>`
     );
     pageIds.push(pageId);
   });
@@ -122,11 +253,12 @@ export async function GET(
 
   const course = courses.find((item) => item.id === lesson.courseId);
   const filename = `${lesson.id}-notes.pdf`;
-  const pdf = buildPdf(
-    lesson.title,
-    course ? `${course.title} - Lesson ${lesson.order}` : `Lesson ${lesson.order}`,
-    lesson.content
-  );
+  const pdf = buildPdf({
+    title: lesson.title,
+    subtitle: course ? `${course.title} - Lesson ${lesson.order}` : `Lesson ${lesson.order}`,
+    content: lesson.content,
+    keyPoints: lesson.keyPoints ?? [],
+  });
 
   const body = new Uint8Array(pdf).buffer;
 

@@ -481,11 +481,40 @@ export default function CoursePlayer() {
                       )}
                       <div className="prose prose-blue max-w-none">
                         <div className="space-y-5 text-gray-700 leading-relaxed">
-                          {activeLesson.content.split("\n\n").map((paragraph, index) => (
-                            <p key={index} className="animate-fade-in" style={{ animationDelay: `${index * 60}ms` }}>{paragraph}</p>
-                          ))}
+                          {activeLesson.content.split("\n\n").map((paragraph, index) => {
+                            // The first paragraph is always the title restatement line, never a real section.
+                            const sectionMatch = index > 0 ? paragraph.match(/^([^:]{3,45}):\s+([\s\S]+)$/) : null;
+                            if (sectionMatch) {
+                              const [, heading, body] = sectionMatch;
+                              return (
+                                <div key={index} className="animate-fade-in" style={{ animationDelay: `${index * 60}ms` }}>
+                                  <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-1.5">{heading}</h4>
+                                  <p>{body}</p>
+                                </div>
+                              );
+                            }
+                            return (
+                              <p key={index} className="animate-fade-in" style={{ animationDelay: `${index * 60}ms` }}>{paragraph}</p>
+                            );
+                          })}
                         </div>
                       </div>
+
+                      {activeLesson.keyPoints && activeLesson.keyPoints.length > 0 && (
+                        <div className="mt-8 rounded-2xl border border-primary/15 bg-white p-5 md:p-6">
+                          <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-4">Key Takeaways From This Class</h4>
+                          <ul className="space-y-2.5">
+                            {activeLesson.keyPoints.map((point, index) => (
+                              <li key={index} className="flex items-start gap-3 text-sm text-gray-700 leading-relaxed">
+                                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-black text-primary">
+                                  {index + 1}
+                                </span>
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
 
