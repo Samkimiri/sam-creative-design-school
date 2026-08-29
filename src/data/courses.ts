@@ -344,6 +344,11 @@ function getGeneratedLessonVideo(courseId: string, moduleIndex: number, lessonTi
   return defaultVideoUrl;
 }
 
+type CourseModuleVoice = {
+  expertNotes: string;
+  workflow: string;
+};
+
 function createModuleLessons(
   courseId: string,
   prefix: string,
@@ -351,12 +356,24 @@ function createModuleLessons(
   image: string,
   imageAlt: string,
   modules: ModulePlan[],
+  voice: CourseModuleVoice,
 ): Lesson[] {
   return modules.flatMap((module, moduleIndex) =>
     module.lessons.map((lessonTitle, lessonIndex) => {
       const order = moduleIndex * 7 + lessonIndex + 1;
       const id = `${prefix}-${moduleIndex + 1}-${lessonIndex + 1}`;
       const isModuleCheckpoint = lessonIndex === module.lessons.length - 1;
+      const previousLessonTitle = lessonIndex > 0 ? module.lessons[lessonIndex - 1] : null;
+
+      const bridge = isModuleCheckpoint
+        ? `This checkpoint closes out the ${module.title} module.`
+        : previousLessonTitle
+          ? `Following on from "${previousLessonTitle}", this lesson moves into ${lessonTitle.toLowerCase()}.`
+          : `This is the opening lesson of the ${module.title} module.`;
+
+      const checkpointRecap = isModuleCheckpoint
+        ? `\n\nModule recap: this checkpoint brings together everything covered in ${module.title} - ${module.lessons.slice(0, -1).join(", ")}. Look back at your work from each of these lessons before submitting this checkpoint, and make sure it reflects what you learned across the whole module, not just the most recent lesson.`
+        : "";
 
       return {
         id,
@@ -367,11 +384,13 @@ function createModuleLessons(
         videoUrl: getGeneratedLessonVideo(courseId, moduleIndex, lessonTitle),
         image,
         imageAlt,
-        content: `${courseLabel} - ${module.title}.
+        content: `${courseLabel} - ${module.title}: ${lessonTitle}.
 
-${module.theme} In this lesson, you will learn ${lessonTitle.toLowerCase()} through a practical school-style project. Focus on the core concept, build a small deliverable, review your decisions, and save evidence of your work for your portfolio.
+${bridge} ${module.theme}
 
-Production practice: write down the goal, the target user or client, the tool settings you used, and what you would improve in the next version. By the end of this lesson you should have a concrete checkpoint that can be reviewed by a tutor or included in your graduation project.`,
+${voice.expertNotes}
+
+${voice.workflow}${checkpointRecap}`,
         resources: [{ name: `${courseLabel} ${module.title} Workbook.pdf`, url: "#", type: "pdf" }],
         ...(isModuleCheckpoint
           ? {
@@ -505,6 +524,11 @@ const capcutProfessionalPlans = [
 const capcutProfessionalLessons: Lesson[] = capcutProfessionalPlans.map((plan, index) => {
   const order = index + 3;
   const id = `cc-${order}`;
+  const previousPlan = index > 0 ? capcutProfessionalPlans[index - 1] : null;
+  const isFirstInModule = !previousPlan || previousPlan.module !== plan.module;
+  const bridge = isFirstInModule
+    ? `This opens the ${plan.module} stage of CapCut Video Editing Masterclass.`
+    : `Building on the previous lesson on "${previousPlan!.title}", this lesson moves into ${plan.title.toLowerCase()}.`;
 
   return {
     id,
@@ -515,17 +539,17 @@ const capcutProfessionalLessons: Lesson[] = capcutProfessionalPlans.map((plan, i
     videoUrl: "https://www.youtube.com/embed/nEwHL9GRuFk",
     image: "/images/course-capcut.png",
     imageAlt: "CapCut professional video editing lesson workspace",
-    content: `CapCut Video Editing Masterclass - ${plan.module}.
+    content: `CapCut Video Editing Masterclass - ${plan.module}: ${plan.title}.
 
-${plan.theme}
+${bridge} ${plan.theme}
 
-Professional notes: start with a clear objective, organize raw clips before editing, make one decision at a time, and review the video on a phone before export. Strong editing is not about using every effect. It is about making the message easy to understand, pleasant to watch, and suitable for the platform.
+CapCut notes: work from a rough cut to a fine cut instead of perfecting one section first, keep raw footage, audio, and exports in clearly named folders, and always preview edits on a phone screen since most short-form viewers watch on mobile. Data from major platforms shows most viewers decide whether to keep watching within the first three seconds, and burned-in captions alone can lift retention by 15 to 25 percent - the opening moment and readable captions matter more than any transition effect.
 
-Production workflow: create folders for raw footage, audio, graphics, captions, drafts, and final exports. Keep filenames clear, save project evidence, and write down the choices you made so a tutor or client can review your process.
+Production workflow: define the objective and audience, assemble a rough version, review it against the brief, refine pacing and audio, then export a clean final version sized for the platform it will be published on.
 
 Practice task: ${plan.practice}
 
-Portfolio checkpoint: save the final export, one timeline screenshot, one before-after comparison where relevant, and three notes explaining what improved in this lesson.`,
+Portfolio checkpoint: save the final export, one timeline screenshot, one before-after comparison where relevant, and three notes explaining what improved in this lesson compared to the previous one.`,
     resources: [{ name: `${plan.title} Workbook.pdf`, url: "#", type: "pdf" }],
     quiz: {
       questions: [
@@ -571,10 +595,22 @@ type CourseExpansionPlan = {
   }[];
 };
 
-function createProfessionalExpansionLessons(plan: CourseExpansionPlan): Lesson[] {
+type DisciplineVoice = {
+  expertNotes: string;
+  workflow: string;
+  checkpointClosing: string;
+};
+
+function createProfessionalExpansionLessons(plan: CourseExpansionPlan & { voice: DisciplineVoice }): Lesson[] {
   return plan.lessons.map((lesson, index) => {
     const order = plan.startOrder + index;
     const id = `${plan.prefix}-${order}`;
+    const previousLesson = index > 0 ? plan.lessons[index - 1] : null;
+    const isFirstInModule = !previousLesson || previousLesson.module !== lesson.module;
+
+    const bridge = isFirstInModule
+      ? `This opens the ${lesson.module} stage of ${plan.courseLabel}.`
+      : `Building on the previous lesson on "${previousLesson!.title}", this lesson moves into ${lesson.title.toLowerCase()}.`;
 
     return {
       id,
@@ -585,17 +621,17 @@ function createProfessionalExpansionLessons(plan: CourseExpansionPlan): Lesson[]
       videoUrl: plan.videoUrl,
       image: plan.image,
       imageAlt: plan.imageAlt,
-      content: `${plan.courseLabel} - ${lesson.module}.
+      content: `${plan.courseLabel} - ${lesson.module}: ${lesson.title}.
 
-${lesson.theme}
+${bridge} ${lesson.theme}
 
-Professional notes: begin with a clear brief, collect references, set up files correctly, and work in organized stages. Keep source files editable, name layers or features clearly, and save evidence of each important decision so tutor feedback can be specific.
+${plan.voice.expertNotes}
 
-Production workflow: define the goal, build the first version, review it against the brief, improve weak areas, and export a clean final version. Do not rush to effects before the structure is correct. Strong work is planned, editable, reviewed, and presented professionally.
+${plan.voice.workflow}
 
 Practice task: ${lesson.practice}
 
-Portfolio checkpoint: save the working file, final export, one screenshot of the process, and three short notes explaining what improved in this lesson.`,
+Portfolio checkpoint: ${plan.voice.checkpointClosing}`,
       resources: [{ name: `${lesson.title} Workbook.pdf`, url: "#", type: "pdf" }],
       quiz: {
         questions: [
@@ -634,6 +670,11 @@ const photoshopProfessionalLessons = createProfessionalExpansionLessons({
   imageAlt: "Photoshop professional design lesson workspace",
   videoUrl: verifiedLessonVideos.photoshopWorkspace,
   startOrder: 6,
+  voice: {
+    expertNotes: "Photoshop notes: work non-destructively with adjustment layers and layer masks instead of erasing pixels permanently, keep a clear layer naming and folder convention as files grow, and turn repeated elements into Smart Objects so they stay easy to resize or swap out later. Professional retouchers organize source images in Bridge with ratings and keywords before they ever open Photoshop, so nothing gets lost in a messy folder.",
+    workflow: "Production workflow: sketch the composition roughly first, build the base layout and imagery, apply your color and typography system, then finish with fine detail and export presets sized correctly for web or print.",
+    checkpointClosing: "save the layered PSD file, a flattened export, and a short note on which Photoshop technique made the biggest difference in this lesson.",
+  },
   lessons: [
     {
       module: "Design Foundations",
@@ -718,6 +759,11 @@ const illustratorProfessionalLessons = createProfessionalExpansionLessons({
   imageAlt: "Illustrator vector design lesson workspace",
   videoUrl: "https://www.youtube.com/embed/Ib8UBwu3yGA",
   startOrder: 4,
+  voice: {
+    expertNotes: "Illustrator notes: build shapes with the Pen tool and Shape Builder rather than tracing loosely, keep anchor points to the minimum needed for a clean curve, and use the Appearance panel to adjust stroke and fill without duplicating objects. Strong logos usually stick to 2 to 3 colors for faster brand recognition, and clever use of negative space is what separates a memorable mark from a generic one.",
+    workflow: "Production workflow: block out the concept with simple shapes, refine proportions on a grid, apply your swatch-based color system, then export both editable AI or PDF source files and flattened SVG or PNG assets for delivery.",
+    checkpointClosing: "save the editable AI file, an exported PNG or SVG, and a short note on how you kept the artwork scalable and clean.",
+  },
   lessons: [
     {
       module: "Vector Foundations",
@@ -802,6 +848,11 @@ const solidworksProfessionalLessons = createProfessionalExpansionLessons({
   imageAlt: "SolidWorks mechanical engineering CAD lesson workspace",
   videoUrl: "https://www.youtube.com/embed/cIKOwZhzh6Q",
   startOrder: 3,
+  voice: {
+    expertNotes: "SolidWorks notes: define design intent early with reference planes, origins, and sketch relations so the model updates predictably when dimensions change, and keep feature names descriptive in the FeatureManager tree rather than leaving default names. A good test of design intent: if changing one dimension breaks the model or produces a strange shape, the sketch relations were not planned carefully enough.",
+    workflow: "Production workflow: sketch with fully-defined geometry first, build features in a logical order from base shape to detail features, check fit inside an assembly if relevant, then move to drawings only once the model itself is correct.",
+    checkpointClosing: "save the part or assembly file, a screenshot of the FeatureManager tree, and a short note on one design decision you made and why.",
+  },
   lessons: [
     {
       module: "Part Modeling",
@@ -911,6 +962,10 @@ const vibeDesigningLessons = createModuleLessons(
       lessons: ["Choosing a Capstone Brief", "Before and After Improvements", "Case Study Storytelling", "Exporting Screens and Assets", "Presentation Deck Design", "Portfolio Review", "Graduation Case Study Checkpoint"],
     },
   ],
+  {
+    expertNotes: "Design notes: base every decision on a real user problem rather than personal taste, keep spacing and type scale consistent across screens, and test your flow with at least one other person before calling it finished. Three well-known UX laws are worth remembering: Fitts's Law (bigger, closer targets are faster to tap), Hick's Law (more choices slow down decisions), and Jakob's Law (people expect your app to behave like the other apps they already use).",
+    workflow: "Working process: sketch the flow roughly first, build a low-fidelity wireframe to confirm structure, then move to visual design and finally an interactive Figma prototype once the structure is approved.",
+  },
 );
 
 const vibeCodingLessons = createModuleLessons(
@@ -961,6 +1016,10 @@ const vibeCodingLessons = createModuleLessons(
       lessons: ["Git Workflow", "Environment Variables", "Production Build", "Deployment Setup", "Domain and SEO Basics", "Project README", "Graduation Deployment Checkpoint"],
     },
   ],
+  {
+    expertNotes: "Coding notes: write small pieces of code you can test immediately, name variables and components clearly, and check your work in the browser after every meaningful change rather than writing large blocks blind. Modern web standards treat load speed and accessibility as requirements, not nice-to-haves - aim to keep pages loading fast and usable with a keyboard alone, since both real users and search engines reward it.",
+    workflow: "Working process: get a basic version working end to end first, then improve structure, styling, and edge cases in separate passes rather than trying to make everything perfect on the first attempt.",
+  },
 );
 
 const aiPromptLessons = createModuleLessons(
@@ -986,6 +1045,10 @@ const aiPromptLessons = createModuleLessons(
       lessons: ["Fact Checking Outputs", "Bias and Safety Review", "Prompt Libraries", "Automation Planning", "Human Approval Steps", "AI Portfolio Project", "Graduation AI System Checkpoint"],
     },
   ],
+  {
+    expertNotes: "Prompting notes: state the task, the audience, and the format you want before adding examples, and always review AI output for accuracy rather than accepting it automatically. Two techniques used by professional prompt engineers are few-shot prompting (showing the AI two or three examples of the output style you want) and chain-of-thought prompting (asking the AI to reason step by step before giving a final answer) - both noticeably improve response quality.",
+    workflow: "Working process: draft a prompt, test it, note what went wrong, and revise it. Treat prompt writing as an iterative skill you improve through testing, not a one-shot request.",
+  },
 );
 
 const enhancedContent: Record<string, string> = {
