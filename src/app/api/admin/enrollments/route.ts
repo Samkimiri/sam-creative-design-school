@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { getDB, upsertDBRecord } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
 import { grantEnrollmentAccess, revokeEnrollmentAccess } from "@/lib/enrollmentAccess";
+import { sendDisenrollmentEmail, sendEnrollmentApprovedEmail } from "@/lib/email";
+import { absoluteUrl } from "@/lib/seo";
+
+function courseNamesFromEnrollment(courseName: string) {
+  return courseName.split(",").map((name) => name.trim()).filter(Boolean);
+}
 
 interface Enrollment {
   id: string;
@@ -113,6 +119,21 @@ export async function PATCH(request: Request) {
     } else {
       enrollments[index].accessGrantMessage = "Payment approved. Student should create or sign in with the same email or phone to receive course access.";
     }
+
+    const recipientEmail = grant.student?.email || enrollment.studentEmail;
+    if (recipientEmail) {
+      const emailResult = await sendEnrollmentApprovedEmail({
+        to: recipientEmail,
+        studentName: grant.student?.name || enrollment.studentName || "there",
+        courseNames: courseNamesFromEnrollment(enrollment.courseName),
+        reference: enrollment.reference,
+        amount: enrollment.amount,
+        lmsUrl: absoluteUrl("/lms"),
+      });
+      enrollments[index].accessGrantMessage += emailResult.sent
+        ? " Confirmation email sent."
+        : " Confirmation email could not be sent (check email settings).";
+    }
   } else if (status.value === "revoked") {
     enrollments[index].adminApprovalStatus = "revoked";
     enrollments[index].accessGrantedAt = undefined;
@@ -125,6 +146,20 @@ export async function PATCH(request: Request) {
     enrollments[index].accessGrantMessage = revoke.revoked && revoke.removedCourses.length > 0
       ? `Access revoked for ${revoke.student?.name || "the student"}. They must enroll and pay again for ${revoke.removedCourses.length} course(s).`
       : "Enrollment marked as revoked. No matching student record was found to update.";
+
+    const recipientEmail = revoke.student?.email || enrollment.studentEmail;
+    if (recipientEmail) {
+      const emailResult = await sendDisenrollmentEmail({
+        to: recipientEmail,
+        studentName: revoke.student?.name || enrollment.studentName || "there",
+        courseNames: courseNamesFromEnrollment(enrollment.courseName),
+        reason: reason || undefined,
+        enrollUrl: absoluteUrl("/enroll"),
+      });
+      enrollments[index].accessGrantMessage += emailResult.sent
+        ? " Notification email sent."
+        : " Notification email could not be sent (check email settings).";
+    }
   } else {
     enrollments[index].adminApprovalStatus = "pending";
     enrollments[index].accessGrantedAt = undefined;
