@@ -1014,6 +1014,17 @@ export default function AdminDashboard() {
   const certificatePreviewUrl = certificateCourseId
     ? `/api/certificates/${certificateCourseId}?preview=1&studentName=${encodeURIComponent(certificateStudentName)}`
     : "";
+  const certificateCourseLessonCount = lessons.filter((l) => l.courseId === certificateCourseId).length;
+  const eligibleCertificateStudents = certificateCourseId
+    ? students.filter((s) => {
+        if (!(s.enrolledCourses ?? []).includes(certificateCourseId)) return false;
+        if (certificateCourseLessonCount === 0) return false;
+        const completed = new Set(
+          progress.find((p) => p.studentId === s.id && p.courseId === certificateCourseId)?.completedLessons ?? []
+        ).size;
+        return completed >= certificateCourseLessonCount;
+      })
+    : [];
   const pendingAccessRequests = enrollments.filter((enrollment) => enrollment.status === "pending");
   const approvalReadyRequests = pendingAccessRequests.filter((enrollment) =>
     enrollment.paymentVerificationStatus === "verified" ||
@@ -2068,6 +2079,42 @@ export default function AdminDashboard() {
                   />
                 </label>
               </div>
+            </section>
+
+            <section className={`overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`} data-reveal>
+              <div className="flex flex-col gap-2 border-b border-gray-100 px-6 py-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h4 className="font-extrabold text-dark">Students Eligible for This Certificate</h4>
+                  <p className="text-xs text-gray-500">
+                    Students enrolled in {courses.find((c) => c.id === certificateCourseId)?.title || "this course"} who have completed all {certificateCourseLessonCount} lesson(s). Each download is their real, verifiable certificate.
+                  </p>
+                </div>
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary">
+                  {eligibleCertificateStudents.length} eligible
+                </span>
+              </div>
+              {eligibleCertificateStudents.length === 0 ? (
+                <p className="p-6 text-sm text-gray-400">No students have completed every lesson in this course yet.</p>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {eligibleCertificateStudents.map((s) => (
+                    <div key={s.id} className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="font-bold text-dark">{s.name}</p>
+                        <p className="text-xs text-gray-500">{s.email}</p>
+                      </div>
+                      <a
+                        href={`/api/certificates/${certificateCourseId}?studentId=${s.id}&download=1`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`premium-button inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white hover:bg-primary/90 ${adminActionMotion}`}
+                      >
+                        Download Certificate
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             <section className={`overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`} data-reveal>
