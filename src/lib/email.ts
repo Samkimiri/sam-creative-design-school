@@ -181,6 +181,76 @@ function enrollmentApprovedHtml(input: SendEnrollmentApprovedEmailInput, courseL
   `);
 }
 
+interface SendEnrollmentRejectedEmailInput {
+  to: string;
+  studentName: string;
+  courseNames: string[];
+  reference: string;
+  reason?: string;
+  enrollUrl: string;
+}
+
+export async function sendEnrollmentRejectedEmail(input: SendEnrollmentRejectedEmailInput) {
+  const courseList = formatCourseList(input.courseNames);
+  return sendTransactionalEmail({
+    to: input.to,
+    subject: `Update on your ${courseList} enrollment request`,
+    html: enrollmentRejectedHtml(input, courseList),
+    text: enrollmentRejectedText(input, courseList),
+  });
+}
+
+function enrollmentRejectedText(input: SendEnrollmentRejectedEmailInput, courseList: string) {
+  const lines = [
+    `Hi ${input.studentName},`,
+    "",
+    `Thank you for your interest in ${courseList} at Sam Creative Design School.`,
+    "",
+    "After review, we were unable to confirm payment for this enrollment request, so we're not able to move forward with it at this time.",
+    "",
+    `Reference: ${input.reference}`,
+  ];
+
+  if (input.reason) {
+    lines.push("", `Note from our team: ${input.reason}`);
+  }
+
+  lines.push(
+    "",
+    "If you believe this is a mistake, or you've already paid and have a confirmation, please reach out to us on WhatsApp with the payment details and we'll happily take another look.",
+    "",
+    "Otherwise, you're welcome to submit a new enrollment and complete payment here whenever you're ready:",
+    input.enrollUrl,
+    "",
+    "We'd love to have you join us and look forward to hearing from you.",
+    "",
+    "Sam Creative Design School"
+  );
+
+  return lines.join("\n");
+}
+
+function enrollmentRejectedHtml(input: SendEnrollmentRejectedEmailInput, courseList: string) {
+  return emailShell(`
+    <h1 style="margin:0 0 12px;font-size:24px;color:#050914">Update on your enrollment request</h1>
+    <p>Hi ${escapeHtml(input.studentName)},</p>
+    <p>Thank you for your interest in <strong>${escapeHtml(courseList)}</strong> at Sam Creative Design School.</p>
+    <p>After review, we were unable to confirm payment for this enrollment request, so we're not able to move forward with it at this time.</p>
+    <div style="background:#F3F4F6;border-radius:12px;padding:16px 18px;margin:16px 0">
+      <p style="margin:0 0 6px;font-size:13px;color:#6B7280">Reference</p>
+      <p style="margin:0;font-weight:700;color:#050914">${escapeHtml(input.reference)}</p>
+      ${input.reason ? `
+      <p style="margin:12px 0 6px;font-size:13px;color:#6B7280">Note from our team</p>
+      <p style="margin:0;color:#374151">${escapeHtml(input.reason)}</p>
+      ` : ""}
+    </div>
+    <p>If you believe this is a mistake, or you've already paid and have a confirmation, please reach out to us on WhatsApp with the payment details and we'll happily take another look.</p>
+    <p>Otherwise, you're welcome to submit a new enrollment and complete payment whenever you're ready.</p>
+    ${emailButton("Enroll Again", input.enrollUrl)}
+    <p>We'd love to have you join us and look forward to hearing from you.</p>
+  `);
+}
+
 interface SendDisenrollmentEmailInput {
   to: string;
   studentName: string;

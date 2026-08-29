@@ -48,13 +48,15 @@ interface Enrollment {
   adminReviewRequestedAt?: string;
   adminApprovedAt?: string;
   adminNotificationMessage?: string;
-  status: "pending" | "confirmed" | "revoked" | "failed";
+  status: "pending" | "confirmed" | "revoked" | "rejected" | "failed";
   whatsappConfirmed?: boolean;
   whatsappSentAt?: string;
   accessGrantedAt?: string;
   accessGrantMessage?: string;
   revokedAt?: string;
   revokedReason?: string;
+  rejectedAt?: string;
+  rejectedReason?: string;
   createdAt: string;
 }
 
@@ -562,6 +564,25 @@ export default function AdminDashboard() {
       `enrollment-${enrollmentId}`,
       "/api/admin/enrollments",
       { password, enrollmentId, status: "confirmed" },
+      (updated) => {
+        setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, ...updated } : e));
+        void refreshEnrollments(password);
+      }
+    );
+  };
+
+  const rejectEnrollment = async (enrollmentId: string, studentName: string, courseName: string) => {
+    const confirmed = window.confirm(
+      `Reject ${studentName}'s enrollment request for ${courseName}? Use this when payment could not be confirmed. No LMS access will be granted.`
+    );
+    if (!confirmed) return;
+
+    const reason = window.prompt("Optional reason for rejection (e.g. payment not received):", "") || "";
+
+    await runMutation<Enrollment>(
+      `enrollment-${enrollmentId}`,
+      "/api/admin/enrollments",
+      { password, enrollmentId, status: "rejected", reason },
       (updated) => {
         setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, ...updated } : e));
         void refreshEnrollments(password);
@@ -1309,6 +1330,7 @@ export default function AdminDashboard() {
                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                           e.status === "confirmed" ? "bg-green-100 text-green-700"
                           : e.status === "revoked" ? "bg-red-100 text-red-700"
+                          : e.status === "rejected" ? "bg-gray-200 text-gray-700"
                           : "bg-yellow-100 text-yellow-700"
                         }`}>
                           {e.status}
@@ -1324,7 +1346,12 @@ export default function AdminDashboard() {
                           </span>
                         )}
                         {e.accessGrantMessage && (
-                          <p className={`mt-2 max-w-[220px] text-xs font-semibold ${e.accessGrantedAt ? "text-green-700" : e.status === "revoked" ? "text-red-700" : "text-amber-700"}`}>
+                          <p className={`mt-2 max-w-[220px] text-xs font-semibold ${
+                            e.accessGrantedAt ? "text-green-700"
+                            : e.status === "revoked" ? "text-red-700"
+                            : e.status === "rejected" ? "text-gray-600"
+                            : "text-amber-700"
+                          }`}>
                             {e.accessGrantMessage}
                           </p>
                         )}
@@ -1333,18 +1360,34 @@ export default function AdminDashboard() {
                             Reason: {e.revokedReason}
                           </p>
                         )}
+                        {e.rejectedReason && (
+                          <p className="mt-2 max-w-[220px] text-xs font-semibold text-gray-600">
+                            Reason: {e.rejectedReason}
+                          </p>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         {e.status === "pending" && (
-                          <button
-                            type="button"
-                            title="Approve this payment and unlock the selected LMS course for the matching student account"
-                            onClick={() => void confirmEnrollment(e.id)}
-                            disabled={pendingAction === `enrollment-${e.id}`}
-                            className={`bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 disabled:opacity-50 ${adminActionMotion}`}
-                          >
-                            {pendingAction === `enrollment-${e.id}` ? "Approving..." : "Approve LMS"}
-                          </button>
+                          <div className="flex flex-col items-start gap-1.5">
+                            <button
+                              type="button"
+                              title="Approve this payment and unlock the selected LMS course for the matching student account"
+                              onClick={() => void confirmEnrollment(e.id)}
+                              disabled={pendingAction === `enrollment-${e.id}`}
+                              className={`bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 disabled:opacity-50 ${adminActionMotion}`}
+                            >
+                              {pendingAction === `enrollment-${e.id}` ? "Approving..." : "Approve LMS"}
+                            </button>
+                            <button
+                              type="button"
+                              title="Reject this enrollment because payment could not be confirmed. No LMS access will be granted."
+                              onClick={() => void rejectEnrollment(e.id, e.studentName, e.courseName)}
+                              disabled={pendingAction === `enrollment-${e.id}`}
+                              className={`bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-200 disabled:opacity-50 ${adminActionMotion}`}
+                            >
+                              {pendingAction === `enrollment-${e.id}` ? "Rejecting..." : "Reject"}
+                            </button>
+                          </div>
                         )}
                         {e.status === "confirmed" && (
                           <div className="flex flex-col items-start gap-1.5">
@@ -1362,6 +1405,9 @@ export default function AdminDashboard() {
                         )}
                         {e.status === "revoked" && (
                           <span className="text-xs font-bold text-red-700">Revoked</span>
+                        )}
+                        {e.status === "rejected" && (
+                          <span className="text-xs font-bold text-gray-600">Rejected</span>
                         )}
                       </td>
                       </tr>

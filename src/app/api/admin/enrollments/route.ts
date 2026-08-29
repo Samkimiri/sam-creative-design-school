@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDB, upsertDBRecord } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
-import { grantEnrollmentAccess, revokeEnrollmentAccess } from "@/lib/enrollmentAccess";
-import { sendDisenrollmentEmail, sendEnrollmentApprovedEmail } from "@/lib/email";
+import { findStudentForEnrollment, grantEnrollmentAccess, revokeEnrollmentAccess } from "@/lib/enrollmentAccess";
+import { sendDisenrollmentEmail, sendEnrollmentApprovedEmail, sendEnrollmentRejectedEmail } from "@/lib/email";
 import { absoluteUrl } from "@/lib/seo";
 
 function courseNamesFromEnrollment(courseName: string) {
@@ -38,6 +38,8 @@ interface Enrollment {
   accessGrantMessage?: string;
   revokedAt?: string;
   revokedReason?: string;
+  rejectedAt?: string;
+  rejectedReason?: string;
   createdAt: string;
 }
 
@@ -84,8 +86,8 @@ export async function PATCH(request: Request) {
 
   const status = getRequiredString(auth.body, "status", "Status");
   if ("response" in status) return status.response;
-  if (status.value !== "pending" && status.value !== "confirmed" && status.value !== "revoked") {
-    return badRequest("Status must be pending, confirmed, or revoked");
+  if (status.value !== "pending" && status.value !== "confirmed" && status.value !== "revoked" && status.value !== "rejected") {
+    return badRequest("Status must be pending, confirmed, revoked, or rejected");
   }
 
   const reasonField = auth.body.reason;
@@ -107,6 +109,8 @@ export async function PATCH(request: Request) {
     enrollments[index].adminApprovedAt = now;
     enrollments[index].revokedAt = undefined;
     enrollments[index].revokedReason = undefined;
+    enrollments[index].rejectedAt = undefined;
+    enrollments[index].rejectedReason = undefined;
 
     const enrollment = enrollments[index];
     const grant = await grantEnrollmentAccess(enrollment);
@@ -139,6 +143,8 @@ export async function PATCH(request: Request) {
     enrollments[index].accessGrantedAt = undefined;
     enrollments[index].revokedAt = now;
     enrollments[index].revokedReason = reason || undefined;
+    enrollments[index].rejectedAt = undefined;
+    enrollments[index].rejectedReason = undefined;
 
     const enrollment = enrollments[index];
     const revoke = await revokeEnrollmentAccess(enrollment);
@@ -160,9 +166,36 @@ export async function PATCH(request: Request) {
         ? " Notification email sent."
         : " Notification email could not be sent (check email settings).";
     }
+  } else if (status.value === "rejected") {
+    enrollments[index].adminApprovalStatus = "rejected";
+    enrollments[index].accessGrantedAt = undefined;
+    enrollments[index].rejectedAt = now;
+    enrollments[index].rejectedReason = reason || undefined;
+    enrollments[index].accessGrantMessage = "Enrollment rejected. Payment could not be confirmed.";
+
+    const enrollment = enrollments[index];
+    const student = await findStudentForEnrollment(enrollment);
+    const recipientEmail = student?.email || enrollment.studentEmail;
+    if (recipientEmail) {
+      const emailResult = await sendEnrollmentRejectedEmail({
+        to: recipientEmail,
+        studentName: student?.name || enrollment.studentName || "there",
+        courseNames: courseNamesFromEnrollment(enrollment.courseName),
+        reference: enrollment.reference,
+        reason: reason || undefined,
+        enrollUrl: absoluteUrl("/enroll"),
+      });
+      enrollments[index].accessGrantMessage += emailResult.sent
+        ? " Notification email sent."
+        : " Notification email could not be sent (check email settings).";
+    }
   } else {
     enrollments[index].adminApprovalStatus = "pending";
     enrollments[index].accessGrantedAt = undefined;
+    enrollments[index].revokedAt = undefined;
+    enrollments[index].revokedReason = undefined;
+    enrollments[index].rejectedAt = undefined;
+    enrollments[index].rejectedReason = undefined;
     enrollments[index].accessGrantMessage = "Enrollment is pending admin approval. LMS access unlocks after approval.";
   }
 

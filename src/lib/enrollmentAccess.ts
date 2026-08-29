@@ -65,6 +65,11 @@ export async function grantEnrollmentAccess(enrollment: Enrollment) {
   return { granted: true, student: students[studentIndex], addedCourses };
 }
 
+export async function findStudentForEnrollment(enrollment: Enrollment) {
+  const students = await getDB<Student>("students.json");
+  return students.find((student) => enrollmentMatchesStudent(enrollment, student)) ?? null;
+}
+
 export async function revokeEnrollmentAccess(enrollment: Enrollment) {
   const students = await getDB<Student>("students.json");
   const studentIndex = students.findIndex((student) => enrollmentMatchesStudent(enrollment, student));
