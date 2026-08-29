@@ -10,7 +10,20 @@ export interface Student {
   interest?: string;
   enrolledCourses?: string[];
   pausedCourses?: string[];
+  isAlumni?: boolean;
+  alumniSince?: string;
   createdAt?: string;
+}
+
+export interface AlumniReferral {
+  id: string;
+  postedByStudentId: string;
+  postedByName: string;
+  title: string;
+  company?: string;
+  description: string;
+  contactInfo: string;
+  createdAt: string;
 }
 
 export interface ProgressRecord {

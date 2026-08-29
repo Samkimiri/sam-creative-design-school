@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
-import { getDB, upsertDBRecord } from "@/lib/db";
+import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest, type AdminRequestBody } from "@/lib/adminAuth";
 import { courses, lessons } from "@/data/courses";
 import { absoluteUrl } from "@/lib/seo";
 import { sendInactivityNudgeEmail, sendNewCourseSuggestionEmail } from "@/lib/email";
-import type { ProgressRecord } from "@/types";
+import type {
+  AlumniReferral,
+  AnalyticsEvent,
+  AssignmentSubmission,
+  CourseFeedback,
+  Enrollment,
+  ProgressRecord,
+  ProjectSubmission,
+  Review,
+  VisitorSession,
+} from "@/types";
 
 interface Student {
   id: string;
@@ -12,10 +22,13 @@ interface Student {
   email: string;
   phone: string;
   password?: string;
+  role?: string;
   avatar?: string | null;
   profileImage?: string | null;
   enrolledCourses: string[];
   pausedCourses?: string[];
+  isAlumni?: boolean;
+  alumniSince?: string;
   createdAt: string;
 }
 
@@ -64,6 +77,40 @@ async function handleCoursePauseToggle(body: AdminRequestBody, pause: boolean) {
   });
 }
 
+async function handleAlumniToggle(body: AdminRequestBody, makeAlumni: boolean) {
+  const studentId = getRequiredString(body, "studentId", "Student ID");
+  if ("response" in studentId) return studentId.response;
+
+  const students = await getDB<Student>("students.json");
+  const index = students.findIndex((item) => item.id === studentId.value);
+  if (index === -1) {
+    return notFound("Student not found");
+  }
+
+  const student = students[index];
+  student.isAlumni = makeAlumni;
+  if (makeAlumni && !student.alumniSince) {
+    student.alumniSince = new Date().toISOString();
+  }
+
+  await upsertDBRecord("students.json", student);
+
+  const { password: _password, avatar: _avatar, profileImage: _profileImage, ...safeStudent } = student;
+  void _password;
+  void _avatar;
+  void _profileImage;
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      student: safeStudent,
+      message: makeAlumni
+        ? `${student.name} has been added to the Alumni Network and can now appear on the homepage.`
+        : `${student.name} has been removed from the Alumni Network.`,
+    },
+  });
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdminRequest(request);
   if ("response" in auth) return auth.response;
@@ -86,6 +133,9 @@ export async function PATCH(request: Request) {
   const action = typeof auth.body.action === "string" ? auth.body.action : "";
   if (action === "pause-course" || action === "unpause-course") {
     return handleCoursePauseToggle(auth.body, action === "pause-course");
+  }
+  if (action === "set-alumni" || action === "remove-alumni") {
+    return handleAlumniToggle(auth.body, action === "set-alumni");
   }
 
   const studentId = getRequiredString(auth.body, "studentId", "Student ID");
@@ -173,6 +223,79 @@ export async function PATCH(request: Request) {
     data: {
       sent: result.sent,
       message: result.sent ? "New course suggestion email sent." : "Email could not be sent (check email settings).",
+    },
+  });
+}
+
+export async function DELETE(request: Request) {
+  const auth = await requireAdminRequest(request);
+  if ("response" in auth) return auth.response;
+
+  const studentId = getRequiredString(auth.body, "studentId", "Student ID");
+  if ("response" in studentId) return studentId.response;
+
+  const students = await getDB<Student>("students.json");
+  const target = students.find((item) => item.id === studentId.value);
+  if (!target) {
+    return notFound("Student not found");
+  }
+  if (target.role === "admin") {
+    return badRequest("Admin accounts cannot be deleted this way.");
+  }
+
+  const nameLower = target.name.trim().toLowerCase();
+  const emailLower = target.email.trim().toLowerCase();
+
+  await saveDB("students.json", students.filter((s) => s.id !== target.id));
+
+  const [enrollments, progress, assignments, projects, feedback, reviews, referrals] = await Promise.all([
+    getDB<Enrollment>("enrollments.json"),
+    getDB<ProgressRecord>("progress.json"),
+    getDB<AssignmentSubmission>("assignments.json"),
+    getDB<ProjectSubmission>("projects.json"),
+    getDB<CourseFeedback>("course-feedback.json"),
+    getDB<Review>("reviews.json"),
+    getDB<AlumniReferral>("alumni-referrals.json"),
+  ]);
+
+  await Promise.all([
+    saveDB(
+      "enrollments.json",
+      enrollments.filter((e) => e.studentId !== target.id && e.studentEmail?.trim().toLowerCase() !== emailLower)
+    ),
+    saveDB("progress.json", progress.filter((p) => p.studentId !== target.id)),
+    saveDB("assignments.json", assignments.filter((a) => a.studentId !== target.id)),
+    saveDB("projects.json", projects.filter((p) => p.studentName.trim().toLowerCase() !== nameLower)),
+    saveDB("course-feedback.json", feedback.filter((f) => f.studentId !== target.id)),
+    saveDB("reviews.json", reviews.filter((r) => r.name.trim().toLowerCase() !== nameLower)),
+    saveDB("alumni-referrals.json", referrals.filter((r) => r.postedByStudentId !== target.id)),
+  ]);
+
+  // Analytics cleanup is best-effort - never let it block the account deletion itself.
+  try {
+    const [sessions, events] = await Promise.all([
+      getDB<VisitorSession>("analytics-sessions.json"),
+      getDB<AnalyticsEvent>("analytics-events.json"),
+    ]);
+    await Promise.all([
+      saveDB(
+        "analytics-sessions.json",
+        sessions.filter((s) => s.userId !== target.id && s.userEmail?.trim().toLowerCase() !== emailLower)
+      ),
+      saveDB(
+        "analytics-events.json",
+        events.filter((e) => e.userEmail?.trim().toLowerCase() !== emailLower)
+      ),
+    ]);
+  } catch (error) {
+    console.error("Analytics cleanup during student deletion failed (non-fatal):", error);
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      id: target.id,
+      message: `${target.name} and all related enrollments, progress, submissions, and records have been permanently deleted.`,
     },
   });
 }

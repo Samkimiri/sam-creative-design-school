@@ -1,10 +1,11 @@
 import { NextResponse, after } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, saveDB } from "@/lib/db";
+import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
 import { courses, lessons } from "@/data/courses";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 import { sendProgressMilestoneEmail } from "@/lib/email";
 import { absoluteUrl } from "@/lib/seo";
+import type { Student } from "@/types";
 
 interface ProgressRecord {
   studentId: string;
@@ -123,6 +124,23 @@ export async function POST(request: Request) {
             lmsUrl: absoluteUrl(`/lms/${courseId}`),
           }).catch(() => {})
         );
+      }
+
+      if (afterCompleted >= totalLessons && !student.isAlumni) {
+        const studentId = student.id;
+        after(async () => {
+          try {
+            const allStudents = await getDB<Student>("students.json");
+            const index = allStudents.findIndex((item) => item.id === studentId);
+            if (index > -1 && !allStudents[index].isAlumni) {
+              allStudents[index].isAlumni = true;
+              allStudents[index].alumniSince = new Date().toISOString();
+              await upsertDBRecord("students.json", allStudents[index]);
+            }
+          } catch (error) {
+            console.error("Auto-alumni update failed (non-fatal):", error);
+          }
+        });
       }
     }
 

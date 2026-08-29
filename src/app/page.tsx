@@ -5,6 +5,7 @@ import AnimatedCounter from "@/components/AnimatedCounter";
 import CreativeShowcaseSlider from "@/components/CreativeShowcaseSlider";
 import GamifiedRegistration from "@/components/GamifiedRegistration";
 import ReviewsSection from "@/components/ReviewsSection";
+import AlumniNetwork from "@/components/AlumniNetwork";
 import IntakeCountdown from "@/components/IntakeCountdown";
 import { getContentSettings, getManagedCourses } from "@/lib/contentSettings";
 import { getCourseVisual } from "@/lib/courseVisuals";
@@ -691,6 +692,8 @@ export default async function Home() {
       </section>
 
       <ReviewsSection mode="preview" />
+
+      <AlumniNetwork />
 
       {/* ── CTA ──────────────────────────────────────────── */}
       <section className="py-24 bg-white" data-reveal>

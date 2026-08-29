@@ -13,6 +13,8 @@ interface Student {
   profileImage?: string;
   enrolledCourses: string[];
   pausedCourses?: string[];
+  isAlumni?: boolean;
+  alumniSince?: string;
   createdAt: string;
 }
 
@@ -693,6 +695,45 @@ export default function AdminDashboard() {
         setStudents((prev) => prev.map((s) => (s.id === student.id ? { ...s, ...student } : s)));
         setNotice(message || (pause ? "Course paused." : "Course resumed."));
       }
+    );
+  };
+
+  const toggleAlumniStatus = async (studentId: string, makeAlumni: boolean) => {
+    await runMutation<{ student: Student; message?: string }>(
+      `alumni-${studentId}`,
+      "/api/admin/students",
+      { password, studentId, action: makeAlumni ? "set-alumni" : "remove-alumni" },
+      ({ student, message }) => {
+        setStudents((prev) =>
+          prev.some((s) => s.id === student.id)
+            ? prev.map((s) => (s.id === student.id ? { ...s, ...student } : s))
+            : [...prev, student]
+        );
+        setNotice(message || (makeAlumni ? "Added to Alumni Network." : "Removed from Alumni Network."));
+      }
+    );
+  };
+
+  const deleteStudent = async (studentId: string, studentName: string) => {
+    const typed = window.prompt(
+      `This permanently deletes ${studentName}'s account and everything linked to it - enrollments, progress, submissions, feedback, and analytics. This cannot be undone.\n\nType the student's name to confirm: ${studentName}`
+    );
+    if (typed === null) return;
+    if (typed.trim().toLowerCase() !== studentName.trim().toLowerCase()) {
+      setNotice("Name didn't match, so nothing was deleted.");
+      return;
+    }
+
+    await runMutation<{ id: string; message?: string }>(
+      `delete-student-${studentId}`,
+      "/api/admin/students",
+      { password, studentId },
+      ({ id, message }) => {
+        setStudents((prev) => prev.filter((s) => s.id !== id));
+        setEnrollments((prev) => prev.filter((e) => e.studentId !== id));
+        setNotice(message || "Student deleted.");
+      },
+      "DELETE"
     );
   };
 
@@ -1587,12 +1628,14 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4 text-left">Phone</th>
                     <th className="px-6 py-4 text-left">Courses</th>
                     <th className="px-6 py-4 text-left">Joined</th>
+                    <th className="px-6 py-4 text-left">Alumni</th>
                     <th className="px-6 py-4 text-left">Progress</th>
+                    <th className="px-6 py-4 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {students.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-12 text-gray-400">No registered students yet</td></tr>
+                    <tr><td colSpan={8} className="text-center py-12 text-gray-400">No registered students yet</td></tr>
                   ) : students.map((s) => (
                     <tr key={s.id} className={adminRowMotion}>
                       <td className="px-6 py-4">
@@ -1616,6 +1659,15 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4 text-gray-500">{new Date(s.createdAt).toLocaleDateString()}</td>
                       <td className="px-6 py-4">
+                        {s.isAlumni ? (
+                          <span className="bg-green-100 text-green-700 font-bold text-xs px-2 py-1 rounded-full">
+                            Alumni
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
                         <button
                           type="button"
                           onClick={() => setProgressStudentId(s.id)}
@@ -1623,6 +1675,26 @@ export default function AdminDashboard() {
                         >
                           View Progress
                         </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void toggleAlumniStatus(s.id, !s.isAlumni)}
+                            disabled={pendingAction === `alumni-${s.id}`}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-50 ${s.isAlumni ? "bg-gray-100 text-dark" : "bg-green-50 text-green-700 hover:bg-green-100"} ${adminActionMotion}`}
+                          >
+                            {pendingAction === `alumni-${s.id}` ? "Saving..." : s.isAlumni ? "Remove Alumni" : "Make Alumni"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deleteStudent(s.id, s.name)}
+                            disabled={pendingAction === `delete-student-${s.id}`}
+                            className={`rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
+                          >
+                            {pendingAction === `delete-student-${s.id}` ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
