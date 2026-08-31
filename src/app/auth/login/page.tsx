@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LoaderCircle, MessageCircle } from "lucide-react";
+import { getSafeNextPath, withNextPath } from "@/lib/nextPath";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,6 +11,13 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [registerHref, setRegisterHref] = useState("/auth/register");
+  const [enrollingNext, setEnrollingNext] = useState(false);
+
+  useEffect(() => {
+    setRegisterHref(withNextPath("/auth/register"));
+    setEnrollingNext(getSafeNextPath().startsWith("/enroll"));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +79,9 @@ export default function LoginPage() {
             <span className="text-white font-extrabold text-2xl tracking-tight">Sam Creative <span className="text-primary">Graphics</span></span>
           </Link>
           <h1 className="text-3xl font-extrabold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-400">Sign in to continue your learning journey</p>
+          <p className="text-gray-400">
+            {enrollingNext ? "Sign in to your account to continue enrolling" : "Sign in to continue your learning journey"}
+          </p>
         </div>
 
         <div className="animate-fade-in bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 transition duration-300 hover:border-white/20 hover:bg-white/[0.07]" style={{ animationDelay: "120ms" }}>
@@ -146,7 +156,7 @@ export default function LoginPage() {
           <div className="mt-6 pt-6 border-t border-white/10 text-center">
             <p className="text-gray-400 text-sm">
               Don&apos;t have an account?{" "}
-              <Link href="/auth/register" className="text-primary font-bold hover:underline">
+              <Link href={registerHref} className="text-primary font-bold hover:underline">
                 Create one free
               </Link>
             </p>
@@ -191,12 +201,4 @@ async function readLoginResponse(response: Response) {
       ? "The sign in response was empty. Please try again."
       : "The sign in service is unavailable. Please try again in a moment.",
   };
-}
-
-function getSafeNextPath() {
-  if (typeof window === "undefined") return "";
-
-  const next = new URLSearchParams(window.location.search).get("next") || "";
-  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/api")) return "";
-  return next;
 }

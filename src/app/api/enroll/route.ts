@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { appendDBRecord, getDB, hasPersistentStorageConfig, upsertDBRecord } from "@/lib/db";
-import { getSession, setSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { getManagedCourses } from "@/lib/contentSettings";
 import { courses } from "@/data/courses";
 import { findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
 import { applyPromoCode, calculateReferralDiscount, getDiscountSettings, normalizePromoCode } from "@/lib/discountSettings";
-import { normalizeEmail, normalizePhone } from "@/lib/enrollmentAccess";
 import type { Enrollment, Student } from "@/types";
 
 const clean = (value: unknown, maxLength: number) =>
@@ -53,6 +52,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const session = await getSession();
+    if (!session?.user.id) {
+      return NextResponse.json(
+        { success: false, message: "Create a free account or sign in before enrolling.", requiresAuth: true },
+        { status: 401 }
+      );
+    }
+
     const phoneRegex = /^0[71]\d{8}$/;
     if (!phoneRegex.test(phone)) {
       return NextResponse.json(
@@ -77,47 +84,24 @@ export async function POST(request: Request) {
     const parsedAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
     const now = new Date().toISOString();
-    const session = await getSession();
     const [students, discountSettings, enrollments] = await Promise.all([
       getDB<Student>("students.json"),
       getDiscountSettings(),
       getDB<Enrollment>("enrollments.json"),
     ]);
     const referrer = findReferrerByCode(students, referralCode);
-    const isSelfReferral = Boolean(referrer && session?.user.id && referrer.id === session.user.id);
+    const isSelfReferral = Boolean(referrer && referrer.id === session.user.id);
 
-    // Anyone who enrolls directly (no account yet) still needs a real student
-    // record so they show up for admin and their LMS activity can be tracked -
-    // match them by session, then email, then phone before creating a new one.
-    const normalizedEmail = normalizeEmail(email);
-    const normalizedPhone = normalizePhone(phone);
-    let student = session?.user.id
-      ? students.find((candidate) => candidate.id === session.user.id)
-      : undefined;
+    // Enrolling requires an account (enforced by the /enroll middleware gate too),
+    // so the student record must already exist - link the enrollment to it.
+    const student = students.find((candidate) => candidate.id === session.user.id);
     if (!student) {
-      student = students.find((candidate) => {
-        const candidateEmail = normalizeEmail(candidate.email);
-        const candidatePhone = normalizePhone(candidate.phone);
-        return (
-          (normalizedEmail && candidateEmail && candidateEmail === normalizedEmail) ||
-          (normalizedPhone && candidatePhone && candidatePhone === normalizedPhone)
-        );
-      });
+      return NextResponse.json(
+        { success: false, message: "Your account could not be found. Please sign in again.", requiresAuth: true },
+        { status: 401 }
+      );
     }
 
-    const isNewStudent = !student;
-    if (!student) {
-      student = {
-        id: Math.random().toString(36).substring(2, 9),
-        name,
-        email: normalizedEmail,
-        phone,
-        role: "student",
-        enrolledCourses: [],
-        createdAt: now,
-      };
-      await appendDBRecord("students.json", student);
-    }
     const referralDiscount = referrer && !isSelfReferral ? calculateReferralDiscount(parsedAmount, discountSettings) : 0;
     const promoResult = applyPromoCode({
       amount: Math.max(0, parsedAmount - referralDiscount),
@@ -141,7 +125,7 @@ export async function POST(request: Request) {
       id: "ENR-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
       studentId: student.id,
       studentName: name,
-      studentEmail: session?.user.email || email,
+      studentEmail: session.user.email || email,
       courseId: selectedCourses.map((course) => course.id).join(","),
       courseName: selectedCourses.map((course) => course.title).join(", ") || "Course",
       originalAmount: parsedAmount,
@@ -178,12 +162,6 @@ export async function POST(request: Request) {
       throw new Error(
         "Enrollment storage verification failed. Configure Supabase, MongoDB, or Vercel KV so requests can appear in the admin dashboard before students pay."
       );
-    }
-
-    // A brand-new self-enrollment has no password yet, but they should still land
-    // in the LMS as themselves right away so admin can see and track their activity.
-    if (isNewStudent && !session) {
-      await setSession({ id: student.id, name: student.name, email: student.email, role: "student" });
     }
 
     return NextResponse.json({

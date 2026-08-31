@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { courses as fallbackCourses, type Course } from "@/data/courses";
 
@@ -10,6 +10,7 @@ type EnrollmentResponse = {
   success?: boolean;
   message?: string;
   reviewPending?: boolean;
+  requiresAuth?: boolean;
   reference?: string;
   amount?: number | string;
   paymentLabel?: string;
@@ -25,6 +26,7 @@ type EnrollmentResponse = {
 };
 
 function EnrollForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialCourse = searchParams.get("course") || "";
   const initialReferralCode = searchParams.get("ref") || "";
@@ -65,7 +67,7 @@ function EnrollForm() {
           }));
         }
       } catch {
-        // Visitors can enroll without being logged in.
+        // Middleware already requires an account to reach this page; profile prefill is best-effort.
       }
     };
 
@@ -151,6 +153,11 @@ function EnrollForm() {
         if (!data.promoApplied && data.promoMessage) setPromoMessage(data.promoMessage);
         setErrorMessage(data.message || "Enrollment could not be submitted for admin review.");
         setStatus("failed");
+      } else if (data.requiresAuth) {
+        // Session expired mid-form; send them to create/sign in to an account and back here after.
+        const backTo = window.location.pathname + window.location.search;
+        router.push(`/auth/register?next=${encodeURIComponent(backTo)}`);
+        return;
       } else {
         setErrorMessage(data.message || "Enrollment failed.");
         setStatus("failed");
@@ -236,7 +243,12 @@ function EnrollForm() {
 
   return (
     <div className="premium-card bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border border-gray-100 transition duration-300 hover:shadow-primary/10" data-reveal>
-      <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 tracking-tight">Course Enrollment</h2>
+      <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight">Course Enrollment</h2>
+      {formData.email && (
+        <p className="mb-6 sm:mb-8 text-xs font-bold uppercase tracking-widest text-gray-400">
+          Enrolling as <span className="text-primary">{formData.name || formData.email}</span>
+        </p>
+      )}
       <form className="space-y-6 md:space-y-8" onSubmit={handleSubmit}>
         <div className="motion-soft motion-delay-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div>

@@ -1,14 +1,22 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
+import { getSafeNextPath, withNextPath } from "@/lib/nextPath";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "", confirm: "" });
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [loginHref, setLoginHref] = useState("/auth/login");
+  const [enrollingNext, setEnrollingNext] = useState(false);
+
+  useEffect(() => {
+    setLoginHref(withNextPath("/auth/login"));
+    setEnrollingNext(getSafeNextPath().startsWith("/enroll"));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +44,7 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (data.success) {
-        router.push("/lms");
+        router.push(getSafeNextPath() || "/lms");
         router.refresh();
       } else {
         setStatus("error");
@@ -64,7 +72,9 @@ export default function RegisterPage() {
             <span className="text-white font-extrabold text-2xl tracking-tight">Sam Creative <span className="text-primary">Design School</span></span>
           </Link>
           <h1 className="text-3xl font-extrabold text-white mb-2">Join the Academy</h1>
-          <p className="text-gray-400">Create your account and start learning today</p>
+          <p className="text-gray-400">
+            {enrollingNext ? "Create your free account first, then continue to enrollment" : "Create your account and start learning today"}
+          </p>
         </div>
 
         <div className="animate-fade-in bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 transition duration-300 hover:border-white/20 hover:bg-white/[0.07]" style={{ animationDelay: "120ms" }}>
@@ -143,7 +153,7 @@ export default function RegisterPage() {
           <div className="mt-6 pt-6 border-t border-white/10 text-center">
             <p className="text-gray-400 text-sm">
               Already have an account?{" "}
-              <Link href="/auth/login" className="text-primary font-bold hover:underline">
+              <Link href={loginHref} className="text-primary font-bold hover:underline">
                 Sign in
               </Link>
             </p>

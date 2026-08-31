@@ -9,14 +9,17 @@ const SECRET = new TextEncoder().encode(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isCoursePreview = pathname.startsWith("/lms/") && request.nextUrl.searchParams.get("preview") === "1";
+  const isEnroll = pathname.startsWith("/enroll");
 
-  if ((pathname.startsWith("/lms") && !isCoursePreview) || pathname.startsWith("/admin")) {
+  if ((pathname.startsWith("/lms") && !isCoursePreview) || pathname.startsWith("/admin") || isEnroll) {
     const token = request.cookies.get("session")?.value;
 
     if (!token) {
-      const loginUrl = new URL("/auth/login", request.url);
-      if (pathname.startsWith("/admin")) loginUrl.searchParams.set("next", "/admin");
-      return NextResponse.redirect(loginUrl);
+      // Enrollment requires an account first, so send guests to sign up rather than sign in.
+      const authUrl = new URL(isEnroll ? "/auth/register" : "/auth/login", request.url);
+      if (pathname.startsWith("/admin")) authUrl.searchParams.set("next", "/admin");
+      else if (isEnroll) authUrl.searchParams.set("next", pathname + request.nextUrl.search);
+      return NextResponse.redirect(authUrl);
     }
 
     try {
@@ -28,9 +31,10 @@ export async function middleware(request: NextRequest) {
         }
       }
     } catch {
-      const loginUrl = new URL("/auth/login", request.url);
-      if (pathname.startsWith("/admin")) loginUrl.searchParams.set("next", "/admin");
-      return NextResponse.redirect(loginUrl);
+      const authUrl = new URL(isEnroll ? "/auth/register" : "/auth/login", request.url);
+      if (pathname.startsWith("/admin")) authUrl.searchParams.set("next", "/admin");
+      else if (isEnroll) authUrl.searchParams.set("next", pathname + request.nextUrl.search);
+      return NextResponse.redirect(authUrl);
     }
   }
 
@@ -38,5 +42,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/lms/:path*", "/admin/:path*"],
+  matcher: ["/lms/:path*", "/admin/:path*", "/enroll"],
 };
