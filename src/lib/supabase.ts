@@ -184,6 +184,22 @@ export async function saveSupabaseCollection<T>(collection: string, data: T[]): 
   }
 }
 
+export async function deleteSupabaseRecord(collection: string, recordId: string): Promise<void> {
+  const query = new URLSearchParams({
+    collection: `eq.${collection}`,
+    record_id: `eq.${recordId}`,
+  });
+
+  const response = await fetchSupabase(getRestUrl(`app_records?${query.toString()}`), {
+    method: "DELETE",
+    headers: getHeaders({ Prefer: "return=minimal" }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase record delete failed: ${await parseSupabaseError(response)}`);
+  }
+}
+
 export async function upsertSupabaseRecord<T>(
   collection: string,
   recordId: string,

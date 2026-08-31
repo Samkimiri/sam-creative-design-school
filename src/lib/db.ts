@@ -3,6 +3,7 @@ import path from "path";
 import { getData as getKVData, hasKVConfig, setData as setKVData } from "./kv";
 import getMongoClient, { hasMongoConfig } from "./mongodb";
 import {
+  deleteSupabaseRecord,
   findSupabaseRecordByJsonField,
   findSupabaseRecordByJsonFieldInsensitive,
   getSupabaseCollection,
@@ -28,6 +29,13 @@ const HIGH_WRITE_FILES = new Set([
   "messages.json",
   "password-resets.json",
   "site-settings.json",
+  // Community collections are polled and written to constantly by many
+  // students at once - never serve a per-instance stale cache for these.
+  "community-messages.json",
+  "community-blocks.json",
+  "community-posts.json",
+  "community-post-comments.json",
+  "community-reactions.json",
 ]);
 const legacyLookupTimeoutMs = Number(process.env.SCDS_LEGACY_DB_TIMEOUT_MS || 1800);
 
@@ -412,6 +420,85 @@ async function upsertIntoArrayStoreWithRetry<T extends object>(
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Removes a single record without rewriting the whole collection - matters for
+ * high-frequency, high-contention writes like reaction toggles, where a full
+ * saveDB() on every unlike would both be wasteful at scale and race against
+ * concurrent writers touching other records in the same collection.
+ */
+export async function deleteDBRecord(
+  filename: string,
+  recordId: string,
+  options?: { idKey?: string }
+): Promise<void> {
+  const idKey = options?.idKey ?? "id";
+  const cleanId = recordId.trim();
+  if (!cleanId) throw new Error(`Cannot delete from ${filename}: missing record id`);
+
+  if (shouldUseMemoryCache(filename)) {
+    const data = memoryDB[filename] ?? (readJSON(filename) as unknown[]);
+    memoryDB[filename] = data.filter((item) => String((item as Record<string, unknown>)[idKey] || "") !== cleanId);
+  }
+
+  if (hasSupabaseConfig()) {
+    try {
+      await deleteSupabaseRecord(getCollectionName(filename), cleanId);
+      return;
+    } catch (error) {
+      console.error("Supabase deleteDBRecord error:", error);
+      if (!hasMongoConfig() && !hasKVConfig() && requiresPersistentStorage(filename)) {
+        throw error instanceof Error ? error : persistentStorageError(filename);
+      }
+    }
+  }
+
+  if (!hasMongoConfig()) {
+    if (requiresPersistentStorage(filename) && !hasKVConfig()) {
+      throw persistentStorageError(filename);
+    }
+
+    await deleteFromArrayStoreWithRetry(filename, idKey, cleanId, hasKVConfig());
+    return;
+  }
+
+  try {
+    const client = await getMongoClient();
+    const db = client.db("scds_db");
+    const collection = db.collection(getCollectionName(filename));
+    await collection.deleteOne({ [String(idKey)]: cleanId });
+    return;
+  } catch (error) {
+    console.error("MongoDB deleteDBRecord error:", error);
+    if (requiresPersistentStorage(filename) && !hasKVConfig()) {
+      throw error instanceof Error ? error : persistentStorageError(filename);
+    }
+  }
+
+  await deleteFromArrayStoreWithRetry(filename, idKey, cleanId, true);
+}
+
+async function deleteFromArrayStoreWithRetry(
+  filename: string,
+  idKey: string,
+  recordId: string,
+  useLiveRead: boolean
+): Promise<void> {
+  const attempts = 4;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const data = useLiveRead ? await getDB<Record<string, unknown>>(filename) : readJSON<Record<string, unknown>>(filename);
+    const next = data.filter((item) => String(item[idKey] || "") !== recordId);
+    await saveDB(filename, next);
+
+    const verify = useLiveRead ? await getDB<Record<string, unknown>>(filename) : readJSON<Record<string, unknown>>(filename);
+    const stillPresent = verify.some((item) => String(item[idKey] || "") === recordId);
+    if (!stillPresent) return;
+    if (attempt < attempts) await delay(75 + Math.floor(Math.random() * 150));
+  }
+
+  throw new Error(`Cannot delete from ${filename}: write was overwritten by a concurrent request after ${attempts} attempts`);
 }
 
 export async function appendDBRecord<T extends object>(
