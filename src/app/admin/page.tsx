@@ -4,6 +4,10 @@ import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
 import type { ContentSettings, CourseContentOverride, CourseFeedback, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, ProgressRecord, PromoCode } from "@/types";
 import type { LeaderboardEntry } from "@/lib/leaderboard";
+import { downloadCsv } from "@/lib/csv";
+import type { FinanceSummary } from "@/lib/finance";
+import type { AuditLogEntry } from "@/lib/auditLog";
+import type { BlogPost } from "@/data/blog";
 import { STICKERS, type CommunityComment, type CommunityMessage, type CommunityPost } from "@/lib/community";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 
@@ -125,6 +129,13 @@ interface AnalyticsSummary {
   topClicks: { label: string; count: number }[];
 }
 
+interface HealthCheck {
+  id: string;
+  label: string;
+  status: "ok" | "warning" | "error";
+  detail: string;
+}
+
 interface AdminReview {
   id: string;
   name: string;
@@ -203,6 +214,7 @@ interface AdminDashboardPayload {
   progress?: ProgressRecord[];
   courseFeedback?: CourseFeedback[];
   leaderboard?: LeaderboardEntry[];
+  finance?: FinanceSummary;
   settings?: AdminSettings;
   analytics?: {
     summary?: AnalyticsSummary;
@@ -211,7 +223,7 @@ interface AdminDashboardPayload {
   };
 }
 
-type AdminTab = "analytics" | "enrollments" | "students" | "community" | "reviews" | "projects" | "assignments" | "certificates" | "discounts" | "settings" | "content";
+type AdminTab = "analytics" | "enrollments" | "finance" | "students" | "admins" | "community" | "reviews" | "projects" | "assignments" | "certificates" | "discounts" | "settings" | "content" | "blog";
 
 type AdminResponse<T> = {
   success?: boolean;
@@ -221,9 +233,13 @@ type AdminResponse<T> = {
   summary?: AnalyticsSummary;
   sessions?: VisitorSession[];
   events?: AnalyticsEvent[];
+  actorRole?: "admin" | "staff";
 };
 
-const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "community", "reviews", "projects", "assignments", "certificates", "discounts", "settings", "content"];
+const adminTabs: AdminTab[] = ["analytics", "enrollments", "finance", "students", "admins", "community", "reviews", "projects", "assignments", "certificates", "discounts", "settings", "content", "blog"];
+// Staff accounts are limited to day-to-day moderation/grading tabs - everything
+// financial, account-level, or content/marketing-related requires full admin.
+const STAFF_TABS: AdminTab[] = ["community", "reviews", "projects", "assignments", "certificates"];
 const defaultIntakeSettings: UpcomingIntakeSettings = {
   id: "upcoming-intake",
   title: "Join the Next SCDS Class",
@@ -416,6 +432,16 @@ export default function AdminDashboard() {
   const [progress, setProgress] = useState<ProgressRecord[]>([]);
   const [courseFeedback, setCourseFeedback] = useState<CourseFeedback[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [financeSummary, setFinanceSummary] = useState<FinanceSummary | null>(null);
+  const [myRole, setMyRole] = useState<"admin" | "staff">("admin");
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [blogLoading, setBlogLoading] = useState(false);
+  const [blogForm, setBlogForm] = useState({ id: "", title: "", category: "", excerpt: "", image: "", tags: "", body: "" });
+  const [blogSaving, setBlogSaving] = useState(false);
+  const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([]);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [auditLogLoading, setAuditLogLoading] = useState(false);
   const [progressStudentId, setProgressStudentId] = useState<string | null>(null);
   const [feedbackDraft, setFeedbackDraft] = useState<Record<string, string>>({});
   const [suggestedCourseByStudent, setSuggestedCourseByStudent] = useState<Record<string, string>>({});
@@ -430,6 +456,8 @@ export default function AdminDashboard() {
   const [contentSettings, setContentSettings] = useState<ContentSettings>(defaultContentSettings);
   const [discountSettings, setDiscountSettings] = useState<DiscountSettings>(defaultDiscountSettings);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [newCourseTitle, setNewCourseTitle] = useState("");
+  const [newCourseError, setNewCourseError] = useState("");
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [certificateCourseId, setCertificateCourseId] = useState(courses[0]?.id || "");
   const [certificateStudentName, setCertificateStudentName] = useState("Robert Rangoma");
@@ -438,6 +466,8 @@ export default function AdminDashboard() {
   const [enrollmentsLastUpdated, setEnrollmentsLastUpdated] = useState<string>("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+  const [enrollmentSearch, setEnrollmentSearch] = useState("");
   const [pendingAction, setPendingAction] = useState("");
   const [assignmentFeedback, setAssignmentFeedback] = useState<Record<string, string>>({});
   const [assignmentRubrics, setAssignmentRubrics] = useState<Record<string, NonNullable<AdminAssignment["rubric"]>>>({});
@@ -471,6 +501,7 @@ export default function AdminDashboard() {
 
       if (res.ok && data.success) {
         const dashboard = data.data ?? {};
+        setMyRole(data.actorRole === "staff" ? "staff" : "admin");
         setStudents(Array.isArray(dashboard.students) ? dashboard.students : []);
         setEnrollments(Array.isArray(dashboard.enrollments) ? dashboard.enrollments : []);
         setEnrollmentsLastUpdated(new Date().toISOString());
@@ -481,6 +512,7 @@ export default function AdminDashboard() {
         setProgress(Array.isArray(dashboard.progress) ? dashboard.progress : []);
         setCourseFeedback(Array.isArray(dashboard.courseFeedback) ? dashboard.courseFeedback : []);
         setLeaderboard(Array.isArray(dashboard.leaderboard) ? dashboard.leaderboard : []);
+        setFinanceSummary(dashboard.finance ?? null);
         setVisitorSessions(Array.isArray(dashboard.analytics?.sessions) ? dashboard.analytics.sessions : []);
         setAnalyticsEvents(Array.isArray(dashboard.analytics?.events) ? dashboard.analytics.events : []);
         setAnalyticsSummary(dashboard.analytics?.summary ?? null);
@@ -629,6 +661,12 @@ export default function AdminDashboard() {
     }, 20000);
     return () => window.clearInterval(interval);
   }, [authed, password, refreshEnrollments, tab]);
+
+  useEffect(() => {
+    if (authed && myRole === "staff" && !STAFF_TABS.includes(tab)) {
+      setTab("community");
+    }
+  }, [authed, myRole, tab]);
 
   useEffect(() => {
     if (!authed || tab !== "community") return;
@@ -797,6 +835,174 @@ export default function AdminDashboard() {
       }
     );
   };
+
+  const exportStudentsCsv = (rows: Student[]) => {
+    downloadCsv(
+      `scds-students-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["#", "Name", "Email", "Phone", "Courses", "Alumni", "Joined"],
+      rows.map((s, index) => [
+        index + 1,
+        s.name,
+        s.email,
+        s.phone,
+        (s.enrolledCourses ?? []).join("; "),
+        s.isAlumni ? "Yes" : "No",
+        new Date(s.createdAt).toLocaleDateString(),
+      ])
+    );
+  };
+
+  const exportEnrollmentsCsv = (rows: Enrollment[]) => {
+    downloadCsv(
+      `scds-enrollments-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["Student", "Email", "Phone", "Course", "Amount", "Status", "Payment Provider", "Reference", "Date"],
+      rows.map((e) => [
+        e.studentName,
+        e.studentEmail,
+        e.phone,
+        e.courseName,
+        e.amount,
+        e.status,
+        e.paymentProvider || "",
+        e.reference,
+        new Date(e.createdAt).toLocaleDateString(),
+      ])
+    );
+  };
+
+  const setStudentRole = async (studentId: string, role: "admin" | "staff" | "student", studentName: string) => {
+    const confirmed = window.confirm(
+      role === "student"
+        ? `Remove ${studentName} from the admin team? They'll go back to being a regular student.`
+        : `Make ${studentName} ${role === "admin" ? "a full admin" : "a staff member"}?`
+    );
+    if (!confirmed) return;
+
+    await runMutation<{ id: string; name: string; email: string; role: string }>(
+      `set-role-${studentId}`,
+      "/api/admin/admins",
+      { password, studentId, role },
+      (updated) => {
+        setStudents((prev) => prev.map((s) => (s.id === updated.id ? { ...s, role: updated.role } : s)));
+        setNotice(`${studentName}'s role is now ${updated.role}.`);
+      },
+      "PATCH"
+    );
+  };
+
+  const loadAuditLog = useCallback(async (pw?: string) => {
+    setAuditLogLoading(true);
+    try {
+      const { res, data } = await fetchAdminJson<AuditLogEntry[]>("/api/admin/audit-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pw ? { password: pw } : {}),
+      });
+      if (res.ok && data.success && Array.isArray(data.data)) setAuditLog(data.data);
+    } catch {
+      // Non-critical - the log panel just stays empty/stale.
+    } finally {
+      setAuditLogLoading(false);
+    }
+  }, [fetchAdminJson]);
+
+  useEffect(() => {
+    if (!authed || tab !== "admins" || myRole !== "admin") return;
+    void loadAuditLog(password);
+  }, [authed, password, tab, myRole, loadAuditLog]);
+
+  const loadBlogPosts = useCallback(async (pw?: string) => {
+    setBlogLoading(true);
+    try {
+      const { res, data } = await fetchAdminJson<BlogPost[]>("/api/admin/blog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pw ? { password: pw } : {}),
+      });
+      if (res.ok && data.success && Array.isArray(data.data)) setBlogPosts(data.data);
+    } catch {
+      // Non-critical - the list just stays empty/stale.
+    } finally {
+      setBlogLoading(false);
+    }
+  }, [fetchAdminJson]);
+
+  useEffect(() => {
+    if (!authed || tab !== "blog") return;
+    void loadBlogPosts(password);
+  }, [authed, password, tab, loadBlogPosts]);
+
+  const resetBlogForm = () => setBlogForm({ id: "", title: "", category: "", excerpt: "", image: "", tags: "", body: "" });
+
+  const startEditBlogPost = (post: BlogPost) => {
+    setBlogForm({
+      id: post.id,
+      title: post.title,
+      category: post.category,
+      excerpt: post.excerpt,
+      image: post.image,
+      tags: post.tags.join(", "),
+      body: post.content.join("\n\n"),
+    });
+  };
+
+  const saveBlogPost = async () => {
+    setBlogSaving(true);
+    setNotice("");
+    try {
+      const { res, data } = await fetchAdminJson<BlogPost>("/api/admin/blog", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, ...blogForm }),
+      });
+      if (!res.ok || !data.success || !data.data) {
+        setNotice(data.message || "Could not save this post.");
+        return;
+      }
+      resetBlogForm();
+      await loadBlogPosts(password);
+      setNotice(`"${data.data.title}" published.`);
+    } catch {
+      setNotice("Could not save this post. Check your connection and try again.");
+    } finally {
+      setBlogSaving(false);
+    }
+  };
+
+  const deleteBlogPost = async (postId: string, title: string) => {
+    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    await runMutation<{ id: string }>(
+      `delete-blog-${postId}`,
+      "/api/admin/blog",
+      { password, id: postId },
+      () => {
+        setBlogPosts((prev) => prev.filter((p) => p.id !== postId));
+        setNotice("Post deleted.");
+      },
+      "DELETE"
+    );
+  };
+
+  const loadHealthChecks = useCallback(async (pw?: string) => {
+    setHealthLoading(true);
+    try {
+      const { res, data } = await fetchAdminJson<HealthCheck[]>("/api/admin/health", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pw ? { password: pw } : {}),
+      });
+      if (res.ok && data.success && Array.isArray(data.data)) setHealthChecks(data.data);
+    } catch {
+      // Non-critical - the panel just stays empty/stale.
+    } finally {
+      setHealthLoading(false);
+    }
+  }, [fetchAdminJson]);
+
+  useEffect(() => {
+    if (!authed || tab !== "settings" || myRole !== "admin") return;
+    void loadHealthChecks(password);
+  }, [authed, password, tab, myRole, loadHealthChecks]);
 
   const deleteStudent = async (studentId: string, studentName: string) => {
     const typed = window.prompt(
@@ -989,6 +1195,38 @@ export default function AdminDashboard() {
         courses: [...current.courses.filter((course) => course.id !== courseId), next],
       };
     });
+  };
+
+  const createNewCourse = () => {
+    setNewCourseError("");
+    const title = newCourseTitle.trim();
+    if (!title) {
+      setNewCourseError("Enter a course title first.");
+      return;
+    }
+
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60);
+
+    if (!slug) {
+      setNewCourseError("That title couldn't be turned into a valid course ID. Try adding some letters.");
+      return;
+    }
+
+    const alreadyExists = courses.some((c) => c.id === slug) || contentSettings.courses.some((c) => c.id === slug);
+    if (alreadyExists) {
+      setNewCourseError("A course with that name already exists. Choose a different title.");
+      return;
+    }
+
+    updateCourseContent(slug, { title, shortTitle: title, price: 0, level: "Beginner" });
+    setSelectedCourseId(slug);
+    setSelectedLessonId(null);
+    setNewCourseTitle("");
+    setNotice(`"${title}" was created as a draft course. Fill in the details below, then Save Content Changes. Its lessons will need to be added afterward - it opens in the LMS with a "coming soon" placeholder until then.`);
   };
 
   const updateLessonContent = (lessonId: string, patch: Partial<LessonContentOverride>) => {
@@ -1232,10 +1470,44 @@ export default function AdminDashboard() {
     if (aPriority !== bPriority) return aPriority - bPriority;
     return new Date(b.adminReviewRequestedAt || b.whatsappSentAt || b.createdAt).getTime() - new Date(a.adminReviewRequestedAt || a.whatsappSentAt || a.createdAt).getTime();
   });
-  const studentsByEnrollmentOrder = [...students].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  const studentsByEnrollmentOrder = [...students]
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .map((s, index) => ({ ...s, enrollmentRank: index + 1 }));
+  const studentSearchTerm = studentSearch.trim().toLowerCase();
+  const filteredStudentsByEnrollmentOrder = studentSearchTerm
+    ? studentsByEnrollmentOrder.filter((s) =>
+        [s.name, s.email, s.phone].some((field) => field?.toLowerCase().includes(studentSearchTerm))
+      )
+    : studentsByEnrollmentOrder;
+  const enrollmentSearchTerm = enrollmentSearch.trim().toLowerCase();
+  const filteredSortedEnrollments = enrollmentSearchTerm
+    ? sortedEnrollments.filter((e) =>
+        [e.studentName, e.studentEmail, e.phone, e.courseName, e.reference].some((field) =>
+          field?.toLowerCase().includes(enrollmentSearchTerm)
+        )
+      )
+    : sortedEnrollments;
   const todaysVisitorSessions = visitorSessions.filter((s) => isToday(s.lastSeen));
+  const staticCourseIds = new Set(courses.map((c) => c.id));
+  const draftCourses = contentSettings.courses
+    .filter((c) => !staticCourseIds.has(c.id) && c.title)
+    .map((c) => ({
+      id: c.id,
+      title: c.title || c.id,
+      shortTitle: c.shortTitle || c.title || c.id,
+      description: c.description || "",
+      longDescription: c.longDescription || c.description || "",
+      duration: c.duration || "Flexible",
+      price: c.price ?? 0,
+      priceRange: c.priceRange || "",
+      skills: c.skills || [],
+      image: c.image || "",
+      icon: "",
+      color: "",
+      level: c.level || "Beginner",
+      certificate: true,
+    }));
+  const editableCourses = [...courses, ...draftCourses];
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24 pt-28">
@@ -1289,7 +1561,7 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-          {adminTabs.map((t) => (
+          {(myRole === "staff" ? adminTabs.filter((t) => STAFF_TABS.includes(t)) : adminTabs).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -1420,6 +1692,27 @@ export default function AdminDashboard() {
                   {enrollmentsLoading ? "Checking..." : "Refresh Enrollments"}
                 </button>
               </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-6 py-4">
+                <input
+                  value={enrollmentSearch}
+                  onChange={(e) => setEnrollmentSearch(e.target.value)}
+                  placeholder="Search by student, course, phone, or reference..."
+                  className="w-full max-w-xs rounded-xl border border-gray-200 px-4 py-2 text-sm outline-none focus:border-primary sm:w-80"
+                />
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-gray-400">
+                    {enrollmentSearchTerm ? `${filteredSortedEnrollments.length} of ${enrollments.length} enrollments` : `${enrollments.length} enrollments`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => exportEnrollmentsCsv(filteredSortedEnrollments)}
+                    disabled={filteredSortedEnrollments.length === 0}
+                    className={`rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-dark disabled:opacity-40 ${adminActionMotion}`}
+                  >
+                    Export CSV
+                  </button>
+                </div>
+              </div>
               <div className="border-b border-gray-100 bg-[#F6FAFF] px-6 py-4">
                 <div className="grid gap-3 text-sm md:grid-cols-3">
                   <div className="rounded-xl border border-blue-100 bg-white p-4">
@@ -1456,7 +1749,9 @@ export default function AdminDashboard() {
                     <tr><td colSpan={9} className="text-center py-12 text-gray-400">Loading enrollment requests...</td></tr>
                   ) : enrollments.length === 0 ? (
                     <tr><td colSpan={9} className="text-center py-12 text-gray-400">No enrollment requests found yet</td></tr>
-                  ) : sortedEnrollments.map((e) => {
+                  ) : filteredSortedEnrollments.length === 0 ? (
+                    <tr><td colSpan={9} className="text-center py-12 text-gray-400">No enrollments match &quot;{enrollmentSearch}&quot;</td></tr>
+                  ) : filteredSortedEnrollments.map((e) => {
                     const isApprovalReady = approvalReadyRequestIds.has(e.id);
                     const isRecentEnrollment = Date.now() - new Date(e.createdAt).getTime() < 24 * 60 * 60 * 1000;
                     const enrollmentCourseIds = e.courseId.split(",").map((id) => id.trim()).filter(Boolean);
@@ -1655,9 +1950,134 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Finance */}
+        {tab === "finance" && (
+          <div key="finance-panel" className="admin-tab-panel space-y-5">
+            {!financeSummary ? (
+              <div className="rounded-2xl border border-gray-100 bg-white p-12 text-center text-gray-400 shadow-sm">Loading finance data...</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {[
+                    { label: "Total Collected", value: `Ksh ${financeSummary.totalCollected.toLocaleString()}`, color: "bg-green-50 text-green-700" },
+                    { label: "This Month", value: `Ksh ${financeSummary.thisMonthCollected.toLocaleString()}`, color: "bg-primary/10 text-primary" },
+                    { label: "Pending Approval", value: `Ksh ${financeSummary.totalPending.toLocaleString()}`, color: "bg-amber-50 text-amber-700" },
+                    { label: "Avg. Order Value", value: `Ksh ${financeSummary.averageOrderValue.toLocaleString()}`, color: "bg-slate-100 text-slate-700" },
+                  ].map((stat) => (
+                    <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <div className={`mb-3 inline-flex rounded-xl px-3 py-1 text-xs font-black uppercase tracking-wider ${stat.color}`}>{stat.label}</div>
+                      <div className="text-2xl font-extrabold text-dark">{stat.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-black uppercase tracking-wider text-gray-400">Confirmed Enrollments</p>
+                    <p className="mt-2 text-xl font-extrabold text-dark">{financeSummary.confirmedCount}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-black uppercase tracking-wider text-gray-400">Referral Discounts Given</p>
+                    <p className="mt-2 text-xl font-extrabold text-dark">Ksh {financeSummary.totalReferralDiscounts.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-black uppercase tracking-wider text-gray-400">Promo Discounts Given</p>
+                    <p className="mt-2 text-xl font-extrabold text-dark">Ksh {financeSummary.totalPromoDiscounts.toLocaleString()}</p>
+                  </div>
+                </div>
+
+                {financeSummary.totalLegacyUnconfirmed > 0 && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+                    Ksh {financeSummary.totalLegacyUnconfirmed.toLocaleString()} of confirmed access is from legacy/backfilled enrollments with no original payment record - excluded from the totals above since it isn&apos;t confirmed revenue.
+                  </div>
+                )}
+
+                <CollapsiblePanel
+                  className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminPanelMotion}`}
+                  title="Collected in the Last 30 Days"
+                  subtitle="Confirmed M-Pesa payments by day"
+                  bodyClassName="mt-5"
+                >
+                  <div className="flex h-32 items-end gap-1">
+                    {financeSummary.last30Days.map((day) => {
+                      const max = Math.max(...financeSummary.last30Days.map((d) => d.collected), 1);
+                      const heightPct = Math.max(2, Math.round((day.collected / max) * 100));
+                      return (
+                        <div key={day.date} className="group relative flex-1">
+                          <div
+                            className="rounded-t bg-primary/70 transition hover:bg-primary"
+                            style={{ height: `${heightPct}%` }}
+                          />
+                          <div className="pointer-events-none absolute -top-8 left-1/2 hidden -translate-x-1/2 rounded-lg bg-dark px-2 py-1 text-[10px] font-bold text-white group-hover:block">
+                            {day.date.slice(5)}: Ksh {day.collected.toLocaleString()}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsiblePanel>
+
+                <CollapsiblePanel
+                  className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${adminPanelMotion}`}
+                  headerClassName="px-6 py-5"
+                  title="Revenue by Course"
+                >
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                        <tr>
+                          <th className="px-6 py-3 text-left">Course</th>
+                          <th className="px-6 py-3 text-left">Confirmed</th>
+                          <th className="px-6 py-3 text-left">Collected</th>
+                          <th className="px-6 py-3 text-left">Pending</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {financeSummary.byCourse.length === 0 ? (
+                          <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-400">No enrollment data yet</td></tr>
+                        ) : (
+                          financeSummary.byCourse.map((row) => (
+                            <tr key={row.courseId}>
+                              <td className="px-6 py-3 font-bold text-dark">{row.courseName}</td>
+                              <td className="px-6 py-3 text-gray-600">{row.confirmedCount}</td>
+                              <td className="px-6 py-3 font-bold text-green-700">Ksh {row.collected.toLocaleString()}</td>
+                              <td className="px-6 py-3 text-amber-700">{row.pendingCount > 0 ? `Ksh ${row.pendingAmount.toLocaleString()} (${row.pendingCount})` : "-"}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CollapsiblePanel>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Students Table */}
         {tab === "students" && (
           <div key="students-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-6 py-4">
+              <input
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                placeholder="Search by name, email, or phone..."
+                className="w-full max-w-xs rounded-xl border border-gray-200 px-4 py-2 text-sm outline-none focus:border-primary sm:w-72"
+              />
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold text-gray-400">
+                  {studentSearchTerm ? `${filteredStudentsByEnrollmentOrder.length} of ${students.length} students` : `${students.length} students`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => exportStudentsCsv(filteredStudentsByEnrollmentOrder)}
+                  disabled={filteredStudentsByEnrollmentOrder.length === 0}
+                  className={`rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-dark disabled:opacity-40 ${adminActionMotion}`}
+                >
+                  Export CSV
+                </button>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
@@ -1676,9 +2096,11 @@ export default function AdminDashboard() {
                 <tbody className="divide-y divide-gray-100">
                   {students.length === 0 ? (
                     <tr><td colSpan={9} className="text-center py-12 text-gray-400">No registered students yet</td></tr>
-                  ) : studentsByEnrollmentOrder.map((s, index) => (
+                  ) : filteredStudentsByEnrollmentOrder.length === 0 ? (
+                    <tr><td colSpan={9} className="text-center py-12 text-gray-400">No students match &quot;{studentSearch}&quot;</td></tr>
+                  ) : filteredStudentsByEnrollmentOrder.map((s) => (
                     <tr key={s.id} className={adminRowMotion}>
-                      <td className="px-6 py-4 font-bold text-gray-400">{index + 1}</td>
+                      <td className="px-6 py-4 font-bold text-gray-400">{s.enrollmentRank}</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden">
@@ -1900,6 +2322,215 @@ export default function AdminDashboard() {
                     >
                       {pendingAction === `delete-comment-${comment.id}` ? "Removing..." : "Remove"}
                     </button>
+                  </div>
+                ))
+              )}
+            </CollapsiblePanel>
+          </div>
+        )}
+
+        {/* Admin Team + Audit Log */}
+        {tab === "admins" && (
+          <div key="admins-panel" className="admin-tab-panel space-y-5">
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-slate-100 px-6 py-5"
+              title="Admin Team"
+              subtitle="Full admins can do everything. Staff are limited to Community, Reviews, Projects, Assignments, and Certificates."
+              bodyClassName="divide-y divide-gray-100"
+            >
+              {students.filter((s) => s.role === "admin" || s.role === "staff").map((member) => (
+                <div key={member.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-dark">{member.name}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${member.role === "admin" ? "bg-primary/10 text-primary" : "bg-slate-100 text-slate-600"}`}>
+                        {member.role}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">{member.email}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {member.role !== "admin" && (
+                      <button
+                        type="button"
+                        onClick={() => void setStudentRole(member.id, "admin", member.name)}
+                        disabled={pendingAction === `set-role-${member.id}`}
+                        className={`rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 disabled:opacity-50 ${adminActionMotion}`}
+                      >
+                        Make Full Admin
+                      </button>
+                    )}
+                    {member.role !== "staff" && (
+                      <button
+                        type="button"
+                        onClick={() => void setStudentRole(member.id, "staff", member.name)}
+                        disabled={pendingAction === `set-role-${member.id}`}
+                        className={`rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200 disabled:opacity-50 ${adminActionMotion}`}
+                      >
+                        Make Staff
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void setStudentRole(member.id, "student", member.name)}
+                      disabled={pendingAction === `set-role-${member.id}`}
+                      className={`rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
+                    >
+                      Remove from Team
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </CollapsiblePanel>
+
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-slate-100 px-6 py-5"
+              title="Promote a Student"
+              subtitle="Give an existing student account admin or staff access."
+              defaultOpen={false}
+              bodyClassName="max-h-96 divide-y divide-gray-100 overflow-y-auto"
+            >
+              {students.filter((s) => s.role !== "admin" && s.role !== "staff").map((student) => (
+                <div key={student.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
+                  <div>
+                    <p className="font-bold text-dark">{student.name}</p>
+                    <p className="text-xs text-gray-500">{student.email}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void setStudentRole(student.id, "staff", student.name)}
+                      disabled={pendingAction === `set-role-${student.id}`}
+                      className={`rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200 disabled:opacity-50 ${adminActionMotion}`}
+                    >
+                      Make Staff
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void setStudentRole(student.id, "admin", student.name)}
+                      disabled={pendingAction === `set-role-${student.id}`}
+                      className={`rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 disabled:opacity-50 ${adminActionMotion}`}
+                    >
+                      Make Admin
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </CollapsiblePanel>
+
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-slate-100 px-6 py-5"
+              title="Audit Log"
+              subtitle="Who did what - enrollment decisions, account deletions, role changes, and community moderation."
+              headerExtra={
+                <button
+                  type="button"
+                  onClick={() => void loadAuditLog(password)}
+                  disabled={auditLogLoading}
+                  className={`shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
+                >
+                  {auditLogLoading ? "Checking..." : "Refresh"}
+                </button>
+              }
+              bodyClassName="max-h-[32rem] divide-y divide-gray-100 overflow-y-auto"
+            >
+              {auditLog.length === 0 ? (
+                <div className="py-12 text-center text-gray-400">No admin actions logged yet</div>
+              ) : (
+                auditLog.map((entry) => (
+                  <div key={entry.id} className="px-6 py-3 text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-dark">{entry.actorName}</span>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase text-slate-600">{entry.actorRole}</span>
+                      <span className="text-gray-500">{entry.action}</span>
+                      {entry.targetLabel && <span className="font-semibold text-gray-700">- {entry.targetLabel}</span>}
+                    </div>
+                    <div className="mt-0.5 text-xs text-gray-400">
+                      {new Date(entry.createdAt).toLocaleString()}
+                      {entry.details && ` - ${entry.details}`}
+                    </div>
+                  </div>
+                ))
+              )}
+            </CollapsiblePanel>
+          </div>
+        )}
+
+        {/* Blog CMS */}
+        {tab === "blog" && (
+          <div key="blog-panel" className="admin-tab-panel space-y-5">
+            <div className={`rounded-2xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+              <h4 className="text-lg font-extrabold text-dark">{blogForm.id ? "Edit Post" : "New Post"}</h4>
+              <p className="mt-1 text-sm text-gray-500">
+                Published posts appear on /blog immediately alongside the site&apos;s built-in articles. Separate paragraphs with a blank line.
+              </p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <input value={blogForm.title} onChange={(e) => setBlogForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="Post title" className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary md:col-span-2" />
+                <input value={blogForm.category} onChange={(e) => setBlogForm((prev) => ({ ...prev, category: e.target.value }))} placeholder="Category, e.g. Photoshop" className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" />
+                <input value={blogForm.image} onChange={(e) => setBlogForm((prev) => ({ ...prev, image: e.target.value }))} placeholder="Cover image URL (optional)" className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary" />
+                <input value={blogForm.tags} onChange={(e) => setBlogForm((prev) => ({ ...prev, tags: e.target.value }))} placeholder="Tags, comma separated" className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2" />
+                <textarea value={blogForm.excerpt} onChange={(e) => setBlogForm((prev) => ({ ...prev, excerpt: e.target.value }))} rows={2} placeholder="Short excerpt shown on the blog list (optional - uses the first paragraph if left blank)" className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2" />
+                <textarea value={blogForm.body} onChange={(e) => setBlogForm((prev) => ({ ...prev, body: e.target.value }))} rows={10} placeholder="Article body - one paragraph per block, separated by a blank line" className="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary md:col-span-2" />
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => void saveBlogPost()}
+                  disabled={blogSaving || !blogForm.title.trim() || !blogForm.body.trim()}
+                  className={`rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-40 ${adminActionMotion}`}
+                >
+                  {blogSaving ? "Publishing..." : blogForm.id ? "Save Changes" : "Publish Post"}
+                </button>
+                {blogForm.id && (
+                  <button type="button" onClick={resetBlogForm} className={`rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold text-dark ${adminActionMotion}`}>
+                    Cancel Edit / Start New
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-gray-100 px-6 py-5"
+              title="Published Posts"
+              subtitle="Admin-authored posts. Built-in site articles aren't editable here."
+              headerExtra={
+                <button
+                  type="button"
+                  onClick={() => void loadBlogPosts(password)}
+                  disabled={blogLoading}
+                  className={`shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
+                >
+                  {blogLoading ? "Checking..." : "Refresh"}
+                </button>
+              }
+              bodyClassName="divide-y divide-gray-100"
+            >
+              {blogPosts.length === 0 ? (
+                <div className="py-12 text-center text-gray-400">No posts published from the admin yet</div>
+              ) : (
+                blogPosts.map((post) => (
+                  <div key={post.id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+                    <div>
+                      <p className="font-bold text-dark">{post.title}</p>
+                      <p className="text-xs text-gray-500">{post.category} - {post.date} - /blog/{post.id}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => startEditBlogPost(post)} className={`rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 ${adminActionMotion}`}>
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteBlogPost(post.id, post.title)}
+                        disabled={pendingAction === `delete-blog-${post.id}`}
+                        className={`rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
+                      >
+                        {pendingAction === `delete-blog-${post.id}` ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -2615,7 +3246,42 @@ export default function AdminDashboard() {
         )}
 
         {tab === "settings" && (
-          <div key="settings-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+          <div key="settings-panel" className="admin-tab-panel space-y-5">
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-gray-100 px-6 py-5"
+              title="System Health"
+              subtitle="What's actually configured and working in this deployment."
+              headerExtra={
+                <button
+                  type="button"
+                  onClick={() => void loadHealthChecks(password)}
+                  disabled={healthLoading}
+                  className={`shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
+                >
+                  {healthLoading ? "Checking..." : "Refresh"}
+                </button>
+              }
+              bodyClassName="divide-y divide-gray-100"
+            >
+              {healthChecks.length === 0 ? (
+                <div className="py-12 text-center text-gray-400">{healthLoading ? "Checking..." : "Open this panel to run a check."}</div>
+              ) : (
+                healthChecks.map((check) => (
+                  <div key={check.id} className="flex items-start gap-3 px-6 py-4">
+                    <span className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${
+                      check.status === "ok" ? "bg-green-500" : check.status === "warning" ? "bg-amber-500" : "bg-red-500"
+                    }`} />
+                    <div>
+                      <p className="font-bold text-dark">{check.label}</p>
+                      <p className="text-xs text-gray-500">{check.detail}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CollapsiblePanel>
+
+            <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-dark">Homepage Upcoming Intake</h3>
               <p className="text-xs text-gray-500 mt-1">Update the intake section shown on the homepage. Changes are saved to the backend and appear after the homepage is refreshed.</p>
@@ -2763,6 +3429,7 @@ export default function AdminDashboard() {
                 {pendingAction === "settings-intake" ? "Saving..." : "Save Homepage Intake"}
               </button>
             </form>
+            </div>
           </div>
         )}
 
@@ -2803,10 +3470,35 @@ export default function AdminDashboard() {
               <p className="mt-4 text-xs font-semibold text-gray-500">Use | to separate columns in stats, What You Get, and tool stack fields. Put each item on a new line.</p>
             </section>
 
+            <section className={`rounded-3xl border border-dashed border-primary/30 bg-primary/5 p-5 ${adminPanelMotion}`}>
+              <h4 className="text-lg font-extrabold text-dark">Add a New Course</h4>
+              <p className="mt-1 text-sm text-gray-600">
+                Creates a draft course that appears on the public course list and can be enrolled into. Its lessons still need
+                to be added afterward - students see a &quot;coming soon&quot; placeholder in the LMS until then.
+              </p>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <input
+                  value={newCourseTitle}
+                  onChange={(e) => setNewCourseTitle(e.target.value)}
+                  placeholder="New course title, e.g. Figma for Product Design"
+                  className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+                />
+                <button
+                  type="button"
+                  onClick={createNewCourse}
+                  className={`shrink-0 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white hover:bg-primary/90 ${adminActionMotion}`}
+                >
+                  Create Draft Course
+                </button>
+              </div>
+              {newCourseError && <p className="mt-2 text-xs font-bold text-red-600">{newCourseError}</p>}
+            </section>
+
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
               <div className="space-y-3">
-                {courses.map((course) => {
+                {editableCourses.map((course) => {
                   const draft = contentSettings.courses.find((item) => item.id === course.id);
+                  const isDraft = !staticCourseIds.has(course.id);
                   return (
                     <button
                       key={course.id}
@@ -2816,7 +3508,14 @@ export default function AdminDashboard() {
                       }}
                       className={`w-full rounded-2xl border p-4 text-left ${adminPanelMotion} ${selectedCourseId === course.id ? "border-primary bg-primary text-white shadow-lg" : "border-gray-100 bg-white hover:border-gray-300"}`}
                     >
-                      <div className="font-bold">{draft?.title || course.title}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">{draft?.title || course.title}</span>
+                        {isDraft && (
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${selectedCourseId === course.id ? "bg-white/20 text-white" : "bg-amber-100 text-amber-700"}`}>
+                            Draft
+                          </span>
+                        )}
+                      </div>
                       <div className={`text-xs ${selectedCourseId === course.id ? "text-white/80" : "text-gray-500"}`}>{draft?.level || course.level}</div>
                     </button>
                   );
@@ -2825,7 +3524,7 @@ export default function AdminDashboard() {
 
               <div className="lg:col-span-2">
                 {selectedCourseId ? (() => {
-                  const course = courses.find((item) => item.id === selectedCourseId);
+                  const course = editableCourses.find((item) => item.id === selectedCourseId);
                   if (!course) return null;
                   const draft = contentSettings.courses.find((item) => item.id === selectedCourseId) || { id: selectedCourseId };
                   const courseLessons = lessons.filter((lesson) => lesson.courseId === selectedCourseId).sort((a, b) => a.order - b.order);
