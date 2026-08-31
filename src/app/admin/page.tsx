@@ -1159,12 +1159,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
             { label: "Unique Visitors", value: analyticsSummary?.uniqueVisitors ?? 0, icon: "UV", color: "bg-primary/10 text-primary" },
             { label: "Page Views", value: analyticsSummary?.pageViews ?? 0, icon: "PV", color: "bg-emerald-50 text-emerald-700" },
             { label: "Today's Visitors", value: analyticsSummary?.todayVisitors ?? 0, icon: "TD", color: "bg-amber-50 text-amber-700" },
-            { label: "Engagements", value: analyticsSummary?.engagements ?? 0, icon: "EG", color: "bg-rose-50 text-rose-700" },
           ].map((stat, i) => (
             <div key={i} className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminCardMotion}`} data-reveal style={{ "--reveal-delay": `${i * 45}ms` } as CSSProperties}>
               <div className="mb-4 flex items-center justify-between">
@@ -1198,49 +1197,26 @@ export default function AdminDashboard() {
 
         {tab === "analytics" && (
           <div key="analytics-panel" className="admin-tab-panel space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminPanelMotion}`}>
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-dark">Top Pages</h3>
-                    <p className="mt-1 text-xs font-medium text-slate-500">Most visited routes</p>
-                  </div>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{analyticsSummary?.topPages.length ?? 0}</span>
+            <div className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminPanelMotion}`}>
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-dark">Top Pages</h3>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Most visited routes</p>
                 </div>
-                {analyticsSummary?.topPages.length ? (
-                  <ul className="space-y-2">
-                    {analyticsSummary.topPages.map((p) => (
-                      <li key={p.path} className={`flex items-center justify-between gap-4 rounded-xl border border-transparent px-3 py-2 text-sm ${adminRowMotion}`}>
-                        <span className="min-w-0 truncate font-medium text-slate-700">{p.path}</span>
-                        <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-primary">{p.count} views</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-gray-400 text-sm">No page views yet. Browse the site to collect data.</p>
-                )}
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{analyticsSummary?.topPages.length ?? 0}</span>
               </div>
-              <div className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminPanelMotion}`}>
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-dark">Top Clicks &amp; Actions</h3>
-                    <p className="mt-1 text-xs font-medium text-slate-500">Highest intent interactions</p>
-                  </div>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{analyticsSummary?.topClicks.length ?? 0}</span>
-                </div>
-                {analyticsSummary?.topClicks.length ? (
-                  <ul className="space-y-2">
-                    {analyticsSummary.topClicks.map((c) => (
-                      <li key={c.label} className={`flex items-center justify-between gap-4 rounded-xl border border-transparent px-3 py-2 text-sm ${adminRowMotion}`}>
-                        <span className="min-w-0 truncate font-medium text-slate-700">{c.label}</span>
-                        <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-primary">{c.count}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-gray-400 text-sm">No click events yet.</p>
-                )}
-              </div>
+              {analyticsSummary?.topPages.length ? (
+                <ul className="space-y-2">
+                  {analyticsSummary.topPages.map((p) => (
+                    <li key={p.path} className={`flex items-center justify-between gap-4 rounded-xl border border-transparent px-3 py-2 text-sm ${adminRowMotion}`}>
+                      <span className="min-w-0 truncate font-medium text-slate-700">{p.path}</span>
+                      <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-primary">{p.count} views</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-400 text-sm">No page views yet. Browse the site to collect data.</p>
+              )}
             </div>
 
             <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${adminPanelMotion}`}>
@@ -1254,16 +1230,14 @@ export default function AdminDashboard() {
                     <tr>
                       <th className="px-6 py-4 text-left">Visitor</th>
                       <th className="px-6 py-4 text-left">Device</th>
-                      <th className="px-6 py-4 text-left">Pages</th>
                       <th className="px-6 py-4 text-left">Views</th>
-                      <th className="px-6 py-4 text-left">Engagements</th>
                       <th className="px-6 py-4 text-left">Referrer</th>
                       <th className="px-6 py-4 text-left">Last Seen</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {visitorSessions.length === 0 ? (
-                      <tr><td colSpan={7} className="text-center py-12 text-gray-400">No visitors tracked yet</td></tr>
+                      <tr><td colSpan={5} className="text-center py-12 text-gray-400">No visitors tracked yet</td></tr>
                     ) : visitorSessions.map((s) => (
                       <tr key={s.sessionId} className={adminRowMotion}>
                         <td className="px-6 py-4">
@@ -1281,58 +1255,10 @@ export default function AdminDashboard() {
                           <div className="font-medium">{s.device}</div>
                           <div className="text-xs text-gray-500">{s.browser}</div>
                         </td>
-                        <td className="px-6 py-4 text-xs text-gray-600 max-w-[180px]">
-                          {s.pages.slice(0, 3).join(", ")}
-                          {s.pages.length > 3 && ` +${s.pages.length - 3}`}
-                        </td>
                         <td className="px-6 py-4 font-bold text-primary">{s.pageViews}</td>
-                        <td className="px-6 py-4 font-bold text-orange-600">{s.engagements}</td>
                         <td className="px-6 py-4 text-xs text-gray-500 max-w-[120px] truncate">{s.referrer}</td>
                         <td className="px-6 py-4 text-gray-500 whitespace-nowrap">
                           {new Date(s.lastSeen).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="font-bold text-dark">Live Activity Feed</h3>
-                <p className="text-xs text-gray-500 mt-1">Recent page views, clicks, and form submissions</p>
-              </div>
-              <div className="overflow-x-auto max-h-96 overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider sticky top-0">
-                    <tr>
-                      <th className="px-6 py-3 text-left">Time</th>
-                      <th className="px-6 py-3 text-left">Type</th>
-                      <th className="px-6 py-3 text-left">Page</th>
-                      <th className="px-6 py-3 text-left">Detail</th>
-                      <th className="px-6 py-3 text-left">User</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {analyticsEvents.length === 0 ? (
-                      <tr><td colSpan={5} className="text-center py-8 text-gray-400">No activity yet</td></tr>
-                    ) : analyticsEvents.map((ev) => (
-                      <tr key={ev.id} className={adminRowMotion}>
-                        <td className="px-6 py-3 text-gray-500 whitespace-nowrap text-xs">
-                          {new Date(ev.createdAt).toLocaleString()}
-                        </td>
-                        <td className="px-6 py-3">
-                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
-                            {ev.type.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3 text-gray-700">{ev.path}</td>
-                        <td className="px-6 py-3 text-xs text-gray-600 max-w-[200px] truncate">
-                          {ev.label || "—"}
-                        </td>
-                        <td className="px-6 py-3 text-xs">
-                          {ev.userName || <span className="text-gray-400">Anonymous</span>}
                         </td>
                       </tr>
                     ))}
