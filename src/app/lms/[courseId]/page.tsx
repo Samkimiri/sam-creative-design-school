@@ -1,8 +1,11 @@
 "use client";
-import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import Link from "next/link";
 import { courses as fallbackCourses, lessons as fallbackLessons, type Course, type Lesson } from "@/data/courses";
 import { useParams, useSearchParams } from "next/navigation";
+import LessonVideoPlayer, { type LessonVideoPlayerHandle } from "@/components/LessonVideoPlayer";
+
+const RESUME_THRESHOLD_SECONDS = 5;
 
 type QuizResult = {
   error?: string;
@@ -46,8 +49,11 @@ export default function CoursePlayer() {
   const [assignmentStatus, setAssignmentStatus] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied" | "paused">(isPreview ? "allowed" : "checking");
+  const [videoPositions, setVideoPositions] = useState<Record<string, number> | null>(null);
+  const videoPlayerRef = useRef<LessonVideoPlayerHandle>(null);
 
   const progressStorageKey = `scds-progress-${courseId}`;
+  const videoProgressStorageKey = `scds-video-progress-${courseId}`;
 
   useEffect(() => {
     fetch("/api/content")
@@ -173,6 +179,74 @@ export default function CoursePlayer() {
   }, [courseId, readLocalProgress, syncLessonProgress, writeLocalProgress]);
 
   useEffect(() => { loadProgress(); }, [loadProgress]);
+
+  const readLocalVideoProgress = useCallback((): Record<string, number> => {
+    if (typeof window === "undefined") return {};
+
+    try {
+      const saved = window.localStorage.getItem(videoProgressStorageKey);
+      const parsed = saved ? JSON.parse(saved) : {};
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+
+      const positions: Record<string, number> = {};
+      for (const [lessonId, value] of Object.entries(parsed)) {
+        if (typeof value === "number" && Number.isFinite(value)) positions[lessonId] = value;
+      }
+      return positions;
+    } catch {
+      return {};
+    }
+  }, [videoProgressStorageKey]);
+
+  const writeLocalVideoProgress = useCallback((positions: Record<string, number>) => {
+    if (typeof window === "undefined") return;
+
+    try {
+      window.localStorage.setItem(videoProgressStorageKey, JSON.stringify(positions));
+    } catch {
+      // Browser storage can be unavailable in private mode; backend progress still handles signed-in users.
+    }
+  }, [videoProgressStorageKey]);
+
+  const loadVideoProgress = useCallback(async () => {
+    const localPositions = readLocalVideoProgress();
+    setVideoPositions(localPositions);
+
+    try {
+      const res = await fetch(`/api/video-progress?courseId=${courseId}`);
+      const data = await res.json();
+
+      if (data.success && data.data && typeof data.data === "object") {
+        const serverPositions: Record<string, number> = {};
+        for (const [lessonId, value] of Object.entries(data.data as Record<string, { positionSeconds?: number }>)) {
+          if (value && typeof value.positionSeconds === "number") serverPositions[lessonId] = value.positionSeconds;
+        }
+        const mergedPositions = { ...localPositions, ...serverPositions };
+        setVideoPositions(mergedPositions);
+        writeLocalVideoProgress(mergedPositions);
+      }
+    } catch {
+      // Leave any local video progress visible if the backend cannot be reached.
+    }
+  }, [courseId, readLocalVideoProgress, writeLocalVideoProgress]);
+
+  useEffect(() => { loadVideoProgress(); }, [loadVideoProgress]);
+
+  const reportVideoProgress = useCallback((lessonId: string, positionSeconds: number, durationSeconds: number) => {
+    setVideoPositions((current) => {
+      const next = { ...(current ?? {}), [lessonId]: positionSeconds };
+      writeLocalVideoProgress(next);
+      return next;
+    });
+
+    fetch("/api/video-progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courseId, lessonId, positionSeconds, durationSeconds }),
+    }).catch(() => {
+      // Local copy is already saved; the next tick will retry the sync.
+    });
+  }, [courseId, writeLocalVideoProgress]);
 
   const markComplete = async (lessonId: string) => {
     if (completedLessons.includes(lessonId)) return;
@@ -421,15 +495,27 @@ export default function CoursePlayer() {
                       </div>
                     </div>
                   ) : (
-                    <div key={`${activeLesson.id}-video`} className="lesson-panel-enter mb-6 aspect-video overflow-hidden rounded-[1.5rem] bg-dark shadow-2xl shadow-slate-900/10">
-                      <iframe
-                        key={activeLesson.id}
-                        className="h-full w-full"
-                        src={activeLesson.videoUrl}
-                        title={activeLesson.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
+                    <div className="mb-6">
+                      <div key={`${activeLesson.id}-video`} className="lesson-panel-enter mb-2 aspect-video overflow-hidden rounded-[1.5rem] bg-dark shadow-2xl shadow-slate-900/10">
+                        <LessonVideoPlayer
+                          key={activeLesson.id}
+                          ref={videoPlayerRef}
+                          lessonId={activeLesson.id}
+                          title={activeLesson.title}
+                          videoUrl={activeLesson.videoUrl}
+                          initialPositionSeconds={videoPositions ? (videoPositions[activeLesson.id] ?? 0) : null}
+                          onProgress={reportVideoProgress}
+                        />
+                      </div>
+                      {(videoPositions?.[activeLesson.id] ?? 0) >= RESUME_THRESHOLD_SECONDS && (
+                        <button
+                          type="button"
+                          onClick={() => videoPlayerRef.current?.restart()}
+                          className="text-xs font-bold text-gray-400 transition-colors hover:text-primary"
+                        >
+                          Restart video from beginning
+                        </button>
+                      )}
                     </div>
                   )
                 )}
