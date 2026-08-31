@@ -1,9 +1,20 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Award, BookOpenCheck, GraduationCap, Medal, MessageCircle, Sparkles, Trophy } from "lucide-react";
-import { getLeaderboardEntries, type LeaderboardEntry } from "@/lib/leaderboard";
+import { Award, BookOpenCheck, GraduationCap, Medal, MessageCircle, Trophy } from "lucide-react";
+import { getLeaderboardEntries } from "@/lib/leaderboard";
+import { getSession } from "@/lib/auth";
 
-function Avatar({ entry, className }: { entry: LeaderboardEntry; className: string }) {
+interface PublicLeaderboardEntry {
+  studentId: string;
+  name: string;
+  avatar?: string | null;
+  score: number;
+  rankLabel: string;
+  isSelf: boolean;
+  recentActivity: string;
+}
+
+function Avatar({ entry, className }: { entry: PublicLeaderboardEntry; className: string }) {
   if (entry.avatar) {
     return <img src={entry.avatar} alt={entry.name} className={`${className} object-cover`} />;
   }
@@ -26,7 +37,23 @@ function formatDate(date: string) {
 }
 
 export default async function LMSLeaderboardPage() {
-  const entries = await getLeaderboardEntries();
+  const [rawEntries, session] = await Promise.all([getLeaderboardEntries(), getSession()]);
+  const currentStudentId = session?.user.id;
+  // Only the score, name, and rank label are public - a student's lesson/course/certificate
+  // breakdown and last-activity timestamp stay private to that student, so we strip everything
+  // else before it ever reaches JSX (avoids leaking it into the page's RSC/source payload too).
+  const entries: PublicLeaderboardEntry[] = rawEntries.map((entry) => {
+    const isSelf = Boolean(currentStudentId) && entry.studentId === currentStudentId;
+    return {
+      studentId: entry.studentId,
+      name: entry.name,
+      avatar: entry.avatar,
+      score: entry.score,
+      rankLabel: entry.rankLabel,
+      isSelf,
+      recentActivity: isSelf ? entry.recentActivity : "",
+    };
+  });
   const topThree = entries.slice(0, 3);
   const remaining = entries.slice(3);
 
@@ -106,7 +133,10 @@ export default async function LMSLeaderboardPage() {
             )}
 
             {entries.map((entry, index) => (
-              <div key={entry.studentId} className="grid gap-4 p-5 md:grid-cols-[80px_1fr_130px_130px_130px_150px] md:items-center md:p-6">
+              <div
+                key={entry.studentId}
+                className={`grid gap-4 p-5 md:grid-cols-[80px_1fr_150px] md:items-center md:p-6 ${entry.isSelf ? "bg-primary/5" : ""}`}
+              >
                 <div className="flex items-center gap-3">
                   <span className="grid h-10 w-10 place-items-center rounded-xl bg-light-gray text-sm font-black text-dark">
                     #{index + 1}
@@ -115,25 +145,16 @@ export default async function LMSLeaderboardPage() {
                 <div className="flex items-center gap-3">
                   <Avatar entry={entry} className="h-10 w-10 shrink-0 rounded-full" />
                   <div className="min-w-0">
-                    <h3 className="truncate font-extrabold text-dark">{entry.name}</h3>
+                    <h3 className="truncate font-extrabold text-dark">
+                      {entry.name}
+                      {entry.isSelf && <span className="ml-2 text-xs font-black uppercase tracking-wider text-primary">You</span>}
+                    </h3>
                     <p className="text-sm font-bold text-primary">{entry.rankLabel}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
-                  <BookOpenCheck className="h-4 w-4 text-primary" aria-hidden="true" />
-                  {entry.completedLessons} lessons
-                </div>
-                <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
-                  <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
-                  {entry.activeCourses} courses
-                </div>
-                <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
-                  <GraduationCap className="h-4 w-4 text-primary" aria-hidden="true" />
-                  {entry.certificates} certs
-                </div>
                 <div>
                   <p className="text-lg font-black text-dark">{entry.score} pts</p>
-                  <p className="text-xs font-bold text-gray-400">{formatDate(entry.recentActivity)}</p>
+                  {entry.isSelf && <p className="text-xs font-bold text-gray-400">{formatDate(entry.recentActivity)}</p>}
                 </div>
               </div>
             ))}
