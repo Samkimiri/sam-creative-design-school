@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { appendDBRecord, findDBRecordByField } from "@/lib/db";
+import { appendDBRecord, findDBRecordByField, upsertDBRecord } from "@/lib/db";
 import { hashPassword, setSession, UserSession } from "@/lib/auth";
 import { getConfirmedEnrollmentCourseIdsForStudent } from "@/lib/enrollmentAccess";
 
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     const safeAvatar = optionalAvatar(avatar);
 
     const existingStudent = await findDBRecordByField<Student>("students.json", "email", email);
-    if (existingStudent) {
+    if (existingStudent && existingStudent.password) {
       return NextResponse.json(
         { success: false, message: "An account with this email already exists." },
         { status: 400 }
@@ -84,9 +84,37 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = await hashPassword(password);
+    const role = existingStudent?.role || "student";
+
+    // A self-enrollment can create a passwordless student record so admin sees them
+    // right away. Registering with the same email claims that record instead of
+    // rejecting it, so the student keeps their existing id, courses, and history.
+    if (existingStudent) {
+      const claimedStudent: Student = {
+        ...existingStudent,
+        name: name || existingStudent.name,
+        phone: phone || existingStudent.phone,
+        password: hashedPassword,
+        avatar: safeAvatar || existingStudent.avatar,
+        interest: interest || existingStudent.interest,
+      };
+      claimedStudent.enrolledCourses = await getConfirmedEnrollmentCourseIdsForStudent(claimedStudent);
+
+      await upsertDBRecord("students.json", claimedStudent);
+
+      const userSession: UserSession = {
+        id: claimedStudent.id,
+        name: claimedStudent.name,
+        email: claimedStudent.email,
+        role,
+      };
+
+      await setSession(userSession);
+
+      return NextResponse.json({ success: true, user: userSession });
+    }
+
     const id = Math.random().toString(36).substring(2, 9);
-    
-    const role = "student";
 
     const newStudent: Student = {
       id,
@@ -111,7 +139,7 @@ export async function POST(request: Request) {
       email,
       role
     };
-    
+
     await setSession(userSession);
 
     return NextResponse.json({ success: true, user: userSession });

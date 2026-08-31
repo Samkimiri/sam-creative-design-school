@@ -2,11 +2,11 @@ import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
 import { courses } from "@/data/courses";
 import type { Enrollment, Student } from "@/types";
 
-function normalizeEmail(value?: string) {
+export function normalizeEmail(value?: string) {
   return String(value || "").trim().toLowerCase();
 }
 
-function normalizePhone(value?: string) {
+export function normalizePhone(value?: string) {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return "";
   if (digits.startsWith("254") && digits.length === 12) return `0${digits.slice(3)}`;

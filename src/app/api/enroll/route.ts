@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { appendDBRecord, getDB, hasPersistentStorageConfig, upsertDBRecord } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getSession, setSession } from "@/lib/auth";
 import { getManagedCourses } from "@/lib/contentSettings";
 import { courses } from "@/data/courses";
 import { findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
 import { applyPromoCode, calculateReferralDiscount, getDiscountSettings, normalizePromoCode } from "@/lib/discountSettings";
+import { normalizeEmail, normalizePhone } from "@/lib/enrollmentAccess";
 import type { Enrollment, Student } from "@/types";
 
 const clean = (value: unknown, maxLength: number) =>
@@ -77,13 +78,46 @@ export async function POST(request: Request) {
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
     const now = new Date().toISOString();
     const session = await getSession();
-    const students = referralCode ? await getDB<Student>("students.json") : [];
-    const referrer = findReferrerByCode(students, referralCode);
-    const isSelfReferral = Boolean(referrer && session?.user.id && referrer.id === session.user.id);
-    const [discountSettings, enrollments] = await Promise.all([
+    const [students, discountSettings, enrollments] = await Promise.all([
+      getDB<Student>("students.json"),
       getDiscountSettings(),
       getDB<Enrollment>("enrollments.json"),
     ]);
+    const referrer = findReferrerByCode(students, referralCode);
+    const isSelfReferral = Boolean(referrer && session?.user.id && referrer.id === session.user.id);
+
+    // Anyone who enrolls directly (no account yet) still needs a real student
+    // record so they show up for admin and their LMS activity can be tracked -
+    // match them by session, then email, then phone before creating a new one.
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedPhone = normalizePhone(phone);
+    let student = session?.user.id
+      ? students.find((candidate) => candidate.id === session.user.id)
+      : undefined;
+    if (!student) {
+      student = students.find((candidate) => {
+        const candidateEmail = normalizeEmail(candidate.email);
+        const candidatePhone = normalizePhone(candidate.phone);
+        return (
+          (normalizedEmail && candidateEmail && candidateEmail === normalizedEmail) ||
+          (normalizedPhone && candidatePhone && candidatePhone === normalizedPhone)
+        );
+      });
+    }
+
+    const isNewStudent = !student;
+    if (!student) {
+      student = {
+        id: Math.random().toString(36).substring(2, 9),
+        name,
+        email: normalizedEmail,
+        phone,
+        role: "student",
+        enrolledCourses: [],
+        createdAt: now,
+      };
+      await appendDBRecord("students.json", student);
+    }
     const referralDiscount = referrer && !isSelfReferral ? calculateReferralDiscount(parsedAmount, discountSettings) : 0;
     const promoResult = applyPromoCode({
       amount: Math.max(0, parsedAmount - referralDiscount),
@@ -105,7 +139,7 @@ export async function POST(request: Request) {
 
     const newEnrollment: Enrollment = {
       id: "ENR-" + Date.now() + "-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
-      studentId: session?.user.id || "guest",
+      studentId: student.id,
       studentName: name,
       studentEmail: session?.user.email || email,
       courseId: selectedCourses.map((course) => course.id).join(","),
@@ -144,6 +178,12 @@ export async function POST(request: Request) {
       throw new Error(
         "Enrollment storage verification failed. Configure Supabase, MongoDB, or Vercel KV so requests can appear in the admin dashboard before students pay."
       );
+    }
+
+    // A brand-new self-enrollment has no password yet, but they should still land
+    // in the LMS as themselves right away so admin can see and track their activity.
+    if (isNewStudent && !session) {
+      await setSession({ id: student.id, name: student.name, email: student.email, role: "student" });
     }
 
     return NextResponse.json({
