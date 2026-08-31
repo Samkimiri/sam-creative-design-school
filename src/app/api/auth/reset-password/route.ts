@@ -32,7 +32,10 @@ export async function POST(request: Request) {
 
     const student = await findDBRecordByField<Student>("students.json", "email", email);
 
-    if (student?.id && student.password) {
+    // Some accounts (e.g. enrolled by admin, or created before a password was
+    // set) have no password yet. Reset still issues a token for them so this
+    // flow doubles as "set my password", not just "change my password".
+    if (student?.id) {
       const { code, codeHash, token, tokenHash } = createPasswordResetToken();
       const now = new Date();
       const expiresAt = new Date(now.getTime() + passwordResetTokenTtlMs);
