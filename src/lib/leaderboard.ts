@@ -70,7 +70,6 @@ export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
       lessons.filter((lesson) => lesson.courseId === course.id).length,
     ])
   );
-  const studentsById = new Map(students.map((student) => [student.id, student]));
   const progressByStudent = new Map<string, ProgressRecord[]>();
 
   progressRecords.filter(isProgressRecord).forEach((record) => {
@@ -79,11 +78,19 @@ export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
     progressByStudent.set(record.studentId, currentRecords);
   });
 
-  return Array.from(progressByStudent.entries())
-    .map(([studentId, records]) => {
-      const student = studentsById.get(studentId);
+  // Every enrolled student is ranked, including those just starting out with
+  // no activity yet - the admin account is excluded since it isn't a learner.
+  const enrolledStudents = students.filter(
+    (student) => student.role !== "admin" && (student.enrolledCourses?.length ?? 0) > 0
+  );
+
+  return enrolledStudents
+    .map((student) => {
+      const records = progressByStudent.get(student.id) || [];
       const completedLessons = records.reduce((sum, record) => sum + new Set(record.completedLessons).size, 0);
-      const activeCourses = new Set(records.map((record) => record.courseId)).size;
+      const activeCourses = records.length > 0
+        ? new Set(records.map((record) => record.courseId)).size
+        : student.enrolledCourses?.length ?? 0;
       const certificates = records.filter((record) => {
         const totalLessons = courseLessonTotals.get(record.courseId) || 0;
         return totalLessons > 0 && new Set(record.completedLessons).size >= totalLessons;
@@ -108,9 +115,9 @@ export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
         getRecentBonus(recentActivity);
 
       return {
-        studentId,
-        name: student?.name?.trim() || "SCDS Student",
-        avatar: student?.profileImage || student?.avatar || null,
+        studentId: student.id,
+        name: student.name?.trim() || "SCDS Student",
+        avatar: student.profileImage || student.avatar || null,
         score,
         completedLessons,
         activeCourses,
@@ -120,6 +127,5 @@ export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
         rankLabel: getRankLabel(score),
       };
     })
-    .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || b.completedLessons - a.completedLessons || a.name.localeCompare(b.name));
 }

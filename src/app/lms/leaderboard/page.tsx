@@ -53,7 +53,7 @@ export default async function LMSLeaderboardPage() {
                 <div>
                   <p className="text-sm font-bold text-primary-light">Current leaders</p>
                   <p className="text-3xl font-black">{entries.length}</p>
-                  <p className="text-sm text-white/65">active students ranked</p>
+                  <p className="text-sm text-white/65">enrolled students ranked</p>
                 </div>
               </div>
             </div>

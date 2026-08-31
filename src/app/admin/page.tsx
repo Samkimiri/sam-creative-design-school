@@ -1128,6 +1128,9 @@ export default function AdminDashboard() {
     if (aPriority !== bPriority) return aPriority - bPriority;
     return new Date(b.adminReviewRequestedAt || b.whatsappSentAt || b.createdAt).getTime() - new Date(a.adminReviewRequestedAt || a.whatsappSentAt || a.createdAt).getTime();
   });
+  const studentsByEnrollmentOrder = [...students].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24 pt-28">
@@ -1623,6 +1626,7 @@ export default function AdminDashboard() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
                   <tr>
+                    <th className="px-6 py-4 text-left">#</th>
                     <th className="px-6 py-4 text-left">Name</th>
                     <th className="px-6 py-4 text-left">Email</th>
                     <th className="px-6 py-4 text-left">Phone</th>
@@ -1635,9 +1639,10 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {students.length === 0 ? (
-                    <tr><td colSpan={8} className="text-center py-12 text-gray-400">No registered students yet</td></tr>
-                  ) : students.map((s) => (
+                    <tr><td colSpan={9} className="text-center py-12 text-gray-400">No registered students yet</td></tr>
+                  ) : studentsByEnrollmentOrder.map((s, index) => (
                     <tr key={s.id} className={adminRowMotion}>
+                      <td className="px-6 py-4 font-bold text-gray-400">{index + 1}</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xs overflow-hidden">
