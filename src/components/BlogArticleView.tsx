@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { getBlogPost } from "@/data/blog";
+import { getBlogPost, type BlogPost } from "@/data/blog";
 import { absoluteUrl, jsonLdScript, siteName } from "@/lib/seo";
 
-export default function BlogArticleView({ id }: { id: string }) {
-  const post = getBlogPost(id);
+export default function BlogArticleView({ id, post: providedPost }: { id?: string; post?: BlogPost }) {
+  const post = providedPost || (id ? getBlogPost(id) : undefined);
 
   if (!post) {
     return (

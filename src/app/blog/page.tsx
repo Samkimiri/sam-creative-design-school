@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { blogPosts } from "@/data/blog";
+import { blogPosts as staticBlogPosts } from "@/data/blog";
+import { getCmsBlogPosts } from "@/lib/blogCms";
 
 export const metadata: Metadata = {
   title: "Blog and Resources | Sam Creative Design School",
@@ -11,7 +12,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const cmsPosts = await getCmsBlogPosts().catch(() => []);
+  const blogPosts = [...cmsPosts, ...staticBlogPosts].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
   return (
     <div className="pt-32 pb-24">
       <div className="bg-dark py-16 mb-16">
