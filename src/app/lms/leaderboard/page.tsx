@@ -1,7 +1,18 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Award, BookOpenCheck, GraduationCap, Medal, Sparkles, Trophy } from "lucide-react";
-import { getLeaderboardEntries } from "@/lib/leaderboard";
+import { Award, BookOpenCheck, GraduationCap, Medal, MessageCircle, Sparkles, Trophy } from "lucide-react";
+import { getLeaderboardEntries, type LeaderboardEntry } from "@/lib/leaderboard";
+
+function Avatar({ entry, className }: { entry: LeaderboardEntry; className: string }) {
+  if (entry.avatar) {
+    return <img src={entry.avatar} alt={entry.name} className={`${className} object-cover`} />;
+  }
+  return (
+    <div className={`${className} grid place-items-center bg-primary/10 font-black text-primary`}>
+      {entry.name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
 
 export const metadata: Metadata = {
   title: "Student Leaderboard | Sam Creative Design School",
@@ -42,6 +53,9 @@ export default async function LMSLeaderboardPage() {
                 <Link href="/courses" className="rounded-xl border border-white/20 px-5 py-3 text-center font-bold text-white transition hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light">
                   Study More Courses
                 </Link>
+                <Link href="/lms/community" className="rounded-xl border border-white/20 px-5 py-3 text-center font-bold text-white transition hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light">
+                  Join the Community
+                </Link>
               </div>
             </div>
 
@@ -63,8 +77,11 @@ export default async function LMSLeaderboardPage() {
         <section className="mb-8 grid gap-5 md:grid-cols-3">
           {topThree.map((entry, index) => (
             <article key={entry.studentId} className="rounded-3xl border border-white bg-white p-5 text-center shadow-sm ring-1 ring-slate-900/5">
-              <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-                {index === 0 ? <Trophy className="h-7 w-7" aria-hidden="true" /> : <Medal className="h-7 w-7" aria-hidden="true" />}
+              <div className="relative mx-auto mb-4 h-16 w-16">
+                <Avatar entry={entry} className="h-16 w-16 rounded-2xl" />
+                <div className="absolute -bottom-2 -right-2 grid h-7 w-7 place-items-center rounded-full bg-primary text-white shadow-md">
+                  {index === 0 ? <Trophy className="h-3.5 w-3.5" aria-hidden="true" /> : <Medal className="h-3.5 w-3.5" aria-hidden="true" />}
+                </div>
               </div>
               <p className="text-xs font-black uppercase tracking-widest text-gray-400">Rank {index + 1}</p>
               <h2 className="mt-2 text-xl font-extrabold text-dark">{entry.name}</h2>
@@ -95,9 +112,12 @@ export default async function LMSLeaderboardPage() {
                     #{index + 1}
                   </span>
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-dark">{entry.name}</h3>
-                  <p className="text-sm font-bold text-primary">{entry.rankLabel}</p>
+                <div className="flex items-center gap-3">
+                  <Avatar entry={entry} className="h-10 w-10 shrink-0 rounded-full" />
+                  <div className="min-w-0">
+                    <h3 className="truncate font-extrabold text-dark">{entry.name}</h3>
+                    <p className="text-sm font-bold text-primary">{entry.rankLabel}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
                   <BookOpenCheck className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -120,11 +140,12 @@ export default async function LMSLeaderboardPage() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-4 md:grid-cols-3">
+        <section className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: BookOpenCheck, title: "Finish Lessons", text: "Each completed lesson adds steady points to your ranking." },
             { icon: Award, title: "Pass Quizzes", text: "Quiz attempts and strong scores improve your activity score." },
             { icon: GraduationCap, title: "Earn Certificates", text: "Completing full courses gives the biggest leaderboard boost." },
+            { icon: MessageCircle, title: "Chat on Weekends", text: "Encourage classmates in the Community on Saturdays and Sundays - every 10 messages earns a point." },
           ].map((item) => (
             <div key={item.title} className="rounded-2xl border border-white bg-white p-5 shadow-sm">
               <item.icon className="mb-4 h-6 w-6 text-primary" aria-hidden="true" />

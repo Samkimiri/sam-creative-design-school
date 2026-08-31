@@ -1,6 +1,7 @@
 import { lessons } from "@/data/courses";
 import { getDB } from "@/lib/db";
 import { getManagedCourses } from "@/lib/contentSettings";
+import { getCommunityPoints, type CommunityMessage } from "@/lib/community";
 
 interface ProgressRecord {
   studentId: string;
@@ -29,6 +30,7 @@ export interface LeaderboardEntry {
   activeCourses: number;
   certificates: number;
   quizAverage: number;
+  communityPoints: number;
   recentActivity: string;
   rankLabel: string;
 }
@@ -58,10 +60,11 @@ function getRankLabel(score: number) {
 }
 
 export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
-  const [students, progressRecords, courses] = await Promise.all([
+  const [students, progressRecords, courses, communityMessages] = await Promise.all([
     getDB<Student>("students.json"),
     getDB<ProgressRecord>("progress.json"),
     getManagedCourses(),
+    getDB<CommunityMessage>("community-messages.json"),
   ]);
 
   const courseLessonTotals = new Map(
@@ -106,12 +109,14 @@ export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
         .map((record) => record.lastAccessed)
         .filter((date): date is string => Boolean(date))
         .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] || "";
+      const communityPoints = getCommunityPoints(communityMessages, student.id);
       const score =
         completedLessons * 50 +
         activeCourses * 25 +
         certificates * 180 +
         quizScores.length * 20 +
         Math.round(quizAverage * 1.5) +
+        communityPoints +
         getRecentBonus(recentActivity);
 
       return {
@@ -123,6 +128,7 @@ export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
         activeCourses,
         certificates,
         quizAverage,
+        communityPoints,
         recentActivity,
         rankLabel: getRankLabel(score),
       };
