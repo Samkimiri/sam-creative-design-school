@@ -4,7 +4,7 @@ import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
 import type { ContentSettings, CourseContentOverride, CourseFeedback, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, ProgressRecord, PromoCode } from "@/types";
 import type { LeaderboardEntry } from "@/lib/leaderboard";
-import { STICKERS, type CommunityMessage } from "@/lib/community";
+import { STICKERS, type CommunityComment, type CommunityMessage, type CommunityPost } from "@/lib/community";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
 
 // Africa/Nairobi is a fixed UTC+3 offset with no daylight saving.
@@ -422,6 +422,8 @@ export default function AdminDashboard() {
   const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [communityMessages, setCommunityMessages] = useState<CommunityMessage[]>([]);
+  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>([]);
+  const [communityPostComments, setCommunityPostComments] = useState<CommunityComment[]>([]);
   const [communityLoading, setCommunityLoading] = useState(false);
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
   const [intakeSettings, setIntakeSettings] = useState<UpcomingIntakeSettings>(defaultIntakeSettings);
@@ -536,26 +538,31 @@ export default function AdminDashboard() {
     }
   }, [fetchAdminJson]);
 
-  const refreshCommunityMessages = useCallback(async (pw?: string, options?: { silent?: boolean }) => {
+  const refreshCommunityContent = useCallback(async (pw?: string, options?: { silent?: boolean }) => {
     if (!options?.silent) setCommunityLoading(true);
     try {
-      const { res, data } = await fetchAdminJson<CommunityMessage[]>("/api/admin/community", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pw ? { password: pw } : {}),
-      });
+      const { res, data } = await fetchAdminJson<{ messages: CommunityMessage[]; posts: CommunityPost[]; comments: CommunityComment[] }>(
+        "/api/admin/community",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pw ? { password: pw } : {}),
+        }
+      );
 
-      if (!res.ok || !data.success || !Array.isArray(data.data)) {
-        if (!options?.silent) setNotice(data.message || "Could not load community messages. Try refreshing again.");
+      if (!res.ok || !data.success || !data.data) {
+        if (!options?.silent) setNotice(data.message || "Could not load community content. Try refreshing again.");
         return;
       }
 
-      setCommunityMessages(data.data);
+      setCommunityMessages(Array.isArray(data.data.messages) ? data.data.messages : []);
+      setCommunityPosts(Array.isArray(data.data.posts) ? data.data.posts : []);
+      setCommunityPostComments(Array.isArray(data.data.comments) ? data.data.comments : []);
     } catch (err) {
       if (!options?.silent) {
         setNotice(err instanceof DOMException && err.name === "AbortError"
-          ? "Community messages took too long to load. Try again."
-          : "Could not load community messages. Check your connection and try again.");
+          ? "Community content took too long to load. Try again."
+          : "Could not load community content. Check your connection and try again.");
       }
     } finally {
       if (!options?.silent) setCommunityLoading(false);
@@ -625,16 +632,16 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!authed || tab !== "community") return;
-    void refreshCommunityMessages(password);
-  }, [authed, password, refreshCommunityMessages, tab]);
+    void refreshCommunityContent(password);
+  }, [authed, password, refreshCommunityContent, tab]);
 
   useEffect(() => {
     if (!authed || tab !== "community") return;
     const interval = window.setInterval(() => {
-      void refreshCommunityMessages(password, { silent: true });
+      void refreshCommunityContent(password, { silent: true });
     }, 10000);
     return () => window.clearInterval(interval);
-  }, [authed, password, refreshCommunityMessages, tab]);
+  }, [authed, password, refreshCommunityContent, tab]);
 
   const confirmEnrollment = async (enrollmentId: string) => {
     await runMutation<Enrollment>(
@@ -814,17 +821,20 @@ export default function AdminDashboard() {
     );
   };
 
-  const deleteCommunityMessage = async (messageId: string, studentName: string) => {
-    const confirmed = window.confirm(`Permanently remove ${studentName}'s message from the community? This cannot be undone.`);
+  const deleteCommunityContent = async (type: "message" | "post" | "comment", id: string, studentName: string) => {
+    const label = type === "message" ? "message" : type === "post" ? "post" : "comment";
+    const confirmed = window.confirm(`Permanently remove ${studentName}'s ${label} from the community? This cannot be undone.`);
     if (!confirmed) return;
 
-    await runMutation<CommunityMessage>(
-      `delete-message-${messageId}`,
+    await runMutation<{ id: string; type: string }>(
+      `delete-${type}-${id}`,
       "/api/admin/community",
-      { password, messageId },
+      { password, type, id },
       () => {
-        setCommunityMessages((prev) => prev.filter((m) => m.id !== messageId));
-        setNotice("Message removed.");
+        if (type === "message") setCommunityMessages((prev) => prev.filter((m) => m.id !== id));
+        else if (type === "post") setCommunityPosts((prev) => prev.filter((p) => p.id !== id));
+        else setCommunityPostComments((prev) => prev.filter((c) => c.id !== id));
+        setNotice(`${label.charAt(0).toUpperCase()}${label.slice(1)} removed.`);
       },
       "DELETE"
     );
@@ -1756,7 +1766,7 @@ export default function AdminDashboard() {
               headerExtra={
                 <button
                   type="button"
-                  onClick={() => void refreshCommunityMessages(password)}
+                  onClick={() => void refreshCommunityContent(password)}
                   disabled={communityLoading}
                   className={`shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
                 >
@@ -1802,7 +1812,7 @@ export default function AdminDashboard() {
                     <div className="flex shrink-0 flex-col gap-1.5">
                       <button
                         type="button"
-                        onClick={() => void deleteCommunityMessage(message.id, message.studentName)}
+                        onClick={() => void deleteCommunityContent("message", message.id, message.studentName)}
                         disabled={pendingAction === `delete-message-${message.id}`}
                         className={`rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
                       >
@@ -1819,6 +1829,77 @@ export default function AdminDashboard() {
                         </button>
                       )}
                     </div>
+                  </div>
+                ))
+              )}
+            </CollapsiblePanel>
+
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-gray-100 px-6 py-5"
+              title="Community Posts"
+              subtitle="Text, photo, and article posts shared to the feed."
+              defaultOpen={false}
+              bodyClassName="divide-y divide-gray-100"
+            >
+              {communityPosts.length === 0 ? (
+                <div className="py-12 text-center text-gray-400">No posts yet</div>
+              ) : (
+                communityPosts.map((post) => (
+                  <div key={post.id} className={`flex items-start gap-4 px-6 py-4 ${adminRowMotion}`}>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="font-bold text-dark">{post.studentName}</span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black uppercase text-slate-600">
+                          {post.kind}
+                        </span>
+                        <span className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleString()}</span>
+                      </div>
+                      {post.title && <p className="mt-1 font-bold text-dark">{post.title}</p>}
+                      {post.body && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-700">{post.body.slice(0, 300)}</p>}
+                      {post.imageUrl && <img src={post.imageUrl} alt="" className="mt-2 h-24 w-24 rounded-lg object-cover" />}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void deleteCommunityContent("post", post.id, post.studentName)}
+                      disabled={pendingAction === `delete-post-${post.id}`}
+                      className={`shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
+                    >
+                      {pendingAction === `delete-post-${post.id}` ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </CollapsiblePanel>
+
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-gray-100 px-6 py-5"
+              title="Post Comments"
+              subtitle="Comments left on community posts."
+              defaultOpen={false}
+              bodyClassName="divide-y divide-gray-100"
+            >
+              {communityPostComments.length === 0 ? (
+                <div className="py-12 text-center text-gray-400">No comments yet</div>
+              ) : (
+                communityPostComments.map((comment) => (
+                  <div key={comment.id} className={`flex items-start gap-4 px-6 py-4 ${adminRowMotion}`}>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="font-bold text-dark">{comment.studentName}</span>
+                        <span className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleString()}</span>
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-700">{comment.text}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void deleteCommunityContent("comment", comment.id, comment.studentName)}
+                      disabled={pendingAction === `delete-comment-${comment.id}`}
+                      className={`shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
+                    >
+                      {pendingAction === `delete-comment-${comment.id}` ? "Removing..." : "Remove"}
+                    </button>
                   </div>
                 ))
               )}
