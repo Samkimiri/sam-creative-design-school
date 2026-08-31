@@ -5,6 +5,7 @@ import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 import { getContentSettings } from "@/lib/contentSettings";
 import { getDiscountSettings } from "@/lib/discountSettings";
 import { getLeaderboardEntries } from "@/lib/leaderboard";
+import { getFinanceSummary } from "@/lib/finance";
 import { requireAdminRequest } from "@/lib/adminAuth";
 import type {
   AnalyticsEvent,
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
   const progress = fulfilled(progressResult, []);
   const courseFeedback = fulfilled(feedbackResult, []);
   const leaderboard = fulfilled(leaderboardResult, []);
+  const finance = getFinanceSummary(enrollments);
   const intake = fulfilled(intakeResult, undefined);
   const content = fulfilled(contentResult, undefined);
   const discounts = fulfilled(discountsResult, undefined);
@@ -81,6 +83,7 @@ export async function POST(request: Request) {
   return NextResponse.json(
     {
       success: true,
+      actorRole: auth.actor.role,
       data: {
         students,
         enrollments,
@@ -91,6 +94,7 @@ export async function POST(request: Request) {
         progress,
         courseFeedback,
         leaderboard,
+        finance: auth.actor.role === "admin" ? finance : undefined,
         settings: intake || content || discounts ? { intake, content, discounts } : undefined,
         analytics: {
           summary,
