@@ -248,7 +248,7 @@ export async function DELETE(request: Request) {
 
   await saveDB("students.json", students.filter((s) => s.id !== target.id));
 
-  const [enrollments, progress, assignments, projects, feedback, reviews, referrals] = await Promise.all([
+  const [enrollments, progress, assignments, projects, feedback, reviews, referrals, videoProgress, communityMessages] = await Promise.all([
     getDB<Enrollment>("enrollments.json"),
     getDB<ProgressRecord>("progress.json"),
     getDB<AssignmentSubmission>("assignments.json"),
@@ -256,6 +256,8 @@ export async function DELETE(request: Request) {
     getDB<CourseFeedback>("course-feedback.json"),
     getDB<Review>("reviews.json"),
     getDB<AlumniReferral>("alumni-referrals.json"),
+    getDB<{ id: string; studentId: string }>("video-progress.json"),
+    getDB<{ id: string; studentId: string }>("community-messages.json"),
   ]);
 
   await Promise.all([
@@ -269,6 +271,8 @@ export async function DELETE(request: Request) {
     saveDB("course-feedback.json", feedback.filter((f) => f.studentId !== target.id)),
     saveDB("reviews.json", reviews.filter((r) => r.name.trim().toLowerCase() !== nameLower)),
     saveDB("alumni-referrals.json", referrals.filter((r) => r.postedByStudentId !== target.id)),
+    saveDB("video-progress.json", videoProgress.filter((v) => v.studentId !== target.id)),
+    saveDB("community-messages.json", communityMessages.filter((m) => m.studentId !== target.id)),
   ]);
 
   // Analytics cleanup is best-effort - never let it block the account deletion itself.
