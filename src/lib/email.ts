@@ -468,6 +468,46 @@ function progressMilestoneHtml(input: SendProgressMilestoneEmailInput) {
   `);
 }
 
+interface SendAdminNewEnrollmentAlertEmailInput {
+  to: string;
+  studentName: string;
+  courseNames: string[];
+  amount: number;
+  reference: string;
+  adminUrl: string;
+}
+
+export async function sendAdminNewEnrollmentAlertEmail(input: SendAdminNewEnrollmentAlertEmailInput) {
+  return sendTransactionalEmail({
+    to: input.to,
+    subject: `New enrollment request: ${input.studentName}`,
+    html: adminNewEnrollmentAlertHtml(input),
+    text: adminNewEnrollmentAlertText(input),
+  });
+}
+
+function adminNewEnrollmentAlertText(input: SendAdminNewEnrollmentAlertEmailInput) {
+  return [
+    `${input.studentName} just submitted an enrollment request for ${formatCourseList(input.courseNames)}.`,
+    `Amount: Ksh ${input.amount.toLocaleString()}`,
+    `Reference: ${input.reference}`,
+    "",
+    "Review and approve it here:",
+    input.adminUrl,
+    "",
+    "Sam Creative Design School",
+  ].join("\n");
+}
+
+function adminNewEnrollmentAlertHtml(input: SendAdminNewEnrollmentAlertEmailInput) {
+  return emailShell(`
+    <h1 style="margin:0 0 12px;font-size:24px;color:#050914">New enrollment request</h1>
+    <p><strong>${escapeHtml(input.studentName)}</strong> just submitted an enrollment request for <strong>${escapeHtml(formatCourseList(input.courseNames))}</strong>.</p>
+    <p style="color:#374151">Amount: Ksh ${input.amount.toLocaleString()}<br />Reference: ${escapeHtml(input.reference)}</p>
+    ${emailButton("Review in Admin Dashboard", input.adminUrl)}
+  `);
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")

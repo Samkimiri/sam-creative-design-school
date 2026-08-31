@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { appendDBRecord, getDB, hasPersistentStorageConfig, upsertDBRecord } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getManagedCourses } from "@/lib/contentSettings";
-import { courses } from "@/data/courses";
 import { findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
 import { applyPromoCode, calculateReferralDiscount, getDiscountSettings, normalizePromoCode } from "@/lib/discountSettings";
+import { sendAdminNewEnrollmentAlertEmail } from "@/lib/email";
+import { absoluteUrl } from "@/lib/seo";
 import type { Enrollment, Student } from "@/types";
 
 const clean = (value: unknown, maxLength: number) =>
@@ -69,7 +70,8 @@ export async function POST(request: Request) {
     }
 
     const requestedCourseIds = new Set(courseIds);
-    const validCourseIds = new Set(courses.map((course) => course.id));
+    const managedCourses = await getManagedCourses();
+    const validCourseIds = new Set(managedCourses.map((course) => course.id));
     const missingCourse = [...requestedCourseIds].some((id) => !validCourseIds.has(id));
 
     if (missingCourse || requestedCourseIds.size === 0) {
@@ -79,7 +81,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const managedCourses = await getManagedCourses();
     const selectedCourses = managedCourses.filter((course) => requestedCourseIds.has(course.id));
     const parsedAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
@@ -161,6 +162,22 @@ export async function POST(request: Request) {
     if (!savedEnrollment) {
       throw new Error(
         "Enrollment storage verification failed. Configure Supabase, MongoDB, or Vercel KV so requests can appear in the admin dashboard before students pay."
+      );
+    }
+
+    const adminAlertEmail = process.env.SCDS_ADMIN_ALERT_EMAIL
+      || students.find((s) => s.role === "admin")?.email
+      || process.env.SCDS_EMAIL_REPLY_TO;
+    if (adminAlertEmail) {
+      after(() =>
+        sendAdminNewEnrollmentAlertEmail({
+          to: adminAlertEmail,
+          studentName: name,
+          courseNames: selectedCourses.map((course) => course.title),
+          amount: payableAmount,
+          reference,
+          adminUrl: absoluteUrl("/admin"),
+        }).catch(() => {})
       );
     }
 
