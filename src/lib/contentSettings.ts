@@ -144,7 +144,9 @@ export async function getManagedFAQs() {
 }
 
 export function mergeCourses(settings: ContentSettings) {
-  return courses.map((course) => {
+  const staticIds = new Set(courses.map((course) => course.id));
+
+  const overridden = courses.map((course) => {
     const override = settings.courses.find((item) => item.id === course.id);
     if (!override) return course;
 
@@ -157,6 +159,34 @@ export function mergeCourses(settings: ContentSettings) {
       certificate: course.certificate,
     };
   });
+
+  // Admin-created courses (no matching static entry) are synthesized into full
+  // Course records here, with sensible fallbacks for anything left blank.
+  const created = settings.courses
+    .filter((item) => !staticIds.has(item.id) && item.title)
+    .map((item) => buildCourseFromOverride(item));
+
+  return [...overridden, ...created];
+}
+
+function buildCourseFromOverride(item: ContentSettings["courses"][number]) {
+  const title = item.title || item.id;
+  return {
+    id: item.id,
+    title,
+    shortTitle: item.shortTitle || title,
+    description: item.description || "",
+    longDescription: item.longDescription || item.description || "",
+    duration: item.duration || "Flexible",
+    price: Number.isFinite(item.price) ? Number(item.price) : 0,
+    priceRange: item.priceRange || "",
+    skills: Array.isArray(item.skills) && item.skills.length ? item.skills : [],
+    image: item.image || "/images/hero.png",
+    icon: item.icon || title.replace(/[^A-Za-z]/g, "").slice(0, 2).toUpperCase() || "SC",
+    color: item.color || "bg-primary",
+    level: item.level || "Beginner",
+    certificate: true,
+  };
 }
 
 export function mergeLessons(settings: ContentSettings) {

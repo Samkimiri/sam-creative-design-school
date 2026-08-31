@@ -29,6 +29,19 @@ type LessonTab = "video" | "notes" | "resources" | "assignment" | "quiz";
 
 const mergeLessonIds = (...lessonGroups: string[][]) => Array.from(new Set(lessonGroups.flat()));
 
+function buildComingSoonLesson(courseId: string): Lesson {
+  return {
+    id: `${courseId}-coming-soon`,
+    courseId,
+    title: "Lessons coming soon",
+    duration: "-",
+    videoUrl: "",
+    content: "This course was just added and its lessons are still being prepared. Check back soon, or contact the school for an update.",
+    resources: [],
+    order: 1,
+  };
+}
+
 export default function CoursePlayer() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -37,7 +50,10 @@ export default function CoursePlayer() {
   const [managedCourses, setManagedCourses] = useState<Course[]>(fallbackCourses);
   const [managedLessons, setManagedLessons] = useState<Lesson[]>(fallbackLessons);
   const course = managedCourses.find((c) => c.id === courseId);
-  const courseLessons = managedLessons.filter((l) => l.courseId === courseId).sort((a, b) => a.order - b.order);
+  const realCourseLessons = managedLessons.filter((l) => l.courseId === courseId).sort((a, b) => a.order - b.order);
+  // A freshly admin-created course can exist with no lessons yet - fall back to a
+  // single placeholder so every downstream usage of courseLessons[0] stays safe.
+  const courseLessons = realCourseLessons.length > 0 ? realCourseLessons : [buildComingSoonLesson(courseId)];
 
   const [activeLesson, setActiveLesson] = useState<Lesson>(courseLessons[0]);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);

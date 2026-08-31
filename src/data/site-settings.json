@@ -1,0 +1,149 @@
+[
+  {
+    "id": "content-manager",
+    "homepage": {
+      "eyebrow": "Sam Creative Design School",
+      "title": "Master Creative & Tech Skills That Pay",
+      "subtitle": "Learn design, coding, AI, video editing, and CAD with practical, industry-level training. Join 500+ students who've already transformed their careers.",
+      "primaryCta": "Start Learning Today",
+      "secondaryCta": "Explore Courses",
+      "whatsappNumber": "254748201131",
+      "whatsappDisplay": "0748201131",
+      "mpesaPaymentText": "0743475247 (Samuel Kimiri)",
+      "stats": [
+        {
+          "value": "500+",
+          "label": "Students Trained"
+        },
+        {
+          "value": "7",
+          "label": "Professional Courses"
+        },
+        {
+          "value": "5+",
+          "label": "Years of Excellence"
+        },
+        {
+          "value": "95%",
+          "label": "Completion Rate"
+        }
+      ],
+      "trustBadges": [
+        "Certificate Included",
+        "WhatsApp Mentorship",
+        "Beginner Friendly",
+        "Pay via MPESA"
+      ],
+      "learningBundle": [
+        {
+          "value": "7",
+          "label": "Skill tracks",
+          "detail": "Design, coding, AI, video, and CAD"
+        },
+        {
+          "value": "30+",
+          "label": "Guided lessons",
+          "detail": "Step-by-step videos, notes, quizzes, and assignments"
+        },
+        {
+          "value": "12+",
+          "label": "Portfolio projects",
+          "detail": "Posters, brand assets, reels, CAD parts, and presentations"
+        },
+        {
+          "value": "24/7",
+          "label": "LMS access",
+          "detail": "Rewatch lessons and keep improving after class"
+        }
+      ],
+      "toolStacks": [
+        {
+          "title": "Design Software",
+          "note": "Build posters, social media kits, logos, print files, and brand presentations.",
+          "tools": [
+            "Adobe Photoshop",
+            "Adobe Illustrator",
+            "Canva",
+            "Mockup tools"
+          ]
+        },
+        {
+          "title": "Video Workflow",
+          "note": "Plan, cut, caption, and export short-form videos for TikTok, Reels, Shorts, and business pages.",
+          "tools": [
+            "CapCut",
+            "Audio cleanup",
+            "Reels formats",
+            "Export presets"
+          ]
+        },
+        {
+          "title": "Engineering Setup",
+          "note": "Model real parts, prepare drawings, and present mechanical ideas clearly.",
+          "tools": [
+            "SolidWorks",
+            "Technical drawings",
+            "Assemblies",
+            "Rendering"
+          ]
+        }
+      ]
+    },
+    "courses": [],
+    "lessons": [],
+    "faqs": [
+      {
+        "category": "Courses & Enrollment",
+        "items": [
+          {
+            "q": "Do I need any prior experience to join?",
+            "a": "No. The courses are beginner-friendly and build practical skills step by step."
+          },
+          {
+            "q": "How long are the courses?",
+            "a": "Duration depends on the course. Most courses run between 2 and 8 weeks with flexible LMS access."
+          },
+          {
+            "q": "Can I enroll in multiple courses at once?",
+            "a": "Yes. Students can enroll in multiple courses and access each course from the LMS dashboard."
+          },
+          {
+            "q": "Will I get a certificate after completing a course?",
+            "a": "Yes. Certificates unlock after completing the lessons and required quizzes for a course."
+          }
+        ]
+      },
+      {
+        "category": "Payment & Fees",
+        "items": [
+          {
+            "q": "How do I pay for a course?",
+            "a": "You pay to the school M-Pesa Till during enrollment, then submit the form for admin review. The school admin confirms the payment and unlocks LMS access."
+          },
+          {
+            "q": "Do you offer discounts?",
+            "a": "Referral, group, and seasonal discounts may be available. Valid referral codes are checked during enrollment."
+          },
+          {
+            "q": "Can I get a refund?",
+            "a": "Refund requests must be submitted to SCDS support within 48 hours of enrollment and before the student has substantially accessed course lessons, downloads, live class placement, or mentorship support. Course fees are generally non-refundable once access to paid learning materials or services has been provided. A refund may be considered where there is a duplicate payment, an incorrect payment amount, or a verified access issue that SCDS is unable to resolve within a reasonable time. Approved refunds are returned to the original payer where possible and may exclude M-Pesa, bank, or payment processing charges. Each request is reviewed fairly, in good faith, and subject to applicable consumer protection laws."
+          }
+        ]
+      },
+      {
+        "category": "LMS & Technical",
+        "items": [
+          {
+            "q": "Can I access the LMS on mobile?",
+            "a": "Yes. The LMS is mobile-friendly and can also be installed as an app from supported browsers."
+          },
+          {
+            "q": "What software do I need?",
+            "a": "Requirements depend on the course. Each course page and lesson notes list the recommended tools."
+          }
+        ]
+      }
+    ],
+    "updatedAt": "2026-08-31T14:37:43.842Z"
+  }
+]
