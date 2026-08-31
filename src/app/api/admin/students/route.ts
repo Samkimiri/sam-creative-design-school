@@ -29,6 +29,7 @@ interface Student {
   pausedCourses?: string[];
   isAlumni?: boolean;
   alumniSince?: string;
+  communityBlocked?: boolean;
   createdAt: string;
 }
 
@@ -111,6 +112,36 @@ async function handleAlumniToggle(body: AdminRequestBody, makeAlumni: boolean) {
   });
 }
 
+async function handleCommunityBlockToggle(body: AdminRequestBody, block: boolean) {
+  const studentId = getRequiredString(body, "studentId", "Student ID");
+  if ("response" in studentId) return studentId.response;
+
+  const students = await getDB<Student>("students.json");
+  const index = students.findIndex((item) => item.id === studentId.value);
+  if (index === -1) {
+    return notFound("Student not found");
+  }
+
+  const student = students[index];
+  student.communityBlocked = block;
+  await upsertDBRecord("students.json", student);
+
+  const { password: _password, avatar: _avatar, profileImage: _profileImage, ...safeStudent } = student;
+  void _password;
+  void _avatar;
+  void _profileImage;
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      student: safeStudent,
+      message: block
+        ? `${student.name} can no longer post in the community.`
+        : `${student.name} can post in the community again.`,
+    },
+  });
+}
+
 export async function POST(request: Request) {
   const auth = await requireAdminRequest(request);
   if ("response" in auth) return auth.response;
@@ -136,6 +167,9 @@ export async function PATCH(request: Request) {
   }
   if (action === "set-alumni" || action === "remove-alumni") {
     return handleAlumniToggle(auth.body, action === "set-alumni");
+  }
+  if (action === "block-community" || action === "unblock-community") {
+    return handleCommunityBlockToggle(auth.body, action === "block-community");
   }
 
   const studentId = getRequiredString(auth.body, "studentId", "Student ID");
@@ -248,7 +282,7 @@ export async function DELETE(request: Request) {
 
   await saveDB("students.json", students.filter((s) => s.id !== target.id));
 
-  const [enrollments, progress, assignments, projects, feedback, reviews, referrals, videoProgress, communityMessages] = await Promise.all([
+  const [enrollments, progress, assignments, projects, feedback, reviews, referrals, videoProgress, communityMessages, communityBlocks] = await Promise.all([
     getDB<Enrollment>("enrollments.json"),
     getDB<ProgressRecord>("progress.json"),
     getDB<AssignmentSubmission>("assignments.json"),
@@ -257,7 +291,8 @@ export async function DELETE(request: Request) {
     getDB<Review>("reviews.json"),
     getDB<AlumniReferral>("alumni-referrals.json"),
     getDB<{ id: string; studentId: string }>("video-progress.json"),
-    getDB<{ id: string; studentId: string }>("community-messages.json"),
+    getDB<{ id: string; studentId: string; recipientId?: string }>("community-messages.json"),
+    getDB<{ id: string; blockerId: string; blockedId: string }>("community-blocks.json"),
   ]);
 
   await Promise.all([
@@ -272,7 +307,14 @@ export async function DELETE(request: Request) {
     saveDB("reviews.json", reviews.filter((r) => r.name.trim().toLowerCase() !== nameLower)),
     saveDB("alumni-referrals.json", referrals.filter((r) => r.postedByStudentId !== target.id)),
     saveDB("video-progress.json", videoProgress.filter((v) => v.studentId !== target.id)),
-    saveDB("community-messages.json", communityMessages.filter((m) => m.studentId !== target.id)),
+    saveDB(
+      "community-messages.json",
+      communityMessages.filter((m) => m.studentId !== target.id && m.recipientId !== target.id)
+    ),
+    saveDB(
+      "community-blocks.json",
+      communityBlocks.filter((b) => b.blockerId !== target.id && b.blockedId !== target.id)
+    ),
   ]);
 
   // Analytics cleanup is best-effort - never let it block the account deletion itself.

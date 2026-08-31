@@ -2,20 +2,43 @@ import { NextResponse } from "next/server";
 import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { containsAbusiveLanguage } from "@/lib/moderation";
-import { isValidStickerId, purgeExpiredTrash, TRASH_RETENTION_MS, type CommunityMessage } from "@/lib/community";
+import {
+  isBlockedBy,
+  isPrivateMessage,
+  isValidStickerId,
+  purgeExpiredTrash,
+  resolveMentions,
+  TRASH_RETENTION_MS,
+  type CommunityBlock,
+  type CommunityMessage,
+} from "@/lib/community";
 import type { Student } from "@/types";
 
 const MAX_MESSAGE_LENGTH = 500;
 const RESPECT_MESSAGE = "That message isn't allowed here. Keep the community respectful.";
+
+function buildReplyPreview(original: CommunityMessage | undefined) {
+  if (!original) return undefined;
+  return {
+    studentId: original.studentId,
+    studentName: original.studentName,
+    text: original.text ? original.text.slice(0, 140) : undefined,
+    stickerId: original.stickerId,
+  };
+}
 
 export async function GET(request: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const view = searchParams.get("view");
+  const view = searchParams.get("view") || "public";
+  const withId = searchParams.get("with") || "";
 
-  const messages = await getDB<CommunityMessage>("community-messages.json");
+  const [messages, blocks] = await Promise.all([
+    getDB<CommunityMessage>("community-messages.json"),
+    getDB<CommunityBlock>("community-blocks.json"),
+  ]);
   const { kept, changed } = purgeExpiredTrash(messages);
   if (changed) await saveDB("community-messages.json", kept);
 
@@ -26,8 +49,46 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, data: trash });
   }
 
+  if (view === "dmList") {
+    const myPrivate = kept.filter(
+      (message) => !message.deletedAt && isPrivateMessage(message) &&
+        (message.studentId === session.user.id || message.recipientId === session.user.id)
+    );
+    const partners = new Map<string, { id: string; name: string; avatar?: string | null; lastMessage: CommunityMessage }>();
+    for (const message of myPrivate) {
+      const isMine = message.studentId === session.user.id;
+      const partnerId = isMine ? message.recipientId || "" : message.studentId;
+      const partnerName = isMine ? message.recipientName || "Student" : message.studentName;
+      const partnerAvatar = isMine ? undefined : message.avatar;
+      if (!partnerId) continue;
+      const existing = partners.get(partnerId);
+      if (!existing || new Date(message.createdAt).getTime() > new Date(existing.lastMessage.createdAt).getTime()) {
+        partners.set(partnerId, { id: partnerId, name: partnerName, avatar: partnerAvatar, lastMessage: message });
+      }
+    }
+    const list = [...partners.values()].sort(
+      (a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
+    );
+    return NextResponse.json({ success: true, data: list });
+  }
+
+  if (view === "dm") {
+    if (!withId) return NextResponse.json({ success: false, message: "Missing conversation partner." }, { status: 400 });
+    const thread = kept
+      .filter(
+        (message) =>
+          !message.deletedAt &&
+          isPrivateMessage(message) &&
+          ((message.studentId === session.user.id && message.recipientId === withId) ||
+            (message.studentId === withId && message.recipientId === session.user.id))
+      )
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    return NextResponse.json({ success: true, data: thread });
+  }
+
+  const myBlocks = blocks.filter((block) => block.blockerId === session.user.id).map((block) => block.blockedId);
   const visible = kept
-    .filter((message) => !message.deletedAt)
+    .filter((message) => !message.deletedAt && !isPrivateMessage(message) && !myBlocks.includes(message.studentId))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .slice(-200);
 
@@ -42,6 +103,8 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const rawText = typeof body.text === "string" ? body.text.trim().slice(0, MAX_MESSAGE_LENGTH) : "";
     const stickerId = typeof body.stickerId === "string" ? body.stickerId.trim() : "";
+    const replyToId = typeof body.replyToId === "string" ? body.replyToId.trim() : "";
+    const recipientId = typeof body.recipientId === "string" ? body.recipientId.trim() : "";
 
     if (!rawText && !stickerId) {
       return NextResponse.json({ success: false, message: "Write a message or pick a sticker." }, { status: 400 });
@@ -52,12 +115,38 @@ export async function POST(request: Request) {
     if (rawText && containsAbusiveLanguage(rawText)) {
       return NextResponse.json({ success: false, message: RESPECT_MESSAGE }, { status: 400 });
     }
+    if (recipientId && recipientId === session.user.id) {
+      return NextResponse.json({ success: false, message: "You can't send yourself a private message." }, { status: 400 });
+    }
 
     const students = await getDB<Student>("students.json");
     const student = students.find((item) => item.id === session.user.id);
     if (!student) {
       return NextResponse.json({ success: false, message: "Your account could not be found." }, { status: 401 });
     }
+    if (student.communityBlocked) {
+      return NextResponse.json(
+        { success: false, message: "Your community access has been restricted by an admin." },
+        { status: 403 }
+      );
+    }
+
+    let recipient: Student | undefined;
+    if (recipientId) {
+      recipient = students.find((item) => item.id === recipientId);
+      if (!recipient) return NextResponse.json({ success: false, message: "Recipient not found." }, { status: 404 });
+
+      const blocks = await getDB<CommunityBlock>("community-blocks.json");
+      if (isBlockedBy(blocks, recipientId, session.user.id)) {
+        return NextResponse.json({ success: false, message: "This student isn't accepting messages from you." }, { status: 403 });
+      }
+    }
+
+    const messages = await getDB<CommunityMessage>("community-messages.json");
+    const original = replyToId ? messages.find((item) => item.id === replyToId && !item.deletedAt) : undefined;
+
+    const roster = students.map((item) => ({ id: item.id, name: item.name }));
+    const mentionIds = rawText ? resolveMentions(rawText, roster).filter((id) => id !== student.id) : [];
 
     const message: CommunityMessage = {
       id: `MSG-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -67,6 +156,12 @@ export async function POST(request: Request) {
       role: student.role || "student",
       text: rawText || undefined,
       stickerId: stickerId || undefined,
+      visibility: recipientId ? "private" : "public",
+      recipientId: recipientId || undefined,
+      recipientName: recipient?.name || undefined,
+      replyToId: original?.id,
+      replyPreview: buildReplyPreview(original),
+      mentionIds: mentionIds.length > 0 ? mentionIds : undefined,
       createdAt: new Date().toISOString(),
     };
 
@@ -107,6 +202,11 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: true, data: restored });
     }
 
+    if (action === "markSeen") {
+      // Reserved for future read-receipt UI; notifications currently use the dedicated endpoint.
+      return NextResponse.json({ success: true });
+    }
+
     if (message.deletedAt) {
       return NextResponse.json({ success: false, message: "Restore this message before editing it." }, { status: 400 });
     }
@@ -117,7 +217,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, message: RESPECT_MESSAGE }, { status: 400 });
     }
 
-    const edited: CommunityMessage = { ...message, text: newText, editedAt: new Date().toISOString() };
+    const students = await getDB<Student>("students.json");
+    const roster = students.map((item) => ({ id: item.id, name: item.name }));
+    const mentionIds = resolveMentions(newText, roster).filter((id) => id !== message.studentId);
+
+    const edited: CommunityMessage = {
+      ...message,
+      text: newText,
+      mentionIds: mentionIds.length > 0 ? mentionIds : undefined,
+      editedAt: new Date().toISOString(),
+    };
     await upsertDBRecord("community-messages.json", edited);
     return NextResponse.json({ success: true, data: edited });
   } catch (error) {

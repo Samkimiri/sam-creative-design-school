@@ -27,11 +27,13 @@ interface Student {
   name: string;
   email: string;
   phone: string;
+  role?: string;
   profileImage?: string;
   enrolledCourses: string[];
   pausedCourses?: string[];
   isAlumni?: boolean;
   alumniSince?: string;
+  communityBlocked?: boolean;
   createdAt: string;
 }
 
@@ -772,6 +774,23 @@ export default function AdminDashboard() {
     );
   };
 
+  const toggleCommunityBlock = async (studentId: string, block: boolean, studentName?: string) => {
+    if (block) {
+      const confirmed = window.confirm(`Block ${studentName || "this student"} from posting in the community? They'll keep LMS access to their courses.`);
+      if (!confirmed) return;
+    }
+
+    await runMutation<{ student: Student; message?: string }>(
+      `community-block-${studentId}`,
+      "/api/admin/students",
+      { password, studentId, action: block ? "block-community" : "unblock-community" },
+      ({ student, message }) => {
+        setStudents((prev) => prev.map((s) => (s.id === student.id ? { ...s, ...student } : s)));
+        setNotice(message || (block ? "Student blocked from community." : "Student unblocked from community."));
+      }
+    );
+  };
+
   const deleteStudent = async (studentId: string, studentName: string) => {
     const typed = window.prompt(
       `This permanently deletes ${studentName}'s account and everything linked to it - enrollments, progress, submissions, feedback, and analytics. This cannot be undone.\n\nType the student's name to confirm: ${studentName}`
@@ -810,6 +829,7 @@ export default function AdminDashboard() {
       "DELETE"
     );
   };
+
 
   const saveFeedback = async (studentId: string, studentName: string, courseId: string, courseName: string) => {
     const message = (feedbackDraft[courseId] || "").trim();
@@ -1697,6 +1717,16 @@ export default function AdminDashboard() {
                           >
                             {pendingAction === `alumni-${s.id}` ? "Saving..." : s.isAlumni ? "Remove Alumni" : "Make Alumni"}
                           </button>
+                          {s.role !== "admin" && (
+                            <button
+                              type="button"
+                              onClick={() => void toggleCommunityBlock(s.id, !s.communityBlocked, s.name)}
+                              disabled={pendingAction === `community-block-${s.id}`}
+                              className={`rounded-lg px-3 py-1.5 text-xs font-bold disabled:opacity-50 ${s.communityBlocked ? "bg-gray-100 text-dark" : "bg-amber-50 text-amber-700 hover:bg-amber-100"} ${adminActionMotion}`}
+                            >
+                              {pendingAction === `community-block-${s.id}` ? "Saving..." : s.communityBlocked ? "Unblock Chat" : "Block Chat"}
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => void deleteStudent(s.id, s.name)}
@@ -1753,6 +1783,11 @@ export default function AdminDashboard() {
                         {message.role === "admin" && (
                           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase text-primary">Admin</span>
                         )}
+                        {message.visibility === "private" && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase text-amber-700">
+                            Private -&gt; {message.recipientName || "student"}
+                          </span>
+                        )}
                         <span className="text-xs text-gray-400">{new Date(message.createdAt).toLocaleString()}</span>
                         {message.editedAt && <span className="text-xs italic text-gray-400">(edited)</span>}
                       </div>
@@ -1764,14 +1799,26 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void deleteCommunityMessage(message.id, message.studentName)}
-                      disabled={pendingAction === `delete-message-${message.id}`}
-                      className={`shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
-                    >
-                      {pendingAction === `delete-message-${message.id}` ? "Removing..." : "Remove"}
-                    </button>
+                    <div className="flex shrink-0 flex-col gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => void deleteCommunityMessage(message.id, message.studentName)}
+                        disabled={pendingAction === `delete-message-${message.id}`}
+                        className={`rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
+                      >
+                        {pendingAction === `delete-message-${message.id}` ? "Removing..." : "Remove"}
+                      </button>
+                      {message.role !== "admin" && (
+                        <button
+                          type="button"
+                          onClick={() => void toggleCommunityBlock(message.studentId, true, message.studentName)}
+                          disabled={pendingAction === `community-block-${message.studentId}`}
+                          className={`rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-600 hover:bg-gray-200 disabled:opacity-50 ${adminActionMotion}`}
+                        >
+                          {pendingAction === `community-block-${message.studentId}` ? "Blocking..." : "Block Student"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))
               )}

@@ -12,6 +12,8 @@ export interface Student {
   pausedCourses?: string[];
   isAlumni?: boolean;
   alumniSince?: string;
+  communityBlocked?: boolean;
+  communityLastSeenAt?: string;
   createdAt?: string;
 }
 

@@ -3,7 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LogIn, Menu, X } from "lucide-react";
+import { LogIn, Menu, MessageCircle, X } from "lucide-react";
+import CommunityUnreadBadge from "./CommunityUnreadBadge";
 
 function runWhenIdle(callback: () => void) {
   const requestIdle = window.requestIdleCallback || ((handler: IdleRequestCallback) => window.setTimeout(handler, 300));
@@ -148,6 +149,16 @@ export default function Navbar() {
                 </Link>
               )}
               <Link
+                href="/lms/community"
+                aria-label="Community"
+                className={`relative rounded-xl p-2.5 transition-all ${
+                  scrolled || isLmsPage ? "text-dark hover:text-primary" : "text-white/90 hover:text-white"
+                }`}
+              >
+                <MessageCircle className="h-5 w-5" aria-hidden="true" />
+                <CommunityUnreadBadge className="absolute -right-0.5 -top-0.5" />
+              </Link>
+              <Link
                 href="/lms"
                 className="premium-button flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-primary/90 hover:-translate-y-0.5 transition-all shadow-lg shadow-primary/20"
               >
@@ -222,6 +233,10 @@ export default function Navbar() {
                       Admin Panel
                     </Link>
                   )}
+                  <Link href="/lms/community" onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 text-center font-bold py-3 rounded-xl text-dark border border-gray-200">
+                    Community
+                    <CommunityUnreadBadge />
+                  </Link>
                   <Link href="/lms" onClick={() => setMobileOpen(false)} className="bg-primary text-white text-center font-bold py-3 rounded-xl">
                     My Dashboard
                   </Link>

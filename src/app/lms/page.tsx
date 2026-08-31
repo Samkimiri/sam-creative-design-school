@@ -8,6 +8,7 @@ import { getCourseVisual } from "@/lib/courseVisuals";
 import { attachConfirmedEnrollmentsToStudent } from "@/lib/enrollmentAccess";
 import { createReferralCode } from "@/lib/referrals";
 import { Award, BadgeCheck, Flame, Medal, Sparkles, Trophy } from "lucide-react";
+import CommunityUnreadBadge from "@/components/CommunityUnreadBadge";
 
 interface ProgressRecord {
   studentId: string;
@@ -161,9 +162,10 @@ export default async function LMSDashboard() {
                 {session && (
                   <Link
                     href="/lms/community"
-                    className="rounded-xl border border-white/20 px-5 py-3 text-center font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light sm:px-6"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3 text-center font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:border-primary-light hover:text-primary-light sm:px-6"
                   >
                     Community
+                    <CommunityUnreadBadge />
                   </Link>
                 )}
               </div>
