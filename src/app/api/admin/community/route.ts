@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { deleteDBRecord, getDB, saveDB } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
 import { purgeExpiredTrash, type CommunityComment, type CommunityMessage, type CommunityPost } from "@/lib/community";
+import { logAdminAction } from "@/lib/auditLog";
 
 async function listCommunityContent(request: Request) {
   const auth = await requireAdminRequest(request);
@@ -60,6 +61,15 @@ export async function DELETE(request: Request) {
   if (!items.some((item) => item.id === id.value)) return notFound("Content not found");
 
   await deleteDBRecord(collection, id.value);
+
+  await logAdminAction({
+    actorId: auth.actor.id,
+    actorName: auth.actor.name,
+    actorRole: auth.actor.role,
+    action: `community.${type.value}.removed`,
+    targetType: type.value,
+    targetId: id.value,
+  });
 
   return NextResponse.json({ success: true, data: { id: id.value, type: type.value }, message: "Removed permanently." });
 }

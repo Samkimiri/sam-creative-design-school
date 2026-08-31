@@ -4,10 +4,10 @@ import {
   getUpcomingIntakeSettings,
   saveUpcomingIntakeSettings,
 } from "@/lib/siteSettings";
-import { requireAdminRequest } from "@/lib/adminAuth";
+import { requireFullAdminRequest } from "@/lib/adminAuth";
 
 export async function POST(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const intake = await getUpcomingIntakeSettings();
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const intake = await saveUpcomingIntakeSettings({

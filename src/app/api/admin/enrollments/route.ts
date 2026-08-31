@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
-import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
+import { badRequest, getRequiredString, notFound, requireFullAdminRequest } from "@/lib/adminAuth";
 import {
   backfillLegacyEnrollments,
   findStudentForEnrollment,
@@ -9,6 +9,7 @@ import {
 } from "@/lib/enrollmentAccess";
 import { sendDisenrollmentEmail, sendEnrollmentApprovedEmail, sendEnrollmentRejectedEmail } from "@/lib/email";
 import { absoluteUrl } from "@/lib/seo";
+import { logAdminAction } from "@/lib/auditLog";
 
 function courseNamesFromEnrollment(courseName: string) {
   return courseName.split(",").map((name) => name.trim()).filter(Boolean);
@@ -49,7 +50,7 @@ interface Enrollment {
 }
 
 async function listEnrollments(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   try {
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const enrollmentId = getRequiredString(auth.body, "enrollmentId", "Enrollment ID");
@@ -207,6 +208,17 @@ export async function PATCH(request: Request) {
 
   await upsertDBRecord("enrollments.json", enrollments[index]);
 
+  await logAdminAction({
+    actorId: auth.actor.id,
+    actorName: auth.actor.name,
+    actorRole: auth.actor.role,
+    action: `enrollment.${status.value}`,
+    targetType: "enrollment",
+    targetId: enrollments[index].id,
+    targetLabel: `${enrollments[index].studentName} - ${enrollments[index].courseName}`,
+    details: reason || undefined,
+  });
+
   return NextResponse.json(
     { success: true, data: enrollments[index] },
     {
@@ -218,7 +230,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const enrollmentId = getRequiredString(auth.body, "enrollmentId", "Enrollment ID");
@@ -237,6 +249,16 @@ export async function DELETE(request: Request) {
 
   const [deleted] = enrollments.splice(index, 1);
   await saveDB("enrollments.json", enrollments);
+
+  await logAdminAction({
+    actorId: auth.actor.id,
+    actorName: auth.actor.name,
+    actorRole: auth.actor.role,
+    action: "enrollment.deleted",
+    targetType: "enrollment",
+    targetId: deleted.id,
+    targetLabel: `${deleted.studentName} - ${deleted.courseName}`,
+  });
 
   return NextResponse.json(
     { success: true, data: deleted, message: "Enrollment record deleted." },

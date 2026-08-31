@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDiscountSettings, saveDiscountSettings } from "@/lib/discountSettings";
-import { requireAdminRequest } from "@/lib/adminAuth";
+import { requireFullAdminRequest } from "@/lib/adminAuth";
 
 export async function POST(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const discounts = await getDiscountSettings();
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const discounts = await saveDiscountSettings(auth.body.discounts || auth.body);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
-import { badRequest, getRequiredString, notFound, requireAdminRequest, type AdminRequestBody } from "@/lib/adminAuth";
+import { badRequest, getRequiredString, notFound, requireAdminRequest, requireFullAdminRequest, type AdminActor, type AdminRequestBody } from "@/lib/adminAuth";
+import { logAdminAction } from "@/lib/auditLog";
 import { courses, lessons } from "@/data/courses";
 import { absoluteUrl } from "@/lib/seo";
 import { sendInactivityNudgeEmail, sendNewCourseSuggestionEmail } from "@/lib/email";
@@ -112,7 +113,7 @@ async function handleAlumniToggle(body: AdminRequestBody, makeAlumni: boolean) {
   });
 }
 
-async function handleCommunityBlockToggle(body: AdminRequestBody, block: boolean) {
+async function handleCommunityBlockToggle(body: AdminRequestBody, block: boolean, actor: AdminActor) {
   const studentId = getRequiredString(body, "studentId", "Student ID");
   if ("response" in studentId) return studentId.response;
 
@@ -125,6 +126,16 @@ async function handleCommunityBlockToggle(body: AdminRequestBody, block: boolean
   const student = students[index];
   student.communityBlocked = block;
   await upsertDBRecord("students.json", student);
+
+  await logAdminAction({
+    actorId: actor.id,
+    actorName: actor.name,
+    actorRole: actor.role,
+    action: block ? "student.community_blocked" : "student.community_unblocked",
+    targetType: "student",
+    targetId: student.id,
+    targetLabel: student.name,
+  });
 
   const { password: _password, avatar: _avatar, profileImage: _profileImage, ...safeStudent } = student;
   void _password;
@@ -158,7 +169,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const action = typeof auth.body.action === "string" ? auth.body.action : "";
@@ -169,7 +180,7 @@ export async function PATCH(request: Request) {
     return handleAlumniToggle(auth.body, action === "set-alumni");
   }
   if (action === "block-community" || action === "unblock-community") {
-    return handleCommunityBlockToggle(auth.body, action === "block-community");
+    return handleCommunityBlockToggle(auth.body, action === "block-community", auth.actor);
   }
 
   const studentId = getRequiredString(auth.body, "studentId", "Student ID");
@@ -262,7 +273,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const studentId = getRequiredString(auth.body, "studentId", "Student ID");
@@ -273,8 +284,8 @@ export async function DELETE(request: Request) {
   if (!target) {
     return notFound("Student not found");
   }
-  if (target.role === "admin") {
-    return badRequest("Admin accounts cannot be deleted this way.");
+  if (target.role === "admin" || target.role === "staff") {
+    return badRequest("Admin and staff accounts cannot be deleted this way. Remove their role first.");
   }
 
   const nameLower = target.name.trim().toLowerCase();
@@ -356,6 +367,16 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error("Analytics cleanup during student deletion failed (non-fatal):", error);
   }
+
+  await logAdminAction({
+    actorId: auth.actor.id,
+    actorName: auth.actor.name,
+    actorRole: auth.actor.role,
+    action: "student.deleted",
+    targetType: "student",
+    targetId: target.id,
+    targetLabel: target.name,
+  });
 
   return NextResponse.json({
     success: true,

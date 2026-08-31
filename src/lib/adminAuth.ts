@@ -6,13 +6,25 @@ const DEV_ADMIN_PASSWORD = "sam-admin-2026";
 
 export type AdminRequestBody = Record<string, unknown>;
 
+export interface AdminActor {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "staff";
+}
+
 interface AdminStudent {
   id: string;
+  name: string;
   email: string;
   role?: string;
 }
 
 type AdminRequestResult =
+  | { body: AdminRequestBody; actor: AdminActor }
+  | { response: NextResponse };
+
+type BodyParseResult =
   | { body: AdminRequestBody }
   | { response: NextResponse };
 
@@ -36,6 +48,18 @@ export function getConfiguredAdminPassword() {
   );
 }
 
+const SHARED_PASSWORD_ACTOR: AdminActor = {
+  id: "password",
+  name: "Admin (shared password)",
+  email: "",
+  role: "admin",
+};
+
+/**
+ * Accepts either a full admin or a staff account (limited to the routes that
+ * explicitly allow staff). Use requireFullAdminRequest for anything financial,
+ * account-level, or otherwise admin-only.
+ */
 export async function requireAdminRequest(request: Request): Promise<AdminRequestResult> {
   const parsed = await readRequestBody(request);
   if ("response" in parsed) return parsed;
@@ -45,17 +69,29 @@ export async function requireAdminRequest(request: Request): Promise<AdminReques
   const passwordAllowed = Boolean(adminPassword && password === adminPassword);
 
   if (passwordAllowed) {
-    return parsed;
+    return { body: parsed.body, actor: SHARED_PASSWORD_ACTOR };
   }
 
   const session = await getSession();
-  const sessionAllowed = await hasCurrentAdminRole(session?.user.id, session?.user.email);
+  const actor = await resolveSessionActor(session?.user.id, session?.user.email);
 
-  if (!sessionAllowed) {
+  if (!actor) {
     return { response: adminError("Unauthorized", 401) };
   }
 
-  return parsed;
+  return { body: parsed.body, actor };
+}
+
+/** Same as requireAdminRequest, but rejects staff accounts - use for financial, account, and settings routes. */
+export async function requireFullAdminRequest(request: Request): Promise<AdminRequestResult> {
+  const result = await requireAdminRequest(request);
+  if ("response" in result) return result;
+
+  if (result.actor.role !== "admin") {
+    return { response: adminError("This action requires full admin access.", 403) };
+  }
+
+  return result;
 }
 
 export function getRequiredString(body: AdminRequestBody, key: string, label: string) {
@@ -67,7 +103,7 @@ export function getRequiredString(body: AdminRequestBody, key: string, label: st
   return { value: value.trim() };
 }
 
-async function readRequestBody(request: Request): Promise<AdminRequestResult> {
+async function readRequestBody(request: Request): Promise<BodyParseResult> {
   const text = await request.text();
   if (text.trim() === "") return { body: {} };
 
@@ -87,8 +123,8 @@ function isPlainObject(value: unknown): value is AdminRequestBody {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-async function hasCurrentAdminRole(id?: string, email?: string) {
-  if (!id && !email) return false;
+async function resolveSessionActor(id?: string, email?: string): Promise<AdminActor | null> {
+  if (!id && !email) return null;
 
   const students = await getDB<AdminStudent>("students.json");
   const normalizedEmail = email?.toLowerCase();
@@ -97,5 +133,7 @@ async function hasCurrentAdminRole(id?: string, email?: string) {
     (normalizedEmail && item.email?.toLowerCase() === normalizedEmail)
   );
 
-  return student?.role === "admin";
+  if (!student || (student.role !== "admin" && student.role !== "staff")) return null;
+
+  return { id: student.id, name: student.name, email: student.email, role: student.role };
 }

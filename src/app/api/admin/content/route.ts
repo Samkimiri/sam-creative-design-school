@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getContentSettings, saveContentSettings } from "@/lib/contentSettings";
-import { requireAdminRequest } from "@/lib/adminAuth";
+import { requireFullAdminRequest } from "@/lib/adminAuth";
 
 const contentPaths = [
   "/",
@@ -14,7 +14,7 @@ const contentPaths = [
 ];
 
 export async function POST(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const content = await getContentSettings();
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdminRequest(request);
+  const auth = await requireFullAdminRequest(request);
   if ("response" in auth) return auth.response;
 
   const content = await saveContentSettings(auth.body.content || auth.body);
