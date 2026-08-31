@@ -4,6 +4,23 @@ import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
 import type { ContentSettings, CourseContentOverride, CourseFeedback, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, ProgressRecord, PromoCode } from "@/types";
 import type { LeaderboardEntry } from "@/lib/leaderboard";
+import { STICKERS, type CommunityMessage } from "@/lib/community";
+import CollapsiblePanel from "@/components/CollapsiblePanel";
+
+// Africa/Nairobi is a fixed UTC+3 offset with no daylight saving.
+const NAIROBI_OFFSET_MS = 3 * 60 * 60 * 1000;
+
+function isToday(dateIso: string) {
+  const time = new Date(dateIso).getTime();
+  if (Number.isNaN(time)) return false;
+  const shifted = new Date(time + NAIROBI_OFFSET_MS);
+  const now = new Date(Date.now() + NAIROBI_OFFSET_MS);
+  return (
+    shifted.getUTCFullYear() === now.getUTCFullYear() &&
+    shifted.getUTCMonth() === now.getUTCMonth() &&
+    shifted.getUTCDate() === now.getUTCDate()
+  );
+}
 
 interface Student {
   id: string;
@@ -192,7 +209,7 @@ interface AdminDashboardPayload {
   };
 }
 
-type AdminTab = "analytics" | "enrollments" | "students" | "reviews" | "projects" | "assignments" | "certificates" | "discounts" | "settings" | "content";
+type AdminTab = "analytics" | "enrollments" | "students" | "community" | "reviews" | "projects" | "assignments" | "certificates" | "discounts" | "settings" | "content";
 
 type AdminResponse<T> = {
   success?: boolean;
@@ -204,7 +221,7 @@ type AdminResponse<T> = {
   events?: AnalyticsEvent[];
 };
 
-const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "reviews", "projects", "assignments", "certificates", "discounts", "settings", "content"];
+const adminTabs: AdminTab[] = ["analytics", "enrollments", "students", "community", "reviews", "projects", "assignments", "certificates", "discounts", "settings", "content"];
 const defaultIntakeSettings: UpcomingIntakeSettings = {
   id: "upcoming-intake",
   title: "Join the Next SCDS Class",
@@ -402,6 +419,8 @@ export default function AdminDashboard() {
   const [suggestedCourseByStudent, setSuggestedCourseByStudent] = useState<Record<string, string>>({});
   const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
+  const [communityMessages, setCommunityMessages] = useState<CommunityMessage[]>([]);
+  const [communityLoading, setCommunityLoading] = useState(false);
   const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
   const [intakeSettings, setIntakeSettings] = useState<UpcomingIntakeSettings>(defaultIntakeSettings);
   const [contentSettings, setContentSettings] = useState<ContentSettings>(defaultContentSettings);
@@ -515,6 +534,32 @@ export default function AdminDashboard() {
     }
   }, [fetchAdminJson]);
 
+  const refreshCommunityMessages = useCallback(async (pw?: string, options?: { silent?: boolean }) => {
+    if (!options?.silent) setCommunityLoading(true);
+    try {
+      const { res, data } = await fetchAdminJson<CommunityMessage[]>("/api/admin/community", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pw ? { password: pw } : {}),
+      });
+
+      if (!res.ok || !data.success || !Array.isArray(data.data)) {
+        if (!options?.silent) setNotice(data.message || "Could not load community messages. Try refreshing again.");
+        return;
+      }
+
+      setCommunityMessages(data.data);
+    } catch (err) {
+      if (!options?.silent) {
+        setNotice(err instanceof DOMException && err.name === "AbortError"
+          ? "Community messages took too long to load. Try again."
+          : "Could not load community messages. Check your connection and try again.");
+      }
+    } finally {
+      if (!options?.silent) setCommunityLoading(false);
+    }
+  }, [fetchAdminJson]);
+
   // Check account role before loading any admin data.
   useEffect(() => {
     let cancelled = false;
@@ -575,6 +620,19 @@ export default function AdminDashboard() {
     }, 20000);
     return () => window.clearInterval(interval);
   }, [authed, password, refreshEnrollments, tab]);
+
+  useEffect(() => {
+    if (!authed || tab !== "community") return;
+    void refreshCommunityMessages(password);
+  }, [authed, password, refreshCommunityMessages, tab]);
+
+  useEffect(() => {
+    if (!authed || tab !== "community") return;
+    const interval = window.setInterval(() => {
+      void refreshCommunityMessages(password, { silent: true });
+    }, 10000);
+    return () => window.clearInterval(interval);
+  }, [authed, password, refreshCommunityMessages, tab]);
 
   const confirmEnrollment = async (enrollmentId: string) => {
     await runMutation<Enrollment>(
@@ -732,6 +790,22 @@ export default function AdminDashboard() {
         setStudents((prev) => prev.filter((s) => s.id !== id));
         setEnrollments((prev) => prev.filter((e) => e.studentId !== id));
         setNotice(message || "Student deleted.");
+      },
+      "DELETE"
+    );
+  };
+
+  const deleteCommunityMessage = async (messageId: string, studentName: string) => {
+    const confirmed = window.confirm(`Permanently remove ${studentName}'s message from the community? This cannot be undone.`);
+    if (!confirmed) return;
+
+    await runMutation<CommunityMessage>(
+      `delete-message-${messageId}`,
+      "/api/admin/community",
+      { password, messageId },
+      () => {
+        setCommunityMessages((prev) => prev.filter((m) => m.id !== messageId));
+        setNotice("Message removed.");
       },
       "DELETE"
     );
@@ -1131,6 +1205,7 @@ export default function AdminDashboard() {
   const studentsByEnrollmentOrder = [...students].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
+  const todaysVisitorSessions = visitorSessions.filter((s) => isToday(s.lastSeen));
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24 pt-28">
@@ -1197,14 +1272,15 @@ export default function AdminDashboard() {
 
         {tab === "analytics" && (
           <div key="analytics-panel" className="admin-tab-panel space-y-6">
-            <div className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminPanelMotion}`}>
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-dark">Top Pages</h3>
-                  <p className="mt-1 text-xs font-medium text-slate-500">Most visited routes</p>
-                </div>
+            <CollapsiblePanel
+              className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${adminPanelMotion}`}
+              title="Top Pages"
+              subtitle="Most visited routes"
+              headerExtra={
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{analyticsSummary?.topPages.length ?? 0}</span>
-              </div>
+              }
+              bodyClassName="mt-4"
+            >
               {analyticsSummary?.topPages.length ? (
                 <ul className="space-y-2">
                   {analyticsSummary.topPages.map((p) => (
@@ -1217,13 +1293,17 @@ export default function AdminDashboard() {
               ) : (
                 <p className="text-gray-400 text-sm">No page views yet. Browse the site to collect data.</p>
               )}
-            </div>
+            </CollapsiblePanel>
 
-            <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${adminPanelMotion}`}>
-              <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
-                <h3 className="font-bold text-dark">Visitor Sessions</h3>
-                <p className="mt-1 text-xs font-medium text-slate-500">Everyone who viewed or engaged with the website</p>
-              </div>
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-slate-100 px-5 py-4 sm:px-6"
+              title="Visitor Sessions"
+              subtitle="Today's visitors only - resets daily"
+              headerExtra={
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary">{todaysVisitorSessions.length}</span>
+              }
+            >
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
@@ -1236,9 +1316,9 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {visitorSessions.length === 0 ? (
-                      <tr><td colSpan={5} className="text-center py-12 text-gray-400">No visitors tracked yet</td></tr>
-                    ) : visitorSessions.map((s) => (
+                    {todaysVisitorSessions.length === 0 ? (
+                      <tr><td colSpan={5} className="text-center py-12 text-gray-400">No visitors tracked today yet</td></tr>
+                    ) : todaysVisitorSessions.map((s) => (
                       <tr key={s.sessionId} className={adminRowMotion}>
                         <td className="px-6 py-4">
                           {s.userName ? (
@@ -1265,7 +1345,7 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </CollapsiblePanel>
           </div>
         )}
 
@@ -1632,6 +1712,70 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* Community Moderation */}
+        {tab === "community" && (
+          <div key="community-panel" className="admin-tab-panel space-y-5">
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-gray-100 px-6 py-5"
+              title="Student Community"
+              subtitle="Live messages from the student chat. Remove anything inappropriate - it's gone for everyone immediately."
+              headerExtra={
+                <button
+                  type="button"
+                  onClick={() => void refreshCommunityMessages(password)}
+                  disabled={communityLoading}
+                  className={`shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
+                >
+                  {communityLoading ? "Checking..." : "Refresh"}
+                </button>
+              }
+              bodyClassName="divide-y divide-gray-100"
+            >
+              {communityMessages.length === 0 ? (
+                <div className="py-12 text-center text-gray-400">No community messages yet</div>
+              ) : (
+                communityMessages.map((message) => (
+                  <div key={message.id} className={`flex items-start gap-4 px-6 py-4 ${adminRowMotion}`}>
+                    <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/10 text-xs font-black text-primary">
+                      {message.avatar ? (
+                        <img src={message.avatar} alt={message.studentName} className="h-full w-full object-cover" />
+                      ) : (
+                        message.studentName.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="font-bold text-dark">{message.studentName}</span>
+                        {message.role === "admin" && (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase text-primary">Admin</span>
+                        )}
+                        <span className="text-xs text-gray-400">{new Date(message.createdAt).toLocaleString()}</span>
+                        {message.editedAt && <span className="text-xs italic text-gray-400">(edited)</span>}
+                      </div>
+                      <div className="mt-1">
+                        {message.stickerId ? (
+                          <span className="text-2xl leading-none">{STICKERS[message.stickerId]?.emoji}</span>
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words text-sm text-gray-700">{message.text}</p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void deleteCommunityMessage(message.id, message.studentName)}
+                      disabled={pendingAction === `delete-message-${message.id}`}
+                      className={`shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
+                    >
+                      {pendingAction === `delete-message-${message.id}` ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </CollapsiblePanel>
           </div>
         )}
 
