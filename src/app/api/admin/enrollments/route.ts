@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest } from "@/lib/adminAuth";
-import { findStudentForEnrollment, grantEnrollmentAccess, revokeEnrollmentAccess } from "@/lib/enrollmentAccess";
+import {
+  backfillLegacyEnrollments,
+  findStudentForEnrollment,
+  grantEnrollmentAccess,
+  revokeEnrollmentAccess,
+} from "@/lib/enrollmentAccess";
 import { sendDisenrollmentEmail, sendEnrollmentApprovedEmail, sendEnrollmentRejectedEmail } from "@/lib/email";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -48,7 +53,8 @@ async function listEnrollments(request: Request) {
   if ("response" in auth) return auth.response;
 
   try {
-    const enrollments = await getDB<Enrollment>("enrollments.json");
+    const storedEnrollments = await getDB<Enrollment>("enrollments.json");
+    const enrollments = await backfillLegacyEnrollments(storedEnrollments);
     return NextResponse.json(
       { success: true, data: enrollments },
       {

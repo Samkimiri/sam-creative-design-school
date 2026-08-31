@@ -154,6 +154,70 @@ export async function getStudentWithConfirmedEnrollmentAccess(studentId: string)
   return attachConfirmedEnrollmentsToStudent(student);
 }
 
+/**
+ * Some students received course access directly (added before the M-Pesa
+ * approval workflow existed, or granted by an admin outside /enroll), so
+ * they have no matching row in enrollments.json. This backfills a "legacy"
+ * confirmed record for each such student+course pair so the admin
+ * Enrollments tab reflects everyone who actually has access, not just
+ * requests submitted through the online form. Idempotent: reruns are safe
+ * because each backfilled record has a deterministic id.
+ */
+export async function backfillLegacyEnrollments(enrollments: Enrollment[]): Promise<Enrollment[]> {
+  const students = await getDB<Student>("students.json");
+  const existingIds = new Set(enrollments.map((enrollment) => enrollment.id));
+  const newRecords: Enrollment[] = [];
+
+  for (const student of students) {
+    if (student.role === "admin") continue;
+
+    for (const courseId of student.enrolledCourses ?? []) {
+      const alreadyTracked = enrollments.some(
+        (enrollment) =>
+          enrollmentMatchesStudent(enrollment, student) && courseIdsFromEnrollment(enrollment).includes(courseId)
+      );
+      if (alreadyTracked) continue;
+
+      const legacyId = `ENR-LEGACY-${student.id}-${courseId}`;
+      if (existingIds.has(legacyId)) continue;
+
+      const course = courses.find((item) => item.id === courseId);
+      const createdAt = student.createdAt || new Date().toISOString();
+
+      const legacyRecord: Enrollment = {
+        id: legacyId,
+        studentId: student.id,
+        studentName: student.name,
+        studentEmail: student.email,
+        courseId,
+        courseName: course?.title || courseId,
+        amount: course?.price || 0,
+        phone: student.phone || "",
+        reference: legacyId,
+        paymentProvider: "legacy",
+        paymentVerificationStatus: "legacy",
+        adminApprovalStatus: "approved",
+        adminApprovedAt: createdAt,
+        accessGrantedAt: createdAt,
+        accessGrantMessage: "Backfilled automatically: this student already had course access before enrollment requests were tracked here. No original payment record exists.",
+        status: "confirmed",
+        createdAt,
+      };
+
+      newRecords.push(legacyRecord);
+      existingIds.add(legacyId);
+    }
+  }
+
+  if (newRecords.length === 0) return enrollments;
+
+  for (const record of newRecords) {
+    await upsertDBRecord("enrollments.json", record);
+  }
+
+  return [...enrollments, ...newRecords];
+}
+
 export function hasCourseAccess(student: Student | null | undefined, courseId: string) {
   if (!student) return false;
   if (student.role === "admin") return true;
