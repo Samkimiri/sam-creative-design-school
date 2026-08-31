@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
+import { deleteDBRecord, getDB, saveDB, upsertDBRecord } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { containsAbusiveLanguage } from "@/lib/moderation";
 import {
   isBlockedBy,
   isPrivateMessage,
   isValidStickerId,
+  isWithinCooldown,
+  MESSAGE_COOLDOWN_MS,
   purgeExpiredTrash,
   resolveMentions,
   TRASH_RETENTION_MS,
@@ -143,6 +145,10 @@ export async function POST(request: Request) {
     }
 
     const messages = await getDB<CommunityMessage>("community-messages.json");
+    if (isWithinCooldown(messages, student.id, MESSAGE_COOLDOWN_MS)) {
+      return NextResponse.json({ success: false, message: "You're sending messages too fast. Give it a second." }, { status: 429 });
+    }
+
     const original = replyToId ? messages.find((item) => item.id === replyToId && !item.deletedAt) : undefined;
 
     const roster = students.map((item) => ({ id: item.id, name: item.name }));
@@ -257,8 +263,7 @@ export async function DELETE(request: Request) {
     }
 
     if (isAdmin && !isOwner) {
-      messages.splice(index, 1);
-      await saveDB("community-messages.json", messages);
+      await deleteDBRecord("community-messages.json", message.id);
       return NextResponse.json({ success: true, message: "Message removed by admin." });
     }
 

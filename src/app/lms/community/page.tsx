@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { AtSign, CornerUpLeft, LoaderCircle, Lock, MessageCircle, MoreHorizontal, Shield, Smile, Trash2, Undo2, UserX, X } from "lucide-react";
+import { AtSign, CornerUpLeft, LoaderCircle, Lock, MessageCircle, MoreHorizontal, Newspaper, Shield, Smile, Trash2, Undo2, UserX, X } from "lucide-react";
 import { STICKERS, type CommunityMessage } from "@/lib/community";
+import PostsFeed from "@/components/community/PostsFeed";
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_MESSAGE_LENGTH = 500;
@@ -13,7 +14,7 @@ type Participant = { id: string; name: string; avatar?: string | null; role?: st
 type BlockedUser = { blockedId: string; blockedName: string };
 type DmPartner = { id: string; name: string; avatar?: string | null; lastMessage: CommunityMessage };
 type ReplyTarget = { message: CommunityMessage; mode: "public" | "private" };
-type ChatView = "chat" | "trash" | "dmList" | "dm" | "blocked";
+type ChatView = "chat" | "feed" | "trash" | "dmList" | "dm" | "blocked";
 
 function formatTime(iso: string) {
   return new Intl.DateTimeFormat("en-KE", { hour: "numeric", minute: "2-digit", month: "short", day: "numeric" }).format(
@@ -400,6 +401,16 @@ export default function CommunityPage() {
             </Link>
             <button
               type="button"
+              onClick={() => setView(view === "feed" ? "chat" : "feed")}
+              className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-bold transition hover:-translate-y-0.5 ${
+                view === "feed" ? "border-primary-light bg-primary-light/10 text-primary-light" : "border-white/20 text-white hover:border-primary-light hover:text-primary-light"
+              }`}
+            >
+              <Newspaper className="h-3.5 w-3.5" aria-hidden="true" />
+              {view === "feed" ? "Live Chat" : "Feed"}
+            </button>
+            <button
+              type="button"
               onClick={() => setView(view === "chat" ? "dmList" : "chat")}
               className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-bold transition hover:-translate-y-0.5 ${
                 view === "dmList" || view === "dm" ? "border-primary-light bg-primary-light/10 text-primary-light" : "border-white/20 text-white hover:border-primary-light hover:text-primary-light"
@@ -438,6 +449,8 @@ export default function CommunityPage() {
             </button>
           </div>
         )}
+
+        {view === "feed" && <PostsFeed currentUser={currentUser} />}
 
         {view === "trash" && (
           <section className="rounded-3xl border border-white bg-white p-5 shadow-sm ring-1 ring-slate-900/5 md:p-6">

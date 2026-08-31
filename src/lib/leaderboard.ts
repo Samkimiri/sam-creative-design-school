@@ -60,12 +60,21 @@ function getRankLabel(score: number) {
 }
 
 export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
-  const [students, progressRecords, courses, communityMessages] = await Promise.all([
+  const [students, progressRecords, courses] = await Promise.all([
     getDB<Student>("students.json"),
     getDB<ProgressRecord>("progress.json"),
     getManagedCourses(),
-    getDB<CommunityMessage>("community-messages.json"),
   ]);
+
+  // Community messages require persistent storage in production, but the
+  // rest of the leaderboard shouldn't fail to build/render just because that
+  // one collection is briefly unavailable - fall back to no community points.
+  let communityMessages: CommunityMessage[] = [];
+  try {
+    communityMessages = await getDB<CommunityMessage>("community-messages.json");
+  } catch (error) {
+    console.error("Community points lookup failed; leaderboard will show 0 community points:", error);
+  }
 
   const courseLessonTotals = new Map(
     courses.map((course) => [
