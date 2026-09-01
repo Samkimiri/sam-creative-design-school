@@ -20,8 +20,15 @@ function getCollectionName(filename: string): string {
 }
 
 type MemoryDB = Record<string, unknown[]>;
-const globalDb = globalThis as typeof globalThis & { memoryDB?: MemoryDB };
+type MemoryDBTimestamps = Record<string, number>;
+const globalDb = globalThis as typeof globalThis & { memoryDB?: MemoryDB; memoryDBTimestamps?: MemoryDBTimestamps };
 const memoryDB: MemoryDB = globalDb.memoryDB ?? (globalDb.memoryDB = {});
+const memoryDBTimestamps: MemoryDBTimestamps = globalDb.memoryDBTimestamps ?? (globalDb.memoryDBTimestamps = {});
+
+// Collections that must land in real persistent storage in production (see
+// requiresPersistentStorage below), and that are polled/written to constantly
+// enough that even a few seconds of cross-instance cache staleness is not
+// acceptable - these are always read live, never served from the in-memory cache.
 const HIGH_WRITE_FILES = new Set([
   "analytics-events.json",
   "analytics-sessions.json",
@@ -39,8 +46,31 @@ const HIGH_WRITE_FILES = new Set([
 ]);
 const legacyLookupTimeoutMs = Number(process.env.SCDS_LEGACY_DB_TIMEOUT_MS || 1800);
 
+// In a multi-instance deployment (e.g. concurrent serverless invocations), each
+// process holds its own copy of this cache. A write from one instance (an admin
+// disenrolling a student, a student renaming their profile) has no way to notify
+// the other warm instances, so an un-expiring cache would let them keep serving
+// what they last saw indefinitely - which is exactly what used to make admin
+// screens and the leaderboard show stale students/enrollments/names. Bounding
+// every cached read to a few seconds means any instance is guaranteed to pick up
+// someone else's write shortly after, while still avoiding a database round trip
+// on every single read within a fast burst of requests.
+const MEMORY_CACHE_TTL_MS = Number(process.env.SCDS_DB_CACHE_TTL_MS || 5000);
+
 function shouldUseMemoryCache(filename: string) {
   return !HIGH_WRITE_FILES.has(filename);
+}
+
+function isMemoryCacheFresh(filename: string): boolean {
+  if (!shouldUseMemoryCache(filename)) return false;
+  if (!(filename in memoryDB)) return false;
+  const cachedAt = memoryDBTimestamps[filename];
+  return cachedAt !== undefined && Date.now() - cachedAt < MEMORY_CACHE_TTL_MS;
+}
+
+function setMemoryCache(filename: string, data: unknown[]) {
+  memoryDB[filename] = data;
+  memoryDBTimestamps[filename] = Date.now();
 }
 
 export function hasPersistentStorageConfig() {
@@ -58,14 +88,14 @@ export function persistentStorageError(filename: string) {
 }
 
 export function readJSON<T>(filename: string): T[] {
-  if (shouldUseMemoryCache(filename) && memoryDB[filename]) return memoryDB[filename] as T[];
+  if (isMemoryCacheFresh(filename)) return memoryDB[filename] as T[];
 
   const filePath = path.join(DATA_DIR, filename);
   try {
     if (!fs.existsSync(filePath)) return [];
     const raw = fs.readFileSync(filePath, "utf-8");
     const data = JSON.parse(raw) as T[];
-    if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
+    if (shouldUseMemoryCache(filename)) setMemoryCache(filename, data as unknown[]);
     return data;
   } catch {
     return [];
@@ -73,7 +103,7 @@ export function readJSON<T>(filename: string): T[] {
 }
 
 export async function getDB<T>(filename: string): Promise<T[]> {
-  if (shouldUseMemoryCache(filename) && memoryDB[filename]) return memoryDB[filename] as T[];
+  if (isMemoryCacheFresh(filename)) return memoryDB[filename] as T[];
 
   if (requiresPersistentStorage(filename) && !hasPersistentStorageConfig()) {
     throw persistentStorageError(filename);
@@ -88,12 +118,12 @@ export async function getDB<T>(filename: string): Promise<T[]> {
         const fallbackData = readJSON<T>(filename);
         if (fallbackData.length > 0) {
           await saveSupabaseCollection(collection, fallbackData);
-          memoryDB[filename] = fallbackData as unknown[];
+          if (shouldUseMemoryCache(filename)) setMemoryCache(filename, fallbackData as unknown[]);
           return fallbackData;
         }
       }
 
-      if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
+      if (shouldUseMemoryCache(filename)) setMemoryCache(filename, data as unknown[]);
       return data;
     } catch (error) {
       console.error("Supabase getDB error:", error);
@@ -108,7 +138,7 @@ export async function getDB<T>(filename: string): Promise<T[]> {
     if (hasKVConfig()) {
       const fallbackData = readJSON<T>(filename);
       const data = await getKVData<T>(getCollectionName(filename), fallbackData);
-      if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
+      if (shouldUseMemoryCache(filename)) setMemoryCache(filename, data as unknown[]);
       return data;
     }
 
@@ -130,7 +160,7 @@ export async function getDB<T>(filename: string): Promise<T[]> {
       const fallbackData = readJSON<T>(filename);
       if (fallbackData.length > 0) {
         await saveDB(filename, fallbackData);
-        memoryDB[filename] = fallbackData as unknown[];
+        if (shouldUseMemoryCache(filename)) setMemoryCache(filename, fallbackData as unknown[]);
         return fallbackData;
       }
       return [];
@@ -141,7 +171,7 @@ export async function getDB<T>(filename: string): Promise<T[]> {
       void _unused;
       return rest as T;
     });
-    if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
+    if (shouldUseMemoryCache(filename)) setMemoryCache(filename, data as unknown[]);
     return data;
   } catch (error) {
     console.error("MongoDB getDB error:", error);
@@ -198,9 +228,11 @@ export async function findDBRecordByField<T>(
   const cleanValue = value.trim();
   if (!field || !cleanValue) return null;
   const findInMemory = () =>
-    (memoryDB[filename] as T[] | undefined)?.find((item) =>
-      String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
-    ) ?? null;
+    isMemoryCacheFresh(filename)
+      ? (memoryDB[filename] as T[] | undefined)?.find((item) =>
+          String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
+        ) ?? null
+      : null;
 
   const cached = findInMemory();
   if (cached) return cached;
@@ -264,7 +296,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
 }
 
 export async function saveDB<T>(filename: string, data: T[]): Promise<void> {
-  if (shouldUseMemoryCache(filename)) memoryDB[filename] = data as unknown[];
+  if (shouldUseMemoryCache(filename)) setMemoryCache(filename, data as unknown[]);
   const persistenceErrors: unknown[] = [];
 
   const filePath = path.join(DATA_DIR, filename);
@@ -339,11 +371,11 @@ export async function upsertDBRecord<T extends object>(
   if (!recordId) throw new Error(`Cannot upsert ${filename}: missing record id`);
 
   if (shouldUseMemoryCache(filename)) {
-    const data = memoryDB[filename] ?? readJSON<T>(filename) as unknown[];
+    const data = readJSON<T>(filename) as unknown[];
     const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
     if (index > -1) data[index] = record as unknown;
     else data.push(record as unknown);
-    memoryDB[filename] = data;
+    setMemoryCache(filename, data);
   }
 
   if (hasSupabaseConfig()) {
@@ -438,8 +470,8 @@ export async function deleteDBRecord(
   if (!cleanId) throw new Error(`Cannot delete from ${filename}: missing record id`);
 
   if (shouldUseMemoryCache(filename)) {
-    const data = memoryDB[filename] ?? (readJSON(filename) as unknown[]);
-    memoryDB[filename] = data.filter((item) => String((item as Record<string, unknown>)[idKey] || "") !== cleanId);
+    const data = readJSON(filename) as unknown[];
+    setMemoryCache(filename, data.filter((item) => String((item as Record<string, unknown>)[idKey] || "") !== cleanId));
   }
 
   if (hasSupabaseConfig()) {
