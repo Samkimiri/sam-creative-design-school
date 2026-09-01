@@ -485,10 +485,12 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  const fetchData = useCallback(async (pw?: string) => {
-    setLoading(true);
-    setError("");
-    setNotice("");
+  const fetchData = useCallback(async (pw?: string, options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+      setError("");
+      setNotice("");
+    }
     try {
       const headers = { "Content-Type": "application/json" };
       const body = JSON.stringify(pw ? { password: pw } : {});
@@ -527,18 +529,20 @@ export default function AdminDashboard() {
         if (!dashboard.enrollmentStorageWarning && data.warnings && data.warnings > 0) {
           setNotice(`${data.warnings} dashboard section${data.warnings === 1 ? "" : "s"} used fallback data. Try refreshing if something looks stale.`);
         }
-      } else {
+      } else if (!options?.silent) {
         setAuthed(false);
         setAccessChecked(true);
         setError(data.message || "Admin access required.");
       }
     } catch (err) {
-      setAccessChecked(true);
-      setError(err instanceof DOMException && err.name === "AbortError"
-        ? "The admin backend took too long to respond. Try again."
-        : "Could not load dashboard data. Try again.");
+      if (!options?.silent) {
+        setAccessChecked(true);
+        setError(err instanceof DOMException && err.name === "AbortError"
+          ? "The admin backend took too long to respond. Try again."
+          : "Could not load dashboard data. Try again.");
+      }
     } finally {
-      setLoading(false);
+      if (!options?.silent) setLoading(false);
     }
   }, [fetchAdminJson]);
 
@@ -680,6 +684,19 @@ export default function AdminDashboard() {
     }, 10000);
     return () => window.clearInterval(interval);
   }, [authed, password, refreshCommunityContent, tab]);
+
+  // The Students tab shows enrollment counts, course lists, and profile details that
+  // change from both admin actions (disenroll, pause) and student self-service (profile
+  // edits, new enrollments) - without this, an admin sitting on this tab would only see
+  // those changes after manually leaving and returning, or reloading the page.
+  useEffect(() => {
+    if (!authed || tab !== "students") return;
+    void fetchData(password, { silent: true });
+    const interval = window.setInterval(() => {
+      void fetchData(password, { silent: true });
+    }, 20000);
+    return () => window.clearInterval(interval);
+  }, [authed, password, fetchData, tab]);
 
   const confirmEnrollment = async (enrollmentId: string) => {
     await runMutation<Enrollment>(
@@ -1453,6 +1470,17 @@ export default function AdminDashboard() {
       })
     : [];
   const pendingAccessRequests = enrollments.filter((enrollment) => enrollment.status === "pending");
+  // A brand-new enrollment only lands in a student's enrolledCourses once approved, so
+  // surface the in-between state here too - otherwise a just-submitted request looks
+  // invisible on the Students tab until an admin happens to check Enrollments separately.
+  const pendingCourseCountByStudent = new Map<string, number>();
+  pendingAccessRequests.forEach((enrollment) => {
+    if (!enrollment.studentId) return;
+    pendingCourseCountByStudent.set(
+      enrollment.studentId,
+      (pendingCourseCountByStudent.get(enrollment.studentId) ?? 0) + 1
+    );
+  });
   const approvalReadyRequests = pendingAccessRequests.filter((enrollment) =>
     enrollment.paymentVerificationStatus === "verified" ||
     enrollment.paymentVerificationStatus === "submitted" ||
@@ -2116,9 +2144,21 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-gray-600">{s.email}</td>
                       <td className="px-6 py-4 text-gray-600">{s.phone}</td>
                       <td className="px-6 py-4">
-                        <span className="bg-primary/10 text-primary font-bold text-xs px-2 py-1 rounded-full">
-                          {(s.enrolledCourses ?? []).length} enrolled
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="bg-primary/10 text-primary font-bold text-xs px-2 py-1 rounded-full">
+                            {(s.enrolledCourses ?? []).length} enrolled
+                          </span>
+                          {pendingCourseCountByStudent.has(s.id) && (
+                            <button
+                              type="button"
+                              onClick={() => setTab("enrollments")}
+                              className={`bg-amber-50 text-amber-700 font-bold text-xs px-2 py-1 rounded-full hover:bg-amber-100 ${adminActionMotion}`}
+                              title="Awaiting admin approval - go to Enrollments to review"
+                            >
+                              {pendingCourseCountByStudent.get(s.id)} pending
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-gray-500">{new Date(s.createdAt).toLocaleDateString()}</td>
                       <td className="px-6 py-4">
