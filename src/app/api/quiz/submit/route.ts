@@ -15,6 +15,18 @@ interface QuizAttempt {
   date: string;
 }
 
+interface ProgressRecord {
+  studentId: string;
+  courseId: string;
+  completedLessons: string[];
+  quizScores: { lessonId: string; score: number; total: number; date: string }[];
+  lastAccessed: string;
+}
+
+function isProgressRecord(record: Partial<ProgressRecord>): record is ProgressRecord {
+  return Boolean(record.studentId && record.courseId && Array.isArray(record.completedLessons));
+}
+
 export async function POST(request: Request) {
   try {
     const session = await getSession();
@@ -102,6 +114,33 @@ export async function POST(request: Request) {
       date: new Date().toISOString(),
     });
     await saveDB("quiz-attempts.json", quizAttempts);
+
+    // Quiz results also live on the student's progress record so the leaderboard's
+    // quiz-average bonus and the admin Students tab's per-lesson quiz breakdown have
+    // something to read - quiz-attempts.json alone only powers the completion gate above.
+    const progress = (await getDB<ProgressRecord>("progress.json")).filter(isProgressRecord);
+    const progressIndex = progress.findIndex(
+      (p) => p.studentId === session.user.id && p.courseId === courseId
+    );
+    const quizResultEntry = { lessonId, score, total, date: new Date().toISOString() };
+
+    if (progressIndex > -1) {
+      const existingScores = progress[progressIndex].quizScores || [];
+      progress[progressIndex].quizScores = [
+        ...existingScores.filter((entry) => entry.lessonId !== lessonId),
+        quizResultEntry,
+      ];
+      progress[progressIndex].lastAccessed = new Date().toISOString();
+    } else {
+      progress.push({
+        studentId: session.user.id as string,
+        courseId,
+        completedLessons: [],
+        quizScores: [quizResultEntry],
+        lastAccessed: new Date().toISOString(),
+      });
+    }
+    await saveDB("progress.json", progress);
 
     return NextResponse.json({ success: true, score, total, percentage, passed, results });
   } catch (error) {
