@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { courses, lessons } from "@/data/courses";
 import { getDB } from "@/lib/db";
+import { hasCourseAccess } from "@/lib/enrollmentAccess";
 import type { ProgressRecord, Student } from "@/types";
 
 export async function GET(request: Request) {
@@ -22,7 +23,13 @@ export async function GET(request: Request) {
       const courseLessons = lessons.filter((lesson) => lesson.courseId === course.id);
       const record = progress.find((item) => item.studentId === student.id && item.courseId === course.id);
       const completed = new Set(record?.completedLessons ?? []);
-      const valid = courseLessons.length > 0 && courseLessons.every((lesson) => completed.has(lesson.id));
+      const allLessonsCompleted = courseLessons.length > 0 && courseLessons.every((lesson) => completed.has(lesson.id));
+      // A certificate for a course the student no longer has access to (paused,
+      // or the enrollment was later revoked - e.g. a refund) should stop
+      // verifying as valid, even though the lessons were genuinely completed
+      // in the past - otherwise a revoked student's certificate keeps checking
+      // out forever via this public tool.
+      const valid = allLessonsCompleted && hasCourseAccess(student, course.id);
 
       return NextResponse.json({
         success: true,
