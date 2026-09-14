@@ -26,7 +26,10 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(token, SECRET);
       if (pathname.startsWith("/admin")) {
         const sessionUser = payload.user as { role?: string } | undefined;
-        if (sessionUser?.role !== "admin") {
+        // Staff accounts get a role-limited view of the admin panel itself
+        // (see STAFF_TABS in admin/page.tsx) - they must be let past this
+        // gate to ever reach it. Only a plain student session is bounced.
+        if (sessionUser?.role !== "admin" && sessionUser?.role !== "staff") {
           return NextResponse.redirect(new URL("/lms", request.url));
         }
       }
