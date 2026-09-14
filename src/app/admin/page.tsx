@@ -10,6 +10,7 @@ import type { AuditLogEntry } from "@/lib/auditLog";
 import type { BlogPost } from "@/data/blog";
 import { STICKERS, type CommunityComment, type CommunityMessage, type CommunityPost } from "@/lib/community";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import CountdownCard from "@/components/admin/CountdownCard";
 
 // Africa/Nairobi is a fixed UTC+3 offset with no daylight saving.
 const NAIROBI_OFFSET_MS = 3 * 60 * 60 * 1000;
@@ -3470,6 +3471,16 @@ export default function AdminDashboard() {
               </button>
             </form>
             </div>
+
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-gray-100 px-6 py-5"
+              title="Countdown Cards to Share"
+              subtitle="Download a simple graphic showing days remaining until the next intake."
+              bodyClassName="p-6"
+            >
+              <CountdownCard nextIntake={intakeSettings.nextIntake} whatsappDisplay={contentSettings.homepage.whatsappDisplay} />
+            </CollapsiblePanel>
           </div>
         )}
 
