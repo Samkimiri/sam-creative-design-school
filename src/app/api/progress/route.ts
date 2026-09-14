@@ -15,6 +15,12 @@ interface ProgressRecord {
   lastAccessed: string;
 }
 
+interface QuizAttempt {
+  studentId: string;
+  lessonId: string;
+  passed: boolean;
+}
+
 function isProgressRecord(record: Partial<ProgressRecord>): record is ProgressRecord {
   return Boolean(record.studentId && record.courseId && Array.isArray(record.completedLessons));
 }
@@ -74,6 +80,21 @@ export async function POST(request: Request) {
     const canAccess = session.user.role === "admin" || hasCourseAccess(student, courseId);
     if (!canAccess) {
       return NextResponse.json({ error: "Course access requires admin approval" }, { status: 403 });
+    }
+
+    // A quiz-gated lesson can only be completed by actually passing its quiz -
+    // the UI already hides the "Mark Complete" button for these, but that's
+    // only a client-side gate; without this check a direct API call could
+    // complete (and eventually get a certificate for) a quiz lesson never
+    // actually attempted.
+    if (lesson.quiz && session.user.role !== "admin") {
+      const attempts = await getDB<QuizAttempt>("quiz-attempts.json");
+      const hasPassed = attempts.some(
+        (attempt) => attempt.studentId === session.user.id && attempt.lessonId === lessonId && attempt.passed
+      );
+      if (!hasPassed) {
+        return NextResponse.json({ error: "Pass this lesson's quiz before marking it complete." }, { status: 403 });
+      }
     }
 
     const progress = (await getDB<ProgressRecord>("progress.json")).filter(isProgressRecord);
