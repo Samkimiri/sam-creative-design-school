@@ -6,7 +6,14 @@ import {
   isExpiredReset,
   type PasswordResetRecord,
 } from "@/lib/passwordReset";
+import { clearFailedAttempts, isRateLimited, recordFailedAttempt } from "@/lib/rateLimit";
 import type { Student } from "@/types";
+
+// The 6-digit code is only 1,000,000 combinations - without this, a script
+// that knows a victim's email could brute-force it well within the code's
+// own 30-minute expiry window. Tighter than the login limiter since this is
+// guessing a short numeric code, not a real password.
+const RESET_CODE_RATE_LIMIT = { maxAttempts: 8, windowMs: 30 * 60 * 1000 };
 
 export async function POST(request: Request) {
   try {
@@ -24,6 +31,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Password must be at least 6 characters." }, { status: 400 });
     }
 
+    // Only the guessable 6-digit code path is rate-limited - a reset token
+    // from an emailed link is a long random string, not realistically
+    // brute-forceable, so there's nothing useful to throttle there.
+    const rateLimitKey = !token && email ? `reset-code:${email}` : "";
+    if (rateLimitKey && (await isRateLimited(rateLimitKey, RESET_CODE_RATE_LIMIT))) {
+      return NextResponse.json(
+        { success: false, message: "Too many attempts. Please request a new reset code and try again later." },
+        { status: 429 }
+      );
+    }
+
     const resets = await getDB<PasswordResetRecord>("password-resets.json");
     const tokenHash = token ? hashPasswordResetToken(token) : "";
     const codeHash = resetCode ? hashPasswordResetToken(resetCode) : "";
@@ -38,8 +56,11 @@ export async function POST(request: Request) {
     });
 
     if (!reset || isExpiredReset(reset)) {
+      if (rateLimitKey) await recordFailedAttempt(rateLimitKey, RESET_CODE_RATE_LIMIT);
       return NextResponse.json({ success: false, message: "This reset link or code has expired or was already used." }, { status: 400 });
     }
+
+    if (rateLimitKey) await clearFailedAttempts(rateLimitKey);
 
     const students = await getDB<Student>("students.json");
     const studentIndex = students.findIndex((student) => student.id === reset.studentId);

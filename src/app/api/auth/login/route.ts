@@ -1,7 +1,18 @@
+import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { findDBRecordByField } from "@/lib/db";
 import { verifyPassword, setSession, UserSession } from "@/lib/auth";
 import { getConfiguredAdminPassword } from "@/lib/adminAuth";
+import { clearFailedAttempts, isRateLimited, recordFailedAttempt } from "@/lib/rateLimit";
+
+const LOGIN_RATE_LIMIT = { maxAttempts: 8, windowMs: 15 * 60 * 1000 };
+
+function timingSafeStringEqual(a: string, b: string): boolean {
+  const bufferA = Buffer.from(a);
+  const bufferB = Buffer.from(b);
+  if (bufferA.length !== bufferB.length) return false;
+  return timingSafeEqual(bufferA, bufferB);
+}
 
 interface Student {
   id: string;
@@ -37,9 +48,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Enter a valid email address" }, { status: 400 });
     }
 
+    const rateLimitKey = `login:${normalizedEmail}`;
+    if (await isRateLimited(rateLimitKey, LOGIN_RATE_LIMIT)) {
+      return NextResponse.json(
+        { success: false, message: "Too many attempts. Please wait a while before trying again." },
+        { status: 429 }
+      );
+    }
+
     const student = await findDBRecordByField<Student>("students.json", "email", normalizedEmail);
 
     if (!student || !student.password) {
+      await recordFailedAttempt(rateLimitKey, LOGIN_RATE_LIMIT);
       return NextResponse.json({ success: false, message: "Invalid credentials" }, { status: 401 });
     }
 
@@ -47,15 +67,18 @@ export async function POST(request: Request) {
     const isAdminPasswordMatch = Boolean(
       student.role === "admin" &&
       adminPassword &&
-      submittedPassword === adminPassword
+      timingSafeStringEqual(submittedPassword, adminPassword)
     );
     const isHashMatch = isAdminPasswordMatch
       ? true
       : await verifyPassword(submittedPassword, student.password).catch(() => false);
-    
+
     if (!isHashMatch) {
+      await recordFailedAttempt(rateLimitKey, LOGIN_RATE_LIMIT);
       return NextResponse.json({ success: false, message: "Invalid credentials" }, { status: 401 });
     }
+
+    await clearFailedAttempts(rateLimitKey);
 
     const userSession: UserSession = {
       id: student.id,

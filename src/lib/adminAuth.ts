@@ -1,8 +1,19 @@
+import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getDB } from "@/lib/db";
+import { clearFailedAttempts, isRateLimited, recordFailedAttempt } from "@/lib/rateLimit";
 
 const DEV_ADMIN_PASSWORD = "sam-admin-2026";
+const ADMIN_PASSWORD_RATE_LIMIT = { maxAttempts: 10, windowMs: 15 * 60 * 1000 };
+const ADMIN_PASSWORD_RATE_LIMIT_KEY = "admin-shared-password";
+
+function timingSafeStringEqual(a: string, b: string): boolean {
+  const bufferA = Buffer.from(a);
+  const bufferB = Buffer.from(b);
+  if (bufferA.length !== bufferB.length) return false;
+  return timingSafeEqual(bufferA, bufferB);
+}
 
 export type AdminRequestBody = Record<string, unknown>;
 
@@ -66,10 +77,23 @@ export async function requireAdminRequest(request: Request): Promise<AdminReques
 
   const password = typeof parsed.body.password === "string" ? parsed.body.password : undefined;
   const adminPassword = getConfiguredAdminPassword();
-  const passwordAllowed = Boolean(adminPassword && password === adminPassword);
 
-  if (passwordAllowed) {
-    return { body: parsed.body, actor: SHARED_PASSWORD_ACTOR };
+  if (password) {
+    // Only a WRONG password ever counts against the limit. The admin
+    // dashboard resends this same shared password on every single request
+    // while a session is open, so counting every attempt (not just wrong
+    // ones) would lock out completely normal use within seconds.
+    if (await isRateLimited(ADMIN_PASSWORD_RATE_LIMIT_KEY, ADMIN_PASSWORD_RATE_LIMIT)) {
+      return { response: adminError("Too many incorrect attempts. Please wait a while before trying again.", 429) };
+    }
+
+    const passwordAllowed = Boolean(adminPassword && timingSafeStringEqual(password, adminPassword));
+    if (passwordAllowed) {
+      await clearFailedAttempts(ADMIN_PASSWORD_RATE_LIMIT_KEY);
+      return { body: parsed.body, actor: SHARED_PASSWORD_ACTOR };
+    }
+
+    await recordFailedAttempt(ADMIN_PASSWORD_RATE_LIMIT_KEY, ADMIN_PASSWORD_RATE_LIMIT);
   }
 
   const session = await getSession();

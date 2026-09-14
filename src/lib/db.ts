@@ -35,6 +35,7 @@ const HIGH_WRITE_FILES = new Set([
   "enrollments.json",
   "messages.json",
   "password-resets.json",
+  "rate-limits.json",
   "site-settings.json",
   // Community collections are polled and written to constantly by many
   // students at once - never serve a per-instance stale cache for these.
