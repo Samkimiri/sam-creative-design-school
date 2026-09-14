@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: StudentPortfolioPageProps) {
   return {
     title: `${studentName} Portfolio | Sam Creative Design School`,
     description: `Approved projects, skills, and certificates for ${studentName}.`,
+    alternates: { canonical: `/student-portfolios/${studentSlug}` },
   };
 }
 

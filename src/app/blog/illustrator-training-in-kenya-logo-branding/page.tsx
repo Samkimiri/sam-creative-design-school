@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: `${post?.title ?? "Illustrator Training in Kenya"} | Sam Creative Design School`,
   description: post?.excerpt,
   keywords: post?.tags,
+  alternates: { canonical: `/blog/${id}` },
 };
 
 export default function IllustratorTrainingKenyaPage() {

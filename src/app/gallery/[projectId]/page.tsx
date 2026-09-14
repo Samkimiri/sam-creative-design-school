@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { galleryProjects, type GalleryProject } from "@/data/galleryProjects";
 import { seedProjects } from "@/data/projectSubmissions";
 import { getDB } from "@/lib/db";
+import { breadcrumbJsonLd, jsonLdScript } from "@/lib/seo";
 import type { ProjectSubmission } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ export async function generateMetadata({ params }: GalleryProjectPageProps) {
   return {
     title: `${project.title} | Student Gallery`,
     description: `${project.title} by ${project.student} in ${project.course}.`,
+    alternates: { canonical: `/gallery/${projectId}` },
   };
 }
 
@@ -44,8 +46,15 @@ export default async function GalleryProjectPage({ params }: GalleryProjectPageP
 
   if (!project) notFound();
 
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Gallery", path: "/gallery" },
+    { name: project.title, path: `/gallery/${project.id}` },
+  ]);
+
   return (
     <main className="min-h-screen bg-white pt-24 pb-20 md:pt-32">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(breadcrumbs)} />
       <section className="container mx-auto px-6">
         <Link href="/gallery" className="mb-8 inline-flex rounded-full bg-light-gray px-5 py-2 text-sm font-bold text-primary transition hover:bg-primary hover:text-white">
           Back to Gallery

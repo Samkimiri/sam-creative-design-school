@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   title: "Tool Setup Guides | Photoshop, Illustrator, CapCut, VS Code, Figma and SolidWorks",
   description:
     "Set up the creative and technical tools used at Sam Creative Design School, including Photoshop, Illustrator, CapCut, VS Code, Figma, and SolidWorks.",
+  alternates: { canonical: "/tool-setup-guides" },
 };
 
 const setupGuides = [

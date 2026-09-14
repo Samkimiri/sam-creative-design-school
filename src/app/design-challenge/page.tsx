@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   title: "Weekly Design Challenge | Sam Creative Design School",
   description:
     "Join weekly design challenges at Sam Creative Design School, submit portfolio-ready work, win rewards, and practice across branding, social media, UI, video, and CAD categories.",
+  alternates: { canonical: "/design-challenge" },
 };
 
 const weeklyChallenges = [

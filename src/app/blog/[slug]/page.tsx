@@ -16,6 +16,7 @@ export async function generateMetadata({ params }: BlogSlugPageProps): Promise<M
     title: `${post.title} | Sam Creative Design School`,
     description: post.excerpt,
     keywords: post.tags,
+    alternates: { canonical: `/blog/${slug}` },
   };
 }
 

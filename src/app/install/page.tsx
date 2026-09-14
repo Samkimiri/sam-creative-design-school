@@ -5,6 +5,7 @@ import AppInstallPanel from "@/components/AppInstallPanel";
 export const metadata: Metadata = {
   title: "Install SCDS App",
   description: "Install the Sam Creative Design School app for quick access to the LMS, courses, assignments, and student resources.",
+  alternates: { canonical: "/install" },
 };
 
 export default function InstallPage() {

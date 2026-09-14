@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Study Break Games",
   description:
     "Fast, colorful arcade-style study break games for Sam Creative Design School students.",
+  alternates: { canonical: "/games" },
 };
 
 export default function GamesPage() {

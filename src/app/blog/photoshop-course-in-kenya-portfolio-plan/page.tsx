@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: `${post?.title} | Sam Creative Design School`,
   description: post?.excerpt,
   keywords: post?.tags,
+  alternates: { canonical: `/blog/${id}` },
 };
 
 export default function Page() {

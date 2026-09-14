@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Corporate and Group Training in Kenya | Sam Creative Design School",
   description:
     "Book practical design, AI, video editing, and digital skills training for schools, churches, cyber cafes, companies, and youth groups in Kenya.",
+  alternates: { canonical: "/corporate-training" },
 };
 
 const stats = [

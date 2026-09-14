@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: `${post?.title ?? "Graphic Design School in Kenya"} | Sam Creative Design School`,
   description: post?.excerpt,
   keywords: post?.tags,
+  alternates: { canonical: `/blog/${id}` },
 };
 
 export default function GraphicDesignSchoolKenyaPage() {

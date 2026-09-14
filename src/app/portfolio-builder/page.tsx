@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Portfolio Builder | Student Project Briefs",
   description:
     "Build a graduation-ready portfolio with guided project briefs for design, coding, AI, video, and CAD students at Sam Creative Design School.",
+  alternates: { canonical: "/portfolio-builder" },
 };
 
 const projectBriefs = [

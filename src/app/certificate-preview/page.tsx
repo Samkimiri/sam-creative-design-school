@@ -6,6 +6,7 @@ import { ArrowLeft, Award, BadgeCheck, Download, ShieldCheck } from "lucide-reac
 export const metadata: Metadata = {
   title: "Blank Certificate Preview",
   description: "View the blank Sam Creative Design School certificate structure before student details are added.",
+  alternates: { canonical: "/certificate-preview" },
 };
 
 export default function CertificatePreviewPage() {

@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Student Resources | Sam Creative Design School",
   description:
     "Preview lessons, submit assignments, verify certificates, and read current learning guides from Sam Creative Design School.",
+  alternates: { canonical: "/resources" },
 };
 
 const resources = [

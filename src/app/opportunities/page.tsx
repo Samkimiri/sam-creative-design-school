@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Jobs and Freelance Opportunities Board | Sam Creative Design School",
   description:
     "Explore student-ready design gigs, internships, contests, and client project opportunities connected to Sam Creative Design School in Kenya.",
+  alternates: { canonical: "/opportunities" },
 };
 
 export default function OpportunitiesPage() {

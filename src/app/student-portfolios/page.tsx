@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Student Portfolios | Sam Creative Design School",
   description: "Browse public student portfolio pages with approved projects, course skills, and certificate progress.",
+  alternates: { canonical: "/student-portfolios" },
 };
 
 export default async function StudentPortfoliosPage() {
