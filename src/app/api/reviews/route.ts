@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { getDB, saveDB } from "@/lib/db";
 import { getManagedCourses } from "@/lib/contentSettings";
 import { getPublicReviews } from "@/lib/reviews";
+import { getClientIp, isSubmissionRateLimited } from "@/lib/rateLimit";
 import type { Review } from "@/types";
+
+const REVIEW_RATE_LIMIT = { maxAttempts: 5, windowMs: 10 * 60 * 1000 };
 
 function generateEditToken(): string {
   return randomBytes(24).toString("hex");
@@ -32,6 +35,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    if (await isSubmissionRateLimited(`review:${ip}`, REVIEW_RATE_LIMIT)) {
+      return NextResponse.json(
+        { success: false, message: "Too many reviews submitted. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { name, role, rating, text, courseId } = await request.json();
     const cleanName = String(name || "").trim();
     const cleanText = String(text || "").trim();

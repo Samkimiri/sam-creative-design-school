@@ -2,7 +2,10 @@ import { NextResponse, after } from "next/server";
 import { appendDBRecord, getDB } from "@/lib/db";
 import { sendAdminContactMessageAlertEmail } from "@/lib/email";
 import { absoluteUrl } from "@/lib/seo";
+import { getClientIp, isSubmissionRateLimited } from "@/lib/rateLimit";
 import type { Student } from "@/types";
+
+const CONTACT_RATE_LIMIT = { maxAttempts: 5, windowMs: 10 * 60 * 1000 };
 
 interface ContactMessage {
   id: string;
@@ -20,6 +23,14 @@ const clean = (value: unknown, maxLength: number) =>
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    if (await isSubmissionRateLimited(`contact:${ip}`, CONTACT_RATE_LIMIT)) {
+      return NextResponse.json(
+        { success: false, message: "Too many messages sent. Please try again later or reach us on WhatsApp." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const name = clean(body.name, 80);
     const email = clean(body.email, 120).toLowerCase();

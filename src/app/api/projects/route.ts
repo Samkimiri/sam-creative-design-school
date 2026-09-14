@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { getDB, saveDB } from "@/lib/db";
 import { courses } from "@/data/courses";
 import { seedProjects } from "@/data/projectSubmissions";
+import { getClientIp, isSubmissionRateLimited } from "@/lib/rateLimit";
 import type { ProjectSubmission } from "@/types";
 
 const maxUploadedImageLength = 2.8 * 1024 * 1024;
 const imageUrlRegex = /^https?:\/\/.+/i;
 const imageDataRegex = /^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i;
+const PROJECT_RATE_LIMIT = { maxAttempts: 5, windowMs: 10 * 60 * 1000 };
 
 export async function GET() {
   const projects = await getDB<ProjectSubmission>("projects.json");
@@ -18,6 +20,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  if (await isSubmissionRateLimited(`project:${ip}`, PROJECT_RATE_LIMIT)) {
+    return NextResponse.json(
+      { success: false, message: "Too many project submissions. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json().catch(() => ({}));
   const studentName = String(body.studentName || "").trim();
   const title = String(body.title || "").trim();
