@@ -20,7 +20,7 @@ import { getManagedCourses, getManagedLessons } from "@/lib/contentSettings";
 import { getDB } from "@/lib/db";
 import CourseReviewForm from "@/components/CourseReviewForm";
 import type { Review } from "@/types";
-import { absoluteUrl, jsonLdScript, siteName } from "@/lib/seo";
+import { absoluteUrl, breadcrumbJsonLd, jsonLdScript, siteName } from "@/lib/seo";
 
 type CoursePageProps = {
   params: Promise<{ courseId: string }>;
@@ -125,6 +125,11 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
   const tools = courseTools[course.id] || ["Laptop or smartphone", "Stable internet", "LMS access", "Practice files"];
   const projects = courseProjects[course.id] || course.skills.map((skill) => `${skill} practice project`);
   const faqs = getCourseFAQs(course.title);
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Courses", path: "/courses" },
+    { name: course.title, path: `/courses/${course.id}` },
+  ]);
   const courseJsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",
@@ -183,6 +188,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
     <div className="bg-white pt-28">
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(courseJsonLd)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(faqJsonLd)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(breadcrumbs)} />
       <section className="bg-dark py-16 text-white md:py-20">
         <div className="container mx-auto px-6">
           <Link href="/courses" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-primary-light hover:text-white">

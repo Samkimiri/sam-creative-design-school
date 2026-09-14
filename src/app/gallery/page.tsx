@@ -1,7 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import StudentProjects from "@/components/StudentProjects";
 import { galleryProjects } from "@/data/galleryProjects";
+
+export const metadata: Metadata = {
+  title: "Student Gallery | Sam Creative Design School",
+  description:
+    "Browse real student project work from Sam Creative Design School - Photoshop posters, Illustrator branding, CapCut edits, and SolidWorks CAD projects made in Kenya.",
+  alternates: { canonical: "/gallery" },
+};
 
 export default function GalleryPage() {
   const categories = ["All", "Photoshop", "Illustrator", "CapCut", "SolidWorks"];

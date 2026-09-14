@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getBlogPost, type BlogPost } from "@/data/blog";
-import { absoluteUrl, jsonLdScript, siteName } from "@/lib/seo";
+import { absoluteUrl, breadcrumbJsonLd, jsonLdScript, siteName } from "@/lib/seo";
 
 export default function BlogArticleView({ id, post: providedPost }: { id?: string; post?: BlogPost }) {
   const post = providedPost || (id ? getBlogPost(id) : undefined);
@@ -39,10 +39,16 @@ export default function BlogArticleView({ id, post: providedPost }: { id?: strin
     mainEntityOfPage: absoluteUrl(`/blog/${post.id}`),
     keywords: post.tags.join(", "),
   };
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Blog", path: "/blog" },
+    { name: post.title, path: `/blog/${post.id}` },
+  ]);
 
   return (
     <div className="pt-28 pb-24">
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(articleJsonLd)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(breadcrumbs)} />
       <article>
         <div className="bg-dark text-white">
           <div className="container mx-auto grid min-h-[420px] items-end gap-8 px-6 py-16 md:grid-cols-2">

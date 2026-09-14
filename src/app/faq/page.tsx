@@ -1,5 +1,14 @@
+import type { Metadata } from "next";
 import { getManagedFAQs } from "@/lib/contentSettings";
+import { jsonLdScript } from "@/lib/seo";
 import type { CSSProperties } from "react";
+
+export const metadata: Metadata = {
+  title: "FAQ | Sam Creative Design School",
+  description:
+    "Answers to common questions about enrolling, paying, and studying at Sam Creative Design School - courses, payment, certificates, and LMS access in Kenya.",
+  alternates: { canonical: "/faq" },
+};
 
 export default async function FAQPage() {
   const enrollmentSteps = [
@@ -9,9 +18,24 @@ export default async function FAQPage() {
     { step: 4, title: "Get Access", desc: "Admin approves the verified payment, then LMS access unlocks." },
   ];
   const faqs = await getManagedFAQs();
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.flatMap((section) =>
+      section.items.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.a,
+        },
+      }))
+    ),
+  };
 
   return (
     <div className="pt-32 pb-24">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(faqJsonLd)} />
       <div className="container mx-auto px-6 max-w-4xl">
         <div className="text-center mb-16" data-reveal>
           <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">FAQ</span>
