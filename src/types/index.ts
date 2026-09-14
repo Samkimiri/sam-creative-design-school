@@ -139,6 +139,9 @@ export interface Review {
   text: string;
   approved?: boolean;
   createdAt: string;
+  // Server-generated secret required to edit this review - never returned by
+  // GET/public reads, only handed back to the submitter once at creation time.
+  editToken?: string;
 }
 
 export interface ProjectSubmission {

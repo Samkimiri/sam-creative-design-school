@@ -45,5 +45,11 @@ export async function getPublicReviews(courseId?: string): Promise<Review[]> {
   const customReviews = reviews.filter((review) => !review.id.startsWith("seed-") && review.approved === true);
   const allReviews = [...customReviews, ...seedReviews];
   const filtered = courseId ? allReviews.filter((review) => review.courseId === courseId) : allReviews;
-  return filtered.slice(0, 12);
+  // editToken is the secret that proves who may edit a review - it must never
+  // be readable from a public list, or anyone could read another visitor's
+  // token here and use it to overwrite their review.
+  return filtered.slice(0, 12).map(({ editToken: _editToken, ...review }) => {
+    void _editToken;
+    return review;
+  });
 }

@@ -1,8 +1,22 @@
+import { randomBytes, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { getDB, saveDB } from "@/lib/db";
 import { getManagedCourses } from "@/lib/contentSettings";
 import { getPublicReviews } from "@/lib/reviews";
 import type { Review } from "@/types";
+
+function generateEditToken(): string {
+  return randomBytes(24).toString("hex");
+}
+
+// Constant-time compare so a mismatched token can't be brute-forced by timing
+// how long the comparison takes.
+function tokensMatch(a: string, b: string): boolean {
+  const bufferA = Buffer.from(a);
+  const bufferB = Buffer.from(b);
+  if (bufferA.length !== bufferB.length) return false;
+  return timingSafeEqual(bufferA, bufferB);
+}
 
 function normalizeRating(value: unknown): number {
   const rating = Number(value);
@@ -34,6 +48,7 @@ export async function POST(request: Request) {
     const reviews = await getDB<Review>("reviews.json");
     const managedCourses = await getManagedCourses();
     const course = managedCourses.find((item) => item.id === cleanCourseId);
+    const editToken = generateEditToken();
     const newReview: Review = {
       id: `REV-${Date.now()}`,
       name: cleanName.slice(0, 80),
@@ -44,11 +59,15 @@ export async function POST(request: Request) {
       text: cleanText.slice(0, 280),
       approved: false,
       createdAt: new Date().toISOString(),
+      editToken,
     };
 
     const customReviews = reviews.filter((review) => !review.id.startsWith("seed-"));
     await saveDB("reviews.json", [newReview, ...customReviews].slice(0, 50));
 
+    // The edit token is handed back exactly once, here - it's the caller's
+    // only proof they submitted this review, since nothing else identifies
+    // them (no login is required to leave a review).
     return NextResponse.json({ success: true, data: newReview });
   } catch {
     return NextResponse.json(
@@ -60,8 +79,9 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { id, name, role, rating, text } = await request.json();
+    const { id, editToken, name, role, rating, text } = await request.json();
     const cleanId = String(id || "").trim();
+    const cleanEditToken = String(editToken || "").trim();
     const cleanName = String(name || "").trim();
     const cleanText = String(text || "").trim();
     const cleanRole = String(role || "").trim();
@@ -91,12 +111,27 @@ export async function PATCH(request: Request) {
       );
     }
 
+    // Only whoever received this review's editToken at creation time may
+    // edit it - without this, anyone who reads a review's public id from
+    // the GET response could overwrite it with arbitrary content.
+    const existingToken = customReviews[reviewIndex].editToken;
+    if (!existingToken || !cleanEditToken || !tokensMatch(existingToken, cleanEditToken)) {
+      return NextResponse.json(
+        { success: false, message: "You don't have permission to edit this review." },
+        { status: 403 }
+      );
+    }
+
     const updatedReview: Review = {
       ...customReviews[reviewIndex],
       name: cleanName.slice(0, 80),
       role: cleanRole.slice(0, 80),
       rating: normalizeRating(rating),
       text: cleanText.slice(0, 280),
+      // An edited review goes back through moderation, same as a new one -
+      // otherwise an already-approved review could be silently rewritten
+      // into something that was never actually reviewed.
+      approved: false,
     };
 
     customReviews[reviewIndex] = updatedReview;

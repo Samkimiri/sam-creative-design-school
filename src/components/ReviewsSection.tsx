@@ -7,6 +7,7 @@ import type { Review } from "@/types";
 
 type FormState = {
   id?: string;
+  editToken?: string;
   name: string;
   role: string;
   text: string;
@@ -17,7 +18,11 @@ type ReviewsSectionProps = {
   mode?: "full" | "preview";
 };
 
-const editableStorageKey = "scds-editable-review-ids";
+// Maps review id -> the secret edit token the server handed back when this
+// browser submitted that review. The server is the actual authority (it
+// rejects a PATCH without the right token) - this is just where the one
+// browser that's allowed to edit a review remembers its own token.
+const editTokensStorageKey = "scds-review-edit-tokens";
 
 const initialForm: FormState = {
   name: "",
@@ -42,17 +47,17 @@ function sortReviews(reviews: Review[]): Review[] {
   });
 }
 
-function readEditableIds(): string[] {
-  if (typeof window === "undefined") return [];
+function readEditTokens(): Record<string, string> {
+  if (typeof window === "undefined") return {};
   try {
-    return JSON.parse(window.localStorage.getItem(editableStorageKey) || "[]") as string[];
+    return JSON.parse(window.localStorage.getItem(editTokensStorageKey) || "{}") as Record<string, string>;
   } catch {
-    return [];
+    return {};
   }
 }
 
-function writeEditableIds(ids: string[]) {
-  window.localStorage.setItem(editableStorageKey, JSON.stringify(Array.from(new Set(ids))));
+function writeEditTokens(tokens: Record<string, string>) {
+  window.localStorage.setItem(editTokensStorageKey, JSON.stringify(tokens));
 }
 
 function Stars({
@@ -120,14 +125,14 @@ function ReviewCard({
 
 export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [editableIds, setEditableIds] = useState<string[]>([]);
+  const [editTokens, setEditTokens] = useState<Record<string, string>>({});
   const [form, setForm] = useState<FormState>(initialForm);
   const [hoverRating, setHoverRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    setEditableIds(readEditableIds());
+    setEditTokens(readEditTokens());
 
     const loadReviews = async () => {
       try {
@@ -153,6 +158,7 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
   const beginEdit = (review: Review) => {
     setForm({
       id: review.id,
+      editToken: editTokens[review.id],
       name: review.name,
       role: review.role || "",
       text: review.text,
@@ -185,12 +191,12 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
         setReviews((current) =>
           sortReviews(current.map((review) => (review.id === data.data.id ? data.data : review)))
         );
-        setMessage("Your review has been updated.");
+        setMessage("Your review has been updated and is awaiting admin approval again.");
       } else {
         setReviews((current) => sortReviews([data.data, ...current]).slice(0, 12));
-        const nextEditableIds = [data.data.id, ...editableIds];
-        setEditableIds(nextEditableIds);
-        writeEditableIds(nextEditableIds);
+        const nextEditTokens = { ...editTokens, [data.data.id]: data.data.editToken };
+        setEditTokens(nextEditTokens);
+        writeEditTokens(nextEditTokens);
         setMessage("Thank you. Your review has been submitted for admin approval. You can still edit it on this browser.");
       }
 
@@ -326,7 +332,7 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
                 <ReviewCard
                   review={topReview}
                   index={0}
-                  editable={editableIds.includes(topReview.id)}
+                  editable={Boolean(editTokens[topReview.id])}
                   onEdit={beginEdit}
                 />
               </div>
@@ -337,7 +343,7 @@ export default function ReviewsSection({ mode = "full" }: ReviewsSectionProps) {
                   key={review.id}
                   review={review}
                   index={index + 1}
-                  editable={editableIds.includes(review.id)}
+                  editable={Boolean(editTokens[review.id])}
                   onEdit={beginEdit}
                 />
               ))}
