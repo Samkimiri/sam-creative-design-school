@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Zap } from "lucide-react";
 
 interface IntakeCountdownProps {
   targetDate: string;
@@ -18,6 +19,22 @@ function getRemaining(target: number) {
     seconds: totalSeconds % 60,
     ended: distance === 0,
   };
+}
+
+function UnitTile({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-b from-light-gray to-white px-2 py-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 sm:py-6">
+      <div className="relative h-9 overflow-hidden sm:h-12">
+        <p
+          key={value}
+          className="countdown-unit-in absolute inset-0 flex items-center justify-center bg-gradient-to-b from-dark to-dark/70 bg-clip-text text-3xl font-black tabular-nums text-transparent sm:text-5xl"
+        >
+          {String(value).padStart(2, "0")}
+        </p>
+      </div>
+      <p className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{label}</p>
+    </div>
+  );
 }
 
 export default function IntakeCountdown({ targetDate, title = "Live Intake Countdown" }: IntakeCountdownProps) {
@@ -72,7 +89,7 @@ export default function IntakeCountdown({ targetDate, title = "Live Intake Count
 
   if (!Number.isFinite(target)) {
     return (
-      <div className="rounded-2xl border border-primary/20 bg-white p-5 shadow-sm">
+      <div className="rounded-3xl border border-primary/20 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-3">
           <span className="h-10 w-1.5 rounded-full bg-primary" aria-hidden="true" />
           <div>
@@ -92,24 +109,36 @@ export default function IntakeCountdown({ targetDate, title = "Live Intake Count
   ];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-primary/20 bg-white shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-widest text-primary">{liveTitle}</p>
-          <p className="mt-1 text-sm font-semibold text-gray-500">
-            {remaining.ended ? "This intake has started." : `Counting down to ${liveTargetDate}`}
-          </p>
+    <div className="premium-card relative overflow-hidden rounded-3xl border border-primary/15 bg-white p-5 shadow-xl shadow-primary/5 sm:p-6">
+      <div
+        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl"
+        aria-hidden="true"
+      />
+      <div className="relative flex flex-col gap-3 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Zap className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-primary">{liveTitle}</p>
+            <p className="mt-0.5 text-sm font-semibold text-gray-500">
+              {remaining.ended ? "This intake has started." : `Counting down to ${liveTargetDate}`}
+            </p>
+          </div>
         </div>
-        <span className="inline-flex w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary">
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-primary">
+          <span className="relative flex h-1.5 w-1.5">
+            {!remaining.ended && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" aria-hidden="true" />
+            )}
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+          </span>
           {remaining.ended ? "Open now" : "Live"}
         </span>
       </div>
-      <div className="grid grid-cols-4 divide-x divide-gray-100">
+      <div className="relative grid grid-cols-4 gap-2 sm:gap-3">
         {units.map((unit) => (
-          <div key={unit.label} className="min-h-24 bg-white px-2 py-5 text-center transition-colors hover:bg-light-gray sm:min-h-28">
-            <p className="text-2xl font-black tabular-nums text-dark sm:text-4xl">{String(unit.value).padStart(2, "0")}</p>
-            <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400">{unit.label}</p>
-          </div>
+          <UnitTile key={unit.label} value={unit.value} label={unit.label} />
         ))}
       </div>
     </div>
