@@ -14,6 +14,8 @@ export interface Student {
   alumniSince?: string;
   communityBlocked?: boolean;
   communityLastSeenAt?: string;
+  /** Recent distinct login days (Africa/Nairobi, YYYY-MM-DD), most recent last - powers the login streak strip. */
+  loginDates?: string[];
   createdAt?: string;
 }
 

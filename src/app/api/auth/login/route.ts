@@ -1,9 +1,10 @@
 import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
-import { findDBRecordByField } from "@/lib/db";
+import { findDBRecordByField, upsertDBRecord } from "@/lib/db";
 import { verifyPassword, setSession, UserSession } from "@/lib/auth";
 import { getConfiguredAdminPassword } from "@/lib/adminAuth";
 import { clearFailedAttempts, isRateLimited, recordFailedAttempt } from "@/lib/rateLimit";
+import { recordLoginDate } from "@/lib/loginStreak";
 
 const LOGIN_RATE_LIMIT = { maxAttempts: 8, windowMs: 15 * 60 * 1000 };
 
@@ -24,6 +25,7 @@ interface Student {
   profileImage?: string;
   avatar?: string;
   interest?: string;
+  loginDates?: string[];
   createdAt: string;
 }
 
@@ -86,10 +88,15 @@ export async function POST(request: Request) {
       email: student.email,
       role: student.role || "student"
     };
-    
+
     await setSession(userSession);
 
-    return NextResponse.json({
+    const updatedLoginDates = recordLoginDate(student.loginDates);
+    if (updatedLoginDates.join(",") !== (student.loginDates || []).join(",")) {
+      await upsertDBRecord("students.json", { ...student, loginDates: updatedLoginDates });
+    }
+
+    const response = NextResponse.json({
       success: true,
       user: userSession,
       redirectTo: userSession.role === "admin" ? "/admin" : "/lms",
@@ -98,6 +105,27 @@ export async function POST(request: Request) {
         "Cache-Control": "no-store, max-age=0",
       },
     });
+
+    // A lightweight "welcome back" hint for the login page itself, so it can
+    // greet a returning student with their streak before they've even signed
+    // in again. Not sensitive (first name + login dates only, no id/email/
+    // password), and not used for authorization anywhere - purely cosmetic,
+    // so it's fine to be readable/editable by the browser it lives in.
+    if (userSession.role === "student") {
+      const firstName = (student.name || "").trim().split(/\s+/)[0] || "";
+      response.cookies.set(
+        "scds_streak_hint",
+        encodeURIComponent(JSON.stringify({ name: firstName, dates: updatedLoginDates })),
+        {
+          maxAge: 60 * 60 * 24 * 180,
+          sameSite: "lax",
+          path: "/",
+          secure: process.env.NODE_ENV === "production",
+        }
+      );
+    }
+
+    return response;
   } catch (error: unknown) {
     console.error("Login API Error:", error);
     return NextResponse.json({ success: false, message: "Login failed. Please try again." }, { status: 500 });

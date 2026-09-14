@@ -4,6 +4,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LoaderCircle, MessageCircle } from "lucide-react";
 import { getSafeNextPath, withNextPath } from "@/lib/nextPath";
+import { summarizeStreak, type StreakSummary } from "@/lib/loginStreak";
+
+function weekdayLabel(dateStr: string) {
+  return new Intl.DateTimeFormat("en", { weekday: "narrow" }).format(new Date(`${dateStr}T00:00:00Z`));
+}
+
+function readStreakHintCookie(): { name: string; dates: string[] } | null {
+  try {
+    const match = document.cookie.match(/(?:^|; )scds_streak_hint=([^;]*)/);
+    if (!match) return null;
+    const parsed = JSON.parse(decodeURIComponent(match[1])) as { name?: unknown; dates?: unknown };
+    if (typeof parsed.name !== "string" || !parsed.name || !Array.isArray(parsed.dates)) return null;
+    return { name: parsed.name, dates: parsed.dates.filter((d): d is string => typeof d === "string") };
+  } catch {
+    return null;
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,10 +30,16 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [registerHref, setRegisterHref] = useState("/auth/register");
   const [enrollingNext, setEnrollingNext] = useState(false);
+  const [streakHint, setStreakHint] = useState<{ name: string; summary: StreakSummary } | null>(null);
 
   useEffect(() => {
     setRegisterHref(withNextPath("/auth/register"));
     setEnrollingNext(getSafeNextPath().startsWith("/enroll"));
+
+    // Cosmetic "welcome back" hint from a prior login on this browser - see
+    // /api/auth/login, which sets the cookie. Never required for the page to work.
+    const hint = readStreakHintCookie();
+    if (hint) setStreakHint({ name: hint.name, summary: summarizeStreak(hint.dates) });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,6 +106,36 @@ export default function LoginPage() {
             {enrollingNext ? "Sign in to your account to continue enrolling" : "Sign in to continue your learning journey"}
           </p>
         </div>
+
+        {streakHint && (
+          <div className="animate-fade-in bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 mb-5">
+            <div className="flex items-center justify-between mb-3.5">
+              <p className="text-sm font-bold text-white">
+                {streakHint.summary.streak > 0 ? `${streakHint.summary.streak}-day streak` : `Welcome back, ${streakHint.name}`}
+              </p>
+              <p className="text-xs font-medium text-gray-400">
+                {streakHint.summary.streak > 0 ? "Log in tomorrow to keep it going" : "Start today's streak"}
+              </p>
+            </div>
+            <div className="grid grid-cols-7 gap-1.5">
+              {streakHint.summary.week.map((day) => (
+                <div key={day.date} className="flex flex-col items-center gap-1.5">
+                  <div
+                    className={
+                      day.filled
+                        ? "w-full aspect-square rounded-md bg-primary"
+                        : day.isToday
+                        ? "w-full aspect-square rounded-md border border-dashed border-primary-light/70"
+                        : "w-full aspect-square rounded-md bg-white/5 border border-white/10"
+                    }
+                    aria-label={day.filled ? "Logged in" : day.isToday ? "Today" : "No login"}
+                  />
+                  <span className="text-[10px] font-bold text-gray-500">{weekdayLabel(day.date)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="animate-fade-in bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-8 transition duration-300 hover:border-white/20 hover:bg-white/[0.07]" style={{ animationDelay: "120ms" }}>
           {status === "error" && (
