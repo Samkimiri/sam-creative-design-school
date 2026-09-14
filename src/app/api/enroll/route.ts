@@ -11,6 +11,16 @@ import type { Enrollment, Student } from "@/types";
 const clean = (value: unknown, maxLength: number) =>
   String(value || "").trim().replace(/\s+/g, " ").slice(0, maxLength);
 
+function enrollmentCourseIds(enrollment: Enrollment): string[] {
+  return enrollment.courseId.split(",").map((id) => id.trim()).filter(Boolean);
+}
+
+function joinTitles(titles: string[]): string {
+  if (titles.length <= 1) return titles[0] || "";
+  if (titles.length === 2) return `${titles[0]} and ${titles[1]}`;
+  return `${titles.slice(0, -1).join(", ")}, and ${titles[titles.length - 1]}`;
+}
+
 function getPaymentDetails() {
   const paymentNumber =
     process.env.MPESA_TILL_NUMBER ||
@@ -82,7 +92,6 @@ export async function POST(request: Request) {
     }
 
     const selectedCourses = managedCourses.filter((course) => requestedCourseIds.has(course.id));
-    const parsedAmount = selectedCourses.reduce((sum, course) => sum + course.price, 0);
     const reference = "SAM-" + Math.random().toString(36).substring(2, 9).toUpperCase();
     const now = new Date().toISOString();
     const [students, discountSettings, enrollments] = await Promise.all([
@@ -103,10 +112,68 @@ export async function POST(request: Request) {
       );
     }
 
+    // A student re-submitting the enroll form for a course they already have an
+    // active request for (still pending review, or already confirmed) used to
+    // create a brand-new duplicate enrollment record every time - cluttering the
+    // admin dashboard with repeats of the same request. Course-by-course: skip
+    // anything already pending/confirmed, only submit genuinely new courses.
+    // A previously rejected or revoked course is NOT a duplicate - the student
+    // is expected to be able to try again for that one.
+    const pendingByCourseId = new Map<string, Enrollment>();
+    const confirmedCourseIds = new Set<string>();
+    for (const existing of enrollments) {
+      if (existing.studentId !== student.id) continue;
+      const ids = enrollmentCourseIds(existing);
+      if (existing.status === "confirmed") {
+        ids.forEach((id) => confirmedCourseIds.add(id));
+      } else if (existing.status === "pending") {
+        ids.forEach((id) => {
+          const current = pendingByCourseId.get(id);
+          if (!current || new Date(existing.createdAt).getTime() > new Date(current.createdAt).getTime()) {
+            pendingByCourseId.set(id, existing);
+          }
+        });
+      }
+    }
+
+    const duplicatePendingCourses = selectedCourses.filter((course) => pendingByCourseId.has(course.id));
+    const alreadyConfirmedCourses = selectedCourses.filter((course) => confirmedCourseIds.has(course.id));
+    const newCourses = selectedCourses.filter(
+      (course) => !pendingByCourseId.has(course.id) && !confirmedCourseIds.has(course.id)
+    );
+
+    if (newCourses.length === 0) {
+      if (duplicatePendingCourses.length > 0) {
+        const mostRecentPending = duplicatePendingCourses
+          .map((course) => pendingByCourseId.get(course.id)!)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+        const pendingNote = `You already submitted ${joinTitles(duplicatePendingCourses.map((c) => c.title))} and it's awaiting admin review. Our admin is already working on it - please wait a short while for confirmation instead of submitting again.`;
+        const confirmedNote = alreadyConfirmedCourses.length > 0
+          ? ` You also already have access to ${joinTitles(alreadyConfirmedCourses.map((c) => c.title))}.`
+          : "";
+        return NextResponse.json({
+          success: true,
+          reviewPending: true,
+          alreadyPending: true,
+          message: pendingNote + confirmedNote,
+          reference: mostRecentPending.reference,
+          amount: mostRecentPending.amount,
+          ...getPaymentDetails(),
+        });
+      }
+
+      return NextResponse.json({
+        success: false,
+        alreadyEnrolled: true,
+        message: `You already have access to ${joinTitles(alreadyConfirmedCourses.map((c) => c.title))}. Open your LMS dashboard to continue learning.`,
+      });
+    }
+
+    const parsedAmount = newCourses.reduce((sum, course) => sum + course.price, 0);
     const referralDiscount = referrer && !isSelfReferral ? calculateReferralDiscount(parsedAmount, discountSettings) : 0;
     const promoResult = applyPromoCode({
       amount: Math.max(0, parsedAmount - referralDiscount),
-      selectedCourses,
+      selectedCourses: newCourses,
       promoCode,
       settings: discountSettings,
       enrollments,
@@ -127,8 +194,8 @@ export async function POST(request: Request) {
       studentId: student.id,
       studentName: name,
       studentEmail: session.user.email || email,
-      courseId: selectedCourses.map((course) => course.id).join(","),
-      courseName: selectedCourses.map((course) => course.title).join(", ") || "Course",
+      courseId: newCourses.map((course) => course.id).join(","),
+      courseName: newCourses.map((course) => course.title).join(", ") || "Course",
       originalAmount: parsedAmount,
       amount: payableAmount,
       referralCode: referralCode || undefined,
@@ -173,7 +240,7 @@ export async function POST(request: Request) {
         sendAdminNewEnrollmentAlertEmail({
           to: adminAlertEmail,
           studentName: name,
-          courseNames: selectedCourses.map((course) => course.title),
+          courseNames: newCourses.map((course) => course.title),
           amount: payableAmount,
           reference,
           adminUrl: absoluteUrl("/admin"),
@@ -181,9 +248,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const skippedDuplicates = [...duplicatePendingCourses, ...alreadyConfirmedCourses];
+    const successMessage = skippedDuplicates.length > 0
+      ? `Enrollment submitted for admin approval. ${joinTitles(skippedDuplicates.map((c) => c.title))} ${skippedDuplicates.length > 1 ? "were" : "was"} already submitted or enrolled, so only the new course(s) above were sent. Pay to the Till shown if you have not already paid.`
+      : "Enrollment submitted for admin approval. Pay to the Till shown if you have not already paid.";
+
     return NextResponse.json({
       success: true,
-      message: "Enrollment submitted for admin approval. Pay to the Till shown if you have not already paid.",
+      message: successMessage,
       reference,
       amount: payableAmount,
       originalAmount: parsedAmount,

@@ -10,6 +10,8 @@ type EnrollmentResponse = {
   success?: boolean;
   message?: string;
   reviewPending?: boolean;
+  alreadyPending?: boolean;
+  alreadyEnrolled?: boolean;
   requiresAuth?: boolean;
   reference?: string;
   amount?: number | string;
@@ -40,9 +42,10 @@ function EnrollForm() {
     paymentMethod: "mpesa" as const,
     selectedCourses: initialCourse ? [initialCourse] : ([] as string[]),
   });
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "failed">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "failed" | "already-enrolled">("idle");
   const [ref, setRef] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [duplicateNotice, setDuplicateNotice] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentDetails, setPaymentDetails] = useState({
     paymentLabel: "Buy Goods Till",
@@ -109,6 +112,7 @@ function EnrollForm() {
     setErrorMessage("");
     setReferralMessage("");
     setPromoMessage("");
+    setDuplicateNotice("");
 
     try {
       const courseNames = selectedCourses.map((course) => course.title).join(", ");
@@ -144,7 +148,17 @@ function EnrollForm() {
         if (data.referralApplied) setReferralMessage(`Referral applied from ${data.referredByName}. Discount: Ksh ${Number(data.referralDiscount || 0).toLocaleString()}.`);
         if (data.promoApplied) setPromoMessage(`${data.promoDescription || "Promo code"} applied. Discount: Ksh ${Number(data.promoDiscount || 0).toLocaleString()}.`);
         if (!data.promoApplied && data.promoMessage) setPromoMessage(data.promoMessage);
+        // Surface the "already submitted, admin is on it" notice (or the
+        // "some courses were skipped as duplicates" note) right on the same
+        // success screen, instead of a separate red error state - nothing
+        // actually failed here.
+        if (data.message && (data.alreadyPending || data.message.includes("already"))) {
+          setDuplicateNotice(data.message);
+        }
         setStatus("success");
+      } else if (data.alreadyEnrolled) {
+        setErrorMessage(data.message || "You already have access to this course.");
+        setStatus("already-enrolled");
       } else if (data.success) {
         setRef(data.reference || "");
         setPaymentAmount(Number(data.amount) || totalAmount);
@@ -170,6 +184,38 @@ function EnrollForm() {
       setStatus("failed");
     }
   };
+
+  if (status === "already-enrolled") {
+    return (
+      <div className="motion-scale bg-white p-5 sm:p-8 md:p-12 rounded-2xl md:rounded-3xl shadow-2xl border-2 border-primary">
+        <div className="text-center py-4 sm:py-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6 text-xl font-black">
+            OK
+          </div>
+          <h2 className="text-2xl font-black text-dark mb-3">You&apos;re Already Enrolled</h2>
+          <p className="text-gray-600 mb-6">{errorMessage}</p>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/lms"
+              className="premium-button flex-1 bg-primary text-white font-bold py-4 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90"
+            >
+              Go to My LMS
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("idle");
+                setErrorMessage("");
+              }}
+              className="premium-button flex-1 bg-light-gray text-dark font-bold py-4 rounded-xl transition-all duration-300 hover:-translate-y-0.5"
+            >
+              Enroll in Another Course
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (status === "failed") {
     return (
@@ -213,6 +259,12 @@ function EnrollForm() {
               <>Your enrollment has been sent to the admin dashboard for {activePaymentLabel} approval.</>
             )}
           </p>
+
+          {duplicateNotice && (
+            <div className="bg-amber-50 border-l-4 border-amber-400 text-amber-800 text-sm font-semibold rounded-xl p-4 mb-6 sm:mb-8 text-left" role="status">
+              {duplicateNotice}
+            </div>
+          )}
 
           <div className="bg-light-gray p-5 sm:p-8 rounded-2xl mb-6 sm:mb-8 text-left border-l-4 border-primary animate-fade-in">
             <h3 className="font-bold text-lg mb-4">Admin Approval Pending</h3>
