@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { deleteDBRecord, getDB, upsertDBRecord } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import {
+  isBlockedBy,
   isValidReactionType,
   reactionId,
   summarizeReactions,
+  type CommunityBlock,
   type CommunityComment,
   type CommunityPost,
   type CommunityReaction,
@@ -34,16 +36,21 @@ export async function POST(request: Request) {
     }
 
     // Confirm the target actually exists and isn't deleted, so reactions can't pile up on ghost content.
+    let targetOwnerId: string | undefined;
     if (targetType === "post") {
       const posts = await getDB<CommunityPost>("community-posts.json");
-      if (!posts.some((post) => post.id === targetId && !post.deletedAt)) {
+      const target = posts.find((post) => post.id === targetId && !post.deletedAt);
+      if (!target) {
         return NextResponse.json({ success: false, message: "This post no longer exists." }, { status: 404 });
       }
+      targetOwnerId = target.studentId;
     } else {
       const comments = await getDB<CommunityComment>("community-post-comments.json");
-      if (!comments.some((comment) => comment.id === targetId && !comment.deletedAt)) {
+      const target = comments.find((comment) => comment.id === targetId && !comment.deletedAt);
+      if (!target) {
         return NextResponse.json({ success: false, message: "This comment no longer exists." }, { status: 404 });
       }
+      targetOwnerId = target.studentId;
     }
 
     const students = await getDB<Student>("students.json");
@@ -54,6 +61,13 @@ export async function POST(request: Request) {
         { success: false, message: "Your community access has been restricted by an admin." },
         { status: 403 }
       );
+    }
+
+    if (targetOwnerId && targetOwnerId !== student.id) {
+      const blocks = await getDB<CommunityBlock>("community-blocks.json");
+      if (isBlockedBy(blocks, targetOwnerId, student.id)) {
+        return NextResponse.json({ success: false, message: "You can't react to this." }, { status: 403 });
+      }
     }
 
     const id = reactionId(targetType, targetId, student.id);

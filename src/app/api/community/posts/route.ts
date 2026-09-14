@@ -3,6 +3,7 @@ import { deleteDBRecord, getDB, saveDB, upsertDBRecord } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { containsAbusiveLanguage } from "@/lib/moderation";
 import {
+  isBlockedBy,
   isValidPostImage,
   isWithinCooldown,
   POST_COOLDOWN_MS,
@@ -10,6 +11,7 @@ import {
   resolveMentions,
   summarizeReactions,
   TRASH_RETENTION_MS,
+  type CommunityBlock,
   type CommunityComment,
   type CommunityPost,
   type CommunityReaction,
@@ -37,10 +39,11 @@ export async function GET(request: Request) {
   const limitParam = Number(searchParams.get("limit"));
   const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, PAGE_SIZE) : PAGE_SIZE;
 
-  const [posts, comments, reactions] = await Promise.all([
+  const [posts, comments, reactions, blocks] = await Promise.all([
     getDB<CommunityPost>("community-posts.json"),
     getDB<CommunityComment>("community-post-comments.json"),
     getDB<CommunityReaction>("community-reactions.json"),
+    getDB<CommunityBlock>("community-blocks.json"),
   ]);
 
   const { kept, changed } = purgeExpiredTrash(posts);
@@ -56,6 +59,7 @@ export async function GET(request: Request) {
   const beforeTime = before ? new Date(before).getTime() : Infinity;
   const visible = kept
     .filter((post) => !post.deletedAt && new Date(post.createdAt).getTime() < beforeTime)
+    .filter((post) => !isBlockedBy(blocks, session.user.id, post.studentId))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, limit);
 

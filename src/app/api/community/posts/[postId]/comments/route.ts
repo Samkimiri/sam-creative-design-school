@@ -4,9 +4,11 @@ import { getSession } from "@/lib/auth";
 import { containsAbusiveLanguage } from "@/lib/moderation";
 import {
   COMMENT_COOLDOWN_MS,
+  isBlockedBy,
   isWithinCooldown,
   resolveMentions,
   summarizeReactions,
+  type CommunityBlock,
   type CommunityComment,
   type CommunityPost,
   type CommunityReaction,
@@ -22,13 +24,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ post
   if (!session) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
   const { postId } = await params;
-  const [comments, reactions] = await Promise.all([
+  const [comments, reactions, blocks] = await Promise.all([
     getDB<CommunityComment>("community-post-comments.json"),
     getDB<CommunityReaction>("community-reactions.json"),
+    getDB<CommunityBlock>("community-blocks.json"),
   ]);
 
   const visible = comments
     .filter((comment) => comment.postId === postId && !comment.deletedAt)
+    .filter((comment) => !isBlockedBy(blocks, session.user.id, comment.studentId))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .slice(-MAX_COMMENTS_RETURNED)
     .map((comment) => ({ ...comment, reactionSummary: summarizeReactions(reactions, "comment", comment.id, session.user.id) }));
@@ -63,6 +67,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ pos
         { success: false, message: "Your community access has been restricted by an admin." },
         { status: 403 }
       );
+    }
+
+    if (post.studentId !== student.id) {
+      const blocks = await getDB<CommunityBlock>("community-blocks.json");
+      if (isBlockedBy(blocks, post.studentId, student.id)) {
+        return NextResponse.json({ success: false, message: "You can't comment on this post." }, { status: 403 });
+      }
     }
 
     const comments = await getDB<CommunityComment>("community-post-comments.json");
