@@ -7,6 +7,7 @@ import {
   type PasswordResetRecord,
 } from "@/lib/passwordReset";
 import { clearFailedAttempts, isRateLimited, recordFailedAttempt } from "@/lib/rateLimit";
+import { validatePasswordStrength } from "@/lib/passwordPolicy";
 import type { Student } from "@/types";
 
 // The 6-digit code is only 1,000,000 combinations - without this, a script
@@ -27,8 +28,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Enter the reset code sent to your email." }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ success: false, message: "Password must be at least 6 characters." }, { status: 400 });
+    const passwordError = validatePasswordStrength(password);
+    if (passwordError) {
+      return NextResponse.json({ success: false, message: passwordError }, { status: 400 });
     }
 
     // Only the guessable 6-digit code path is rate-limited - a reset token

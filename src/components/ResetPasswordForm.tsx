@@ -13,9 +13,9 @@ export default function ResetPasswordForm({ token }: { token: string }) {
     event.preventDefault();
     if (status === "loading") return;
 
-    if (form.password.length < 6) {
+    if (form.password.length < 8) {
       setStatus("error");
-      setMessage("Password must be at least 6 characters.");
+      setMessage("Password must be at least 8 characters, with a letter and a number.");
       return;
     }
 
@@ -112,11 +112,12 @@ export default function ResetPasswordForm({ token }: { token: string }) {
               id="new-password"
               required
               type="password"
+              minLength={8}
               autoComplete="new-password"
               value={form.password}
               onChange={(event) => setForm({ ...form, password: event.target.value })}
               className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-4 text-white outline-none transition-all duration-300 placeholder:text-gray-600 focus:-translate-y-0.5 focus:border-primary focus:shadow-lg focus:shadow-primary/10"
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters, with a letter and a number"
             />
           </div>
           <div>

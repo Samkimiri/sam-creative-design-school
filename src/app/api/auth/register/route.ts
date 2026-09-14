@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { appendDBRecord, findDBRecordByField, upsertDBRecord } from "@/lib/db";
 import { hashPassword, setSession, UserSession } from "@/lib/auth";
 import { getConfirmedEnrollmentCourseIdsForStudent } from "@/lib/enrollmentAccess";
+import { validatePasswordStrength } from "@/lib/passwordPolicy";
 
 interface Student {
   id: string;
@@ -66,11 +67,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { success: false, message: "Password must be at least 6 characters." },
-        { status: 400 }
-      );
+    const passwordError = validatePasswordStrength(password);
+    if (passwordError) {
+      return NextResponse.json({ success: false, message: passwordError }, { status: 400 });
     }
 
     const safeAvatar = optionalAvatar(avatar);

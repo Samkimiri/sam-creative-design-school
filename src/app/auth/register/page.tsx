@@ -27,9 +27,9 @@ export default function RegisterPage() {
       setErrorMsg("Passwords do not match");
       return;
     }
-    if (formData.password.length < 6) {
+    if (formData.password.length < 8) {
       setStatus("error");
-      setErrorMsg("Password must be at least 6 characters");
+      setErrorMsg("Password must be at least 8 characters, with a letter and a number");
       return;
     }
     setStatus("loading");
@@ -118,9 +118,9 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm font-bold text-gray-300 mb-2">Password</label>
               <input
-                required type="password" minLength={6}
+                required type="password" minLength={8}
                 className="w-full bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300 focus:-translate-y-0.5 focus:shadow-lg focus:shadow-primary/10 placeholder:text-gray-500"
-                placeholder="Min. 6 characters"
+                placeholder="Min. 8 characters, with a letter and a number"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
