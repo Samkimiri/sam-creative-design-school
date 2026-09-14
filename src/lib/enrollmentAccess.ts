@@ -14,7 +14,7 @@ export function normalizePhone(value?: string) {
   return digits;
 }
 
-function normalizeId(value?: string) {
+export function normalizeId(value?: string) {
   return String(value || "").trim().toLowerCase();
 }
 

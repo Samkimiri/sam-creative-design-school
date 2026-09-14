@@ -949,7 +949,7 @@ export default function AdminDashboard() {
 
       const confirmed = window.confirm(
         `Found ${recordsToRemove} duplicate enrollment record(s) across ${duplicateGroupCount} student/course pair(s). ` +
-        `For each pair, the best record (confirmed over pending, real M-Pesa receipt over none, most recent as a tiebreaker) is kept and the rest are permanently deleted. This cannot be undone. Continue?`
+        `For each pair, the best record (linked to a real student account over not, confirmed over pending, real M-Pesa receipt over none, most recent as a tiebreaker) is kept and the rest are permanently deleted. This cannot be undone. Continue?`
       );
       if (!confirmed) return;
 
