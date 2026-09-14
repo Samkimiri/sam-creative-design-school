@@ -1001,6 +1001,63 @@ export default function AdminDashboard() {
     }
   };
 
+  const reconcileEnrollments = async () => {
+    setPendingAction("enrollments-reconcile");
+    setNotice("");
+    try {
+      const preview = await fetchAdminJson<{ fixCount: number; orphanedCount: number }>(
+        "/api/admin/enrollments/reconcile",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password, confirm: false }),
+        }
+      );
+
+      if (!preview.res.ok || !preview.data.success || !preview.data.data) {
+        setNotice(preview.data.message || "Could not check for enrollment access drift.");
+        return;
+      }
+
+      const { fixCount, orphanedCount } = preview.data.data;
+      if (fixCount === 0) {
+        setNotice(
+          orphanedCount > 0
+            ? `No access to grant automatically. ${orphanedCount} confirmed enrollment(s) match no student account and need manual review.`
+            : "No drift found. Every confirmed enrollment matches its student's course access."
+        );
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Found ${fixCount} confirmed enrollment(s) whose course is missing from the matched student's access - ` +
+        `they paid and were approved, but never actually got into the course. Grant the missing access now?` +
+        (orphanedCount > 0 ? ` (${orphanedCount} other confirmed enrollment(s) match no student account and will be left for manual review.)` : "")
+      );
+      if (!confirmed) return;
+
+      const apply = await fetchAdminJson<{ fixCount: number }>("/api/admin/enrollments/reconcile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, confirm: true }),
+      });
+
+      if (!apply.res.ok || !apply.data.success || !apply.data.data) {
+        setNotice(apply.data.message || "Could not grant the missing course access.");
+        return;
+      }
+
+      setNotice(`Granted missing course access for ${apply.data.data.fixCount} enrollment(s).`);
+      await fetchData(password);
+    } catch (err) {
+      setNotice(err instanceof DOMException && err.name === "AbortError"
+        ? "The check took too long. Please try again."
+        : "Could not reconcile enrollment access. Check your connection and try again.");
+    } finally {
+      setPendingAction("");
+    }
+  };
+
   const setStudentRole = async (studentId: string, role: "admin" | "staff" | "student", studentName: string) => {
     const confirmed = window.confirm(
       role === "student"
@@ -1885,6 +1942,15 @@ export default function AdminDashboard() {
                     className={`rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700 disabled:opacity-50 ${adminActionMotion}`}
                   >
                     {pendingAction === "enrollments-dedupe" ? "Checking..." : "Clean Up Duplicates"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void reconcileEnrollments()}
+                    disabled={pendingAction === "enrollments-reconcile"}
+                    className={`rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700 disabled:opacity-50 ${adminActionMotion}`}
+                    title="Grants missing course access for confirmed enrollments whose student never actually got the course, due to a matching or write failure."
+                  >
+                    {pendingAction === "enrollments-reconcile" ? "Checking..." : "Fix Missing Access"}
                   </button>
                   <button
                     type="button"
