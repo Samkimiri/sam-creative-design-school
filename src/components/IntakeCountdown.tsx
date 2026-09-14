@@ -21,7 +21,44 @@ function getRemaining(target: number) {
 }
 
 export default function IntakeCountdown({ targetDate, title = "Live Intake Countdown" }: IntakeCountdownProps) {
-  const target = useMemo(() => new Date(targetDate).getTime(), [targetDate]);
+  // The page itself is revalidated the moment an admin saves a new intake date, so a
+  // fresh page load always gets the right date. But a tab a visitor already has open
+  // would otherwise stay locked to whatever date it loaded with - polling here means
+  // an admin changing the date is picked up by open tabs too, not just new page loads.
+  const [liveTargetDate, setLiveTargetDate] = useState(targetDate);
+  const [liveTitle, setLiveTitle] = useState(title);
+
+  useEffect(() => {
+    setLiveTargetDate(targetDate);
+  }, [targetDate]);
+
+  useEffect(() => {
+    setLiveTitle(title);
+  }, [title]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const pollIntake = async () => {
+      try {
+        const res = await fetch("/api/intake", { cache: "no-store" });
+        const json = await res.json();
+        if (cancelled || !json?.success) return;
+        if (json.data?.nextIntake) setLiveTargetDate(json.data.nextIntake);
+        if (json.data?.countdownTitle) setLiveTitle(json.data.countdownTitle);
+      } catch {
+        // Keep showing the last known date if a poll fails
+      }
+    };
+
+    const interval = window.setInterval(pollIntake, 45000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const target = useMemo(() => new Date(liveTargetDate).getTime(), [liveTargetDate]);
   const [remaining, setRemaining] = useState(() => getRemaining(target));
 
   useEffect(() => {
@@ -39,7 +76,7 @@ export default function IntakeCountdown({ targetDate, title = "Live Intake Count
         <div className="flex items-center gap-3">
           <span className="h-10 w-1.5 rounded-full bg-primary" aria-hidden="true" />
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-primary">{title}</p>
+            <p className="text-xs font-black uppercase tracking-widest text-primary">{liveTitle}</p>
             <p className="mt-1 text-lg font-extrabold text-dark">Next intake date will be announced soon.</p>
           </div>
         </div>
@@ -58,9 +95,9 @@ export default function IntakeCountdown({ targetDate, title = "Live Intake Count
     <div className="overflow-hidden rounded-2xl border border-primary/20 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-primary">{title}</p>
+          <p className="text-xs font-black uppercase tracking-widest text-primary">{liveTitle}</p>
           <p className="mt-1 text-sm font-semibold text-gray-500">
-            {remaining.ended ? "This intake has started." : `Counting down to ${targetDate}`}
+            {remaining.ended ? "This intake has started." : `Counting down to ${liveTargetDate}`}
           </p>
         </div>
         <span className="inline-flex w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary">
