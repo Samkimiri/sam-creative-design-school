@@ -10,6 +10,11 @@ export const defaultDiscountSettings: DiscountSettings = {
     rewardNote: "Referring students help new learners save during enrollment. Admin can review referral records from enrollments.",
   },
   promoCodes: [],
+  // Each of referral% and a promo's value is individually capped at 100%, but nothing
+  // stopped them from stacking past that when both apply to the same enrollment - a
+  // referred student who also has a generous promo code could otherwise get a course
+  // entirely free even though neither discount was set up to be that generous alone.
+  maxCombinedDiscountPercent: 50,
   updatedAt: new Date(0).toISOString(),
 };
 
@@ -101,7 +106,33 @@ function normalizeDiscountSettings(input?: Partial<DiscountSettings> | null): Di
     promoCodes: Array.isArray(input?.promoCodes)
       ? input.promoCodes.map(normalizePromo).filter((promo) => promo.code)
       : [],
+    maxCombinedDiscountPercent: Math.min(
+      100,
+      Math.max(0, Number(input?.maxCombinedDiscountPercent ?? defaultDiscountSettings.maxCombinedDiscountPercent))
+    ),
     updatedAt: input?.updatedAt || defaultDiscountSettings.updatedAt,
+  };
+}
+
+/**
+ * Caps referral + promo discount at settings.maxCombinedDiscountPercent of the
+ * original amount. The referral discount (a standing program-wide policy) is
+ * kept intact and any excess is trimmed from the promo discount (an ad-hoc,
+ * per-code marketing tool), since promo already applies "on top of" referral
+ * in the enrollment flow.
+ */
+export function capCombinedDiscount(
+  originalAmount: number,
+  referralDiscount: number,
+  promoDiscount: number,
+  settings: DiscountSettings
+): { referralDiscount: number; promoDiscount: number } {
+  const ceiling = Math.round(originalAmount * (settings.maxCombinedDiscountPercent / 100));
+  const cappedReferralDiscount = Math.min(referralDiscount, ceiling);
+  const allowedPromoDiscount = Math.max(0, ceiling - cappedReferralDiscount);
+  return {
+    referralDiscount: cappedReferralDiscount,
+    promoDiscount: Math.min(promoDiscount, allowedPromoDiscount),
   };
 }
 

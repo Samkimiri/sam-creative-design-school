@@ -3,7 +3,7 @@ import { appendDBRecord, getDB, hasPersistentStorageConfig, upsertDBRecord } fro
 import { getSession } from "@/lib/auth";
 import { getManagedCourses } from "@/lib/contentSettings";
 import { findReferrerByCode, normalizeReferralCode } from "@/lib/referrals";
-import { applyPromoCode, calculateReferralDiscount, getDiscountSettings, normalizePromoCode } from "@/lib/discountSettings";
+import { applyPromoCode, calculateReferralDiscount, capCombinedDiscount, getDiscountSettings, normalizePromoCode } from "@/lib/discountSettings";
 import { sendAdminNewEnrollmentAlertEmail } from "@/lib/email";
 import { absoluteUrl } from "@/lib/seo";
 import type { Enrollment, Student } from "@/types";
@@ -170,15 +170,21 @@ export async function POST(request: Request) {
     }
 
     const parsedAmount = newCourses.reduce((sum, course) => sum + course.price, 0);
-    const referralDiscount = referrer && !isSelfReferral ? calculateReferralDiscount(parsedAmount, discountSettings) : 0;
+    const rawReferralDiscount = referrer && !isSelfReferral ? calculateReferralDiscount(parsedAmount, discountSettings) : 0;
     const promoResult = applyPromoCode({
-      amount: Math.max(0, parsedAmount - referralDiscount),
+      amount: Math.max(0, parsedAmount - rawReferralDiscount),
       selectedCourses: newCourses,
       promoCode,
       settings: discountSettings,
       enrollments,
     });
-    const promoDiscount = promoResult.valid ? promoResult.discount : 0;
+    const rawPromoDiscount = promoResult.valid ? promoResult.discount : 0;
+    const { referralDiscount, promoDiscount } = capCombinedDiscount(
+      parsedAmount,
+      rawReferralDiscount,
+      rawPromoDiscount,
+      discountSettings
+    );
     const payableAmount = Math.max(0, parsedAmount - referralDiscount - promoDiscount);
     const paymentDetails = getPaymentDetails();
 

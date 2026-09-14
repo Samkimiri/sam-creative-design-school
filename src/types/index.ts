@@ -317,5 +317,7 @@ export interface DiscountSettings {
   id: "discount-manager";
   referral: ReferralRewardSettings;
   promoCodes: PromoCode[];
+  /** Ceiling on referral + promo combined, as a percent of the course price - stops the two from stacking past what either was individually meant to allow. */
+  maxCombinedDiscountPercent: number;
   updatedAt: string;
 }

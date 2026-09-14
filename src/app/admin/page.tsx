@@ -350,6 +350,7 @@ const defaultDiscountSettings: DiscountSettings = {
     rewardNote: "Students who share referral links help new learners save during enrollment.",
   },
   promoCodes: [],
+  maxCombinedDiscountPercent: 50,
   updatedAt: "",
 };
 
@@ -3529,6 +3530,22 @@ export default function AdminDashboard() {
                   placeholder="Admin note about referral rewards"
                 />
               </div>
+            </section>
+
+            <section className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
+              <h4 className="mb-2 text-lg font-extrabold text-dark">Max Combined Discount</h4>
+              <p className="mb-5 text-sm text-gray-500">
+                Caps referral + promo code combined, as a percent of the course price - stops a referred student who also has a promo code from stacking past what either discount was individually meant to allow.
+              </p>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={discountSettings.maxCombinedDiscountPercent}
+                onChange={(e) => setDiscountSettings((prev) => ({ ...prev, maxCombinedDiscountPercent: Number(e.target.value) }))}
+                className="w-full max-w-xs rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+                placeholder="Max combined discount percent"
+              />
             </section>
 
             <section className={`rounded-3xl border border-gray-100 bg-white p-6 shadow-sm ${adminPanelMotion}`}>
