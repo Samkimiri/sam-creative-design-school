@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -13,6 +14,20 @@ import {
   siteUrl,
   websiteJsonLd,
 } from "@/lib/seo";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800", "900"],
+  variable: "--font-poppins",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -70,9 +85,9 @@ export const metadata: Metadata = {
     images: [
       {
         url: defaultOgImage,
-        width: 512,
-        height: 512,
-        alt: "Sam Creative Design School logo",
+        width: 1024,
+        height: 1024,
+        alt: "Sam Creative Design School - Online Graphic Design Courses in Kenya",
       },
     ],
     locale: "en_KE",
@@ -102,7 +117,7 @@ export default async function RootLayout({
   const content = await getContentSettings();
 
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body className="antialiased">
         <script
           type="application/ld+json"

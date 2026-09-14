@@ -10,8 +10,9 @@
   --primary-light: #5AB4F0;
   --dark: #0a0f1e;
   --light-gray: #F0F6FF;
-  --font-inter: Inter, Arial, Helvetica, sans-serif;
-  --font-poppins: Poppins, Arial, Helvetica, sans-serif;
+  /* --font-inter and --font-poppins are supplied by next/font in layout.tsx,
+     which loads the real Poppins/Inter font files instead of silently
+     falling back to system fonts. */
 }
 
 body {
