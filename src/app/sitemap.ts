@@ -28,9 +28,11 @@ const routes = [
   "/gallery",
   "/opportunities",
   "/portfolio-builder",
+  "/privacy-policy",
   "/resources",
   "/reviews",
   "/student-portfolios",
+  "/terms-of-service",
   "/tool-setup-guides",
 ];
 

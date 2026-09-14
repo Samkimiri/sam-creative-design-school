@@ -139,10 +139,18 @@ export default async function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/15 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="border-t border-white/15 pt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <p className="text-white/65 text-sm">
             © {year} Sam Creative Design School. All rights reserved.
           </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <Link href="/privacy-policy" className="font-semibold text-white/70 hover:text-primary-light transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms-of-service" className="font-semibold text-white/70 hover:text-primary-light transition-colors">
+              Terms of Service
+            </Link>
+          </div>
           <p className="text-white/55 text-sm font-medium italic">
             Empowering Creatives. Building Professionals.
           </p>
