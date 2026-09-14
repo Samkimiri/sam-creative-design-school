@@ -923,6 +923,58 @@ export default function AdminDashboard() {
     );
   };
 
+  const dedupeEnrollments = async () => {
+    setPendingAction("enrollments-dedupe");
+    setNotice("");
+    try {
+      const preview = await fetchAdminJson<{ duplicateGroupCount: number; recordsToRemove: number }>(
+        "/api/admin/enrollments/dedupe",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password, confirm: false }),
+        }
+      );
+
+      if (!preview.res.ok || !preview.data.success || !preview.data.data) {
+        setNotice(preview.data.message || "Could not check for duplicate enrollments.");
+        return;
+      }
+
+      const { duplicateGroupCount, recordsToRemove } = preview.data.data;
+      if (recordsToRemove === 0) {
+        setNotice("No duplicate enrollments found. Data is already clean.");
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Found ${recordsToRemove} duplicate enrollment record(s) across ${duplicateGroupCount} student/course pair(s). ` +
+        `For each pair, the best record (confirmed over pending, real M-Pesa receipt over none, most recent as a tiebreaker) is kept and the rest are permanently deleted. This cannot be undone. Continue?`
+      );
+      if (!confirmed) return;
+
+      const apply = await fetchAdminJson<{ recordsToRemove: number }>("/api/admin/enrollments/dedupe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, confirm: true }),
+      });
+
+      if (!apply.res.ok || !apply.data.success || !apply.data.data) {
+        setNotice(apply.data.message || "Could not remove duplicate enrollments.");
+        return;
+      }
+
+      setNotice(`Removed ${apply.data.data.recordsToRemove} duplicate enrollment record(s). Data is now clean.`);
+      await refreshEnrollments(password);
+    } catch (err) {
+      setNotice(err instanceof DOMException && err.name === "AbortError"
+        ? "The clean-up took too long. Please try again."
+        : "Could not clean up duplicate enrollments. Check your connection and try again.");
+    } finally {
+      setPendingAction("");
+    }
+  };
+
   const setStudentRole = async (studentId: string, role: "admin" | "staff" | "student", studentName: string) => {
     const confirmed = window.confirm(
       role === "student"
@@ -1747,14 +1799,24 @@ export default function AdminDashboard() {
                       : "Auto-sync starts when this tab opens."}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void refreshEnrollments(password)}
-                  disabled={enrollmentsLoading}
-                  className={`shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
-                >
-                  {enrollmentsLoading ? "Checking..." : "Refresh Enrollments"}
-                </button>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void dedupeEnrollments()}
+                    disabled={pendingAction === "enrollments-dedupe"}
+                    className={`rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700 disabled:opacity-50 ${adminActionMotion}`}
+                  >
+                    {pendingAction === "enrollments-dedupe" ? "Checking..." : "Clean Up Duplicates"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void refreshEnrollments(password)}
+                    disabled={enrollmentsLoading}
+                    className={`rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
+                  >
+                    {enrollmentsLoading ? "Checking..." : "Refresh Enrollments"}
+                  </button>
+                </div>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-6 py-4">
                 <input
