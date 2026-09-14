@@ -25,24 +25,43 @@ function courseIdsFromEnrollment(enrollment: Pick<Enrollment, "courseId">) {
     .filter(Boolean);
 }
 
-export function enrollmentMatchesStudent(enrollment: Enrollment, student: Student) {
+/**
+ * Phone numbers aren't enforced unique at registration (e.g. a shared family
+ * or business phone across siblings/staff), so matching an enrollment to a
+ * student by phone alone is only trusted when exactly one student in the
+ * system has that number - otherwise a shared phone could misdeliver one
+ * person's paid course access to someone else who happens to share it.
+ */
+function isPhoneMatchUnambiguous(allStudents: Student[], phone: string) {
+  if (!phone) return false;
+  return allStudents.filter((student) => normalizePhone(student.phone) === phone).length === 1;
+}
+
+export function enrollmentMatchesStudent(enrollment: Enrollment, student: Student, allStudents?: Student[]) {
   const enrollmentStudentId = normalizeId(enrollment.studentId);
   const studentId = normalizeId(student.id);
   const enrollmentEmail = normalizeEmail(enrollment.studentEmail);
   const studentEmail = normalizeEmail(student.email);
+
+  if (enrollmentStudentId && enrollmentStudentId !== "guest" && studentId && enrollmentStudentId === studentId) {
+    return true;
+  }
+  if (enrollmentEmail && studentEmail && enrollmentEmail === studentEmail) {
+    return true;
+  }
+
   const enrollmentPhone = normalizePhone(enrollment.phone);
   const studentPhone = normalizePhone(student.phone);
+  if (enrollmentPhone && studentPhone && enrollmentPhone === studentPhone && allStudents) {
+    return isPhoneMatchUnambiguous(allStudents, enrollmentPhone);
+  }
 
-  return Boolean(
-    (enrollmentStudentId && enrollmentStudentId !== "guest" && studentId && enrollmentStudentId === studentId) ||
-      (enrollmentEmail && studentEmail && enrollmentEmail === studentEmail) ||
-      (enrollmentPhone && studentPhone && enrollmentPhone === studentPhone)
-  );
+  return false;
 }
 
 export async function grantEnrollmentAccess(enrollment: Enrollment) {
   const students = await getDB<Student>("students.json");
-  const studentIndex = students.findIndex((student) => enrollmentMatchesStudent(enrollment, student));
+  const studentIndex = students.findIndex((student) => enrollmentMatchesStudent(enrollment, student, students));
 
   if (studentIndex === -1) {
     return { granted: false, student: null, addedCourses: [] as string[] };
@@ -67,12 +86,12 @@ export async function grantEnrollmentAccess(enrollment: Enrollment) {
 
 export async function findStudentForEnrollment(enrollment: Enrollment) {
   const students = await getDB<Student>("students.json");
-  return students.find((student) => enrollmentMatchesStudent(enrollment, student)) ?? null;
+  return students.find((student) => enrollmentMatchesStudent(enrollment, student, students)) ?? null;
 }
 
 export async function revokeEnrollmentAccess(enrollment: Enrollment) {
   const students = await getDB<Student>("students.json");
-  const studentIndex = students.findIndex((student) => enrollmentMatchesStudent(enrollment, student));
+  const studentIndex = students.findIndex((student) => enrollmentMatchesStudent(enrollment, student, students));
 
   if (studentIndex === -1) {
     return { revoked: false, student: null, removedCourses: [] as string[] };
@@ -97,8 +116,10 @@ export async function revokeEnrollmentAccess(enrollment: Enrollment) {
 
 export async function getConfirmedEnrollmentCourseIdsForStudent(student: Student) {
   let enrollments: Enrollment[] = [];
+  let allStudents: Student[] = [student];
   try {
     enrollments = await getDB<Enrollment>("enrollments.json");
+    allStudents = await getDB<Student>("students.json");
   } catch (error) {
     console.error("Confirmed enrollment lookup failed; using saved student courses only:", error);
     return [];
@@ -107,7 +128,7 @@ export async function getConfirmedEnrollmentCourseIdsForStudent(student: Student
   const courseIds = new Set<string>();
 
   for (const enrollment of enrollments) {
-    if (enrollment.status !== "confirmed" || !enrollmentMatchesStudent(enrollment, student)) continue;
+    if (enrollment.status !== "confirmed" || !enrollmentMatchesStudent(enrollment, student, allStudents)) continue;
     for (const courseId of courseIdsFromEnrollment(enrollment)) {
       courseIds.add(courseId);
     }
@@ -174,7 +195,7 @@ export async function backfillLegacyEnrollments(enrollments: Enrollment[]): Prom
     for (const courseId of student.enrolledCourses ?? []) {
       const alreadyTracked = enrollments.some(
         (enrollment) =>
-          enrollmentMatchesStudent(enrollment, student) && courseIdsFromEnrollment(enrollment).includes(courseId)
+          enrollmentMatchesStudent(enrollment, student, students) && courseIdsFromEnrollment(enrollment).includes(courseId)
       );
       if (alreadyTracked) continue;
 

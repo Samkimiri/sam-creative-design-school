@@ -61,8 +61,8 @@ const STATUS_RANK: Record<string, number> = {
  */
 function pickRecordToKeep(records: Enrollment[], students: Student[]): Enrollment {
   return [...records].sort((a, b) => {
-    const aLinked = Number(students.some((s) => enrollmentMatchesStudent(a, s)));
-    const bLinked = Number(students.some((s) => enrollmentMatchesStudent(b, s)));
+    const aLinked = Number(students.some((s) => enrollmentMatchesStudent(a, s, students)));
+    const bLinked = Number(students.some((s) => enrollmentMatchesStudent(b, s, students)));
     if (aLinked !== bLinked) return bLinked - aLinked;
 
     const rankDiff = (STATUS_RANK[b.status] ?? 0) - (STATUS_RANK[a.status] ?? 0);
