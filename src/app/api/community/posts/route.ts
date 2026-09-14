@@ -7,6 +7,7 @@ import {
   isWithinCooldown,
   POST_COOLDOWN_MS,
   purgeExpiredTrash,
+  resolveMentions,
   summarizeReactions,
   TRASH_RETENTION_MS,
   type CommunityComment,
@@ -123,6 +124,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "You're posting too fast. Give it a moment." }, { status: 429 });
     }
 
+    const roster = students.map((item) => ({ id: item.id, name: item.name }));
+    const mentionIds = bodyText ? resolveMentions(bodyText, roster).filter((id) => id !== student.id) : [];
+
     const post: CommunityPost = {
       id: `POST-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       studentId: student.id,
@@ -133,6 +137,7 @@ export async function POST(request: Request) {
       title: title || undefined,
       body: bodyText || undefined,
       imageUrl: imageUrl || undefined,
+      mentionIds: mentionIds.length > 0 ? mentionIds : undefined,
       createdAt: new Date().toISOString(),
     };
 
@@ -198,11 +203,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, message: RESPECT_MESSAGE }, { status: 400 });
     }
 
+    const students = await getDB<Student>("students.json");
+    const roster = students.map((item) => ({ id: item.id, name: item.name }));
+    const mentionIds = bodyText ? resolveMentions(bodyText, roster).filter((id) => id !== post.studentId) : [];
+
     const edited: CommunityPost = {
       ...post,
       title: title || undefined,
       body: bodyText || undefined,
       imageUrl: imageUrl || undefined,
+      mentionIds: mentionIds.length > 0 ? mentionIds : undefined,
       editedAt: new Date().toISOString(),
     };
     await upsertDBRecord("community-posts.json", edited);

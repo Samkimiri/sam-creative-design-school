@@ -1,21 +1,23 @@
 import { NextResponse } from "next/server";
 import { getDB, upsertDBRecord } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getUnreadSummary, type CommunityBlock, type CommunityMessage } from "@/lib/community";
+import { getUnreadSummary, type CommunityBlock, type CommunityComment, type CommunityMessage, type CommunityPost } from "@/lib/community";
 import type { Student } from "@/types";
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 
-  const [messages, blocks, students] = await Promise.all([
+  const [messages, blocks, students, comments, posts] = await Promise.all([
     getDB<CommunityMessage>("community-messages.json"),
     getDB<CommunityBlock>("community-blocks.json"),
     getDB<Student>("students.json"),
+    getDB<CommunityComment>("community-post-comments.json"),
+    getDB<CommunityPost>("community-posts.json"),
   ]);
 
   const student = students.find((item) => item.id === session.user.id);
-  const summary = getUnreadSummary(messages, blocks, session.user.id, student?.communityLastSeenAt);
+  const summary = getUnreadSummary(messages, blocks, session.user.id, student?.communityLastSeenAt, comments, posts);
 
   return NextResponse.json(
     { success: true, data: summary },

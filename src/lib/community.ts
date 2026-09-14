@@ -43,15 +43,21 @@ export function isBlockedBy(blocks: CommunityBlock[], blockerId: string, blocked
   return blocks.some((block) => block.blockerId === blockerId && block.blockedId === blockedId);
 }
 
-/** Resolves @FirstName mentions in a message against a roster of known participants. */
+/**
+ * Resolves @FirstName mentions in a message against a roster of known
+ * participants. First names aren't unique (e.g. two students both named
+ * "Martin"), so a token is only resolved when it matches exactly one person -
+ * otherwise picking the first array match would silently notify the wrong
+ * student every time, which is worse than not resolving the mention at all.
+ */
 export function resolveMentions(text: string, roster: { id: string; name: string }[]): string[] {
   const tokens = Array.from(text.matchAll(/@(\w+)/g)).map((match) => match[1].toLowerCase());
   if (tokens.length === 0) return [];
 
   const ids = new Set<string>();
   for (const token of tokens) {
-    const match = roster.find((person) => person.name.trim().split(/\s+/)[0]?.toLowerCase() === token);
-    if (match) ids.add(match.id);
+    const matches = roster.filter((person) => person.name.trim().split(/\s+/)[0]?.toLowerCase() === token);
+    if (matches.length === 1) ids.add(matches[0].id);
   }
   return [...ids];
 }
@@ -127,6 +133,7 @@ export interface CommunityPost {
   title?: string;
   body?: string;
   imageUrl?: string;
+  mentionIds?: string[];
   createdAt: string;
   editedAt?: string;
   deletedAt?: string;
@@ -234,7 +241,9 @@ export function getUnreadSummary(
   messages: CommunityMessage[],
   blocks: CommunityBlock[],
   currentUserId: string,
-  lastSeenAt: string | undefined
+  lastSeenAt: string | undefined,
+  comments: CommunityComment[] = [],
+  posts: CommunityPost[] = []
 ): CommunityNotificationSummary {
   const since = lastSeenAt ? new Date(lastSeenAt).getTime() : 0;
   const scanWindow = messages.length > UNREAD_SCAN_WINDOW ? messages.slice(-UNREAD_SCAN_WINDOW) : messages;
@@ -248,9 +257,23 @@ export function getUnreadSummary(
 
   const sorted = [...relevant].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  // Comments and posts store mentionIds too, but they're a separate feed from chat
+  // messages - they only feed the "you were mentioned" flag here, not the chat
+  // unreadCount/latestMessage, which stay scoped to messages.
+  const isUnreadMention = (item: { studentId: string; deletedAt?: string; createdAt: string; mentionIds?: string[] }) =>
+    !item.deletedAt &&
+    item.studentId !== currentUserId &&
+    new Date(item.createdAt).getTime() > since &&
+    Boolean(item.mentionIds?.includes(currentUserId));
+
+  const hasMention =
+    relevant.some((message) => message.mentionIds?.includes(currentUserId)) ||
+    comments.some(isUnreadMention) ||
+    posts.some(isUnreadMention);
+
   return {
     unreadCount: relevant.length,
-    hasMention: relevant.some((message) => message.mentionIds?.includes(currentUserId)),
+    hasMention,
     hasPrivate: relevant.some((message) => isPrivateMessage(message)),
     latestMessage: sorted[0],
   };
