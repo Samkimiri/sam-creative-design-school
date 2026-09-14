@@ -5,6 +5,12 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    // Several data files store Tailwind class strings (gradient/color
+    // combos for gallery projects, courses, blog cards) that are never
+    // hardcoded anywhere else - without scanning this directory, Tailwind's
+    // JIT compiler drops those classes from the build entirely, so an
+    // element styled with them renders with no color/gradient applied.
+    "./src/data/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
