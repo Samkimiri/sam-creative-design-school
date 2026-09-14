@@ -422,9 +422,21 @@ export async function upsertDBRecord<T extends object>(
 /**
  * The KV/local-file backends store each collection as a single array, so a plain
  * read-modify-write here can lose a concurrent writer's record (last save wins).
- * Supabase and MongoDB upsert a single row/document atomically and don't need this;
- * this path re-reads fresh and retries when another writer clobbered our record.
+ * Supabase and MongoDB upsert a single row/document atomically and don't need this.
+ *
+ * Verifying only "is MY record still there" isn't enough: two requests can each
+ * read the same array, edit different records, and save - whichever saves last
+ * wins outright and silently discards the other's change, even though each
+ * one's own record looks present in its own verify check. Fingerprinting every
+ * OTHER record (not just ours) between read and post-write-verify catches that
+ * case too, so a real collision gets retried against fresh data instead of
+ * silently losing someone else's write.
  */
+function fingerprintOthers<T extends object>(data: T[], idKey: string, excludeId: string): string {
+  const others = data.filter((item) => String((item as Record<string, unknown>)[idKey] || "") !== excludeId);
+  return JSON.stringify(others);
+}
+
 async function upsertIntoArrayStoreWithRetry<T extends object>(
   filename: string,
   record: T,
@@ -436,6 +448,7 @@ async function upsertIntoArrayStoreWithRetry<T extends object>(
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     const data = useLiveRead ? await getDB<T>(filename) : readJSON<T>(filename);
+    const othersFingerprint = fingerprintOthers(data, idKey, recordId);
     const index = data.findIndex((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
     if (index > -1) data[index] = record;
     else data.push(record);
@@ -443,7 +456,8 @@ async function upsertIntoArrayStoreWithRetry<T extends object>(
 
     const verify = useLiveRead ? await getDB<T>(filename) : readJSON<T>(filename);
     const stillPresent = verify.some((item) => String((item as Record<string, unknown>)[idKey] || "") === recordId);
-    if (stillPresent) return;
+    const othersUnchanged = fingerprintOthers(verify, idKey, recordId) === othersFingerprint;
+    if (stillPresent && othersUnchanged) return;
     if (attempt < attempts) await delay(75 + Math.floor(Math.random() * 150));
   }
 
@@ -521,12 +535,14 @@ async function deleteFromArrayStoreWithRetry(
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     const data = useLiveRead ? await getDB<Record<string, unknown>>(filename) : readJSON<Record<string, unknown>>(filename);
+    const othersFingerprint = fingerprintOthers(data, idKey, recordId);
     const next = data.filter((item) => String(item[idKey] || "") !== recordId);
     await saveDB(filename, next);
 
     const verify = useLiveRead ? await getDB<Record<string, unknown>>(filename) : readJSON<Record<string, unknown>>(filename);
     const stillPresent = verify.some((item) => String(item[idKey] || "") === recordId);
-    if (!stillPresent) return;
+    const othersUnchanged = fingerprintOthers(verify, idKey, recordId) === othersFingerprint;
+    if (!stillPresent && othersUnchanged) return;
     if (attempt < attempts) await delay(75 + Math.floor(Math.random() * 150));
   }
 

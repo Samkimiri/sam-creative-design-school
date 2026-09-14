@@ -8,6 +8,12 @@ import PostsFeed from "@/components/community/PostsFeed";
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_MESSAGE_LENGTH = 500;
+// markSeen used to fire on every 5s poll, writing a "seen" timestamp to
+// students.json every time - at 1000 concurrent students that's ~200
+// unnecessary writes/sec just to keep a badge count fresh to the second,
+// which nobody needs. Throttling to once per 30s cuts that ~6x with no
+// perceptible change (the unread badge is still fresh within half a minute).
+const MARK_SEEN_MIN_INTERVAL_MS = 30000;
 
 type CurrentUser = { id: string; role?: string; avatar?: string | null; name?: string } | null;
 type Participant = { id: string; name: string; avatar?: string | null; role?: string };
@@ -117,7 +123,11 @@ export default function CommunityPage() {
       .catch(() => undefined);
   }, []);
 
+  const lastMarkedSeenAtRef = useRef(0);
   const markSeen = useCallback(() => {
+    const now = Date.now();
+    if (now - lastMarkedSeenAtRef.current < MARK_SEEN_MIN_INTERVAL_MS) return;
+    lastMarkedSeenAtRef.current = now;
     fetch("/api/community/notifications", { method: "POST" }).catch(() => undefined);
   }, []);
 
