@@ -746,6 +746,18 @@ export default function AdminDashboard() {
     return () => window.clearInterval(interval);
   }, [authed, password, fetchData, tab]);
 
+  // Finance totals (collected/pending/discounts) come from the same dashboard payload as
+  // students, but are only recomputed server-side on fetch - so without this, an admin
+  // sitting on this tab would keep seeing pre-approval numbers until they left and returned.
+  useEffect(() => {
+    if (!authed || tab !== "finance") return;
+    void fetchData(password, { silent: true });
+    const interval = window.setInterval(() => {
+      void fetchData(password, { silent: true });
+    }, 20000);
+    return () => window.clearInterval(interval);
+  }, [authed, password, fetchData, tab]);
+
   const confirmEnrollment = async (enrollmentId: string) => {
     await runMutation<Enrollment>(
       `enrollment-${enrollmentId}`,
@@ -754,6 +766,7 @@ export default function AdminDashboard() {
       (updated) => {
         setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, ...updated } : e));
         void refreshEnrollments(password);
+        void fetchData(password, { silent: true });
       }
     );
   };
@@ -773,6 +786,7 @@ export default function AdminDashboard() {
       (updated) => {
         setEnrollments((prev) => prev.map((e) => e.id === enrollmentId ? { ...e, ...updated } : e));
         void refreshEnrollments(password);
+        void fetchData(password, { silent: true });
       }
     );
   };
