@@ -1,5 +1,8 @@
-import { NextResponse } from "next/server";
-import { appendDBRecord } from "@/lib/db";
+import { NextResponse, after } from "next/server";
+import { appendDBRecord, getDB } from "@/lib/db";
+import { sendAdminContactMessageAlertEmail } from "@/lib/email";
+import { absoluteUrl } from "@/lib/seo";
+import type { Student } from "@/types";
 
 interface ContactMessage {
   id: string;
@@ -48,6 +51,23 @@ export async function POST(request: Request) {
     };
 
     await appendDBRecord("messages.json", newMessage);
+
+    const students = await getDB<Student>("students.json").catch(() => [] as Student[]);
+    const adminAlertEmail = process.env.SCDS_ADMIN_ALERT_EMAIL
+      || students.find((s) => s.role === "admin")?.email
+      || process.env.SCDS_EMAIL_REPLY_TO;
+    if (adminAlertEmail) {
+      after(() =>
+        sendAdminContactMessageAlertEmail({
+          to: adminAlertEmail,
+          name,
+          email,
+          subject,
+          message,
+          adminUrl: absoluteUrl("/admin"),
+        }).catch(() => {})
+      );
+    }
 
     return NextResponse.json({
       success: true,

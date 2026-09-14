@@ -149,6 +149,16 @@ interface AdminReview {
   createdAt: string;
 }
 
+interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  date: string;
+  status: "unread" | "read";
+}
+
 interface AdminProject {
   id: string;
   studentName: string;
@@ -224,7 +234,7 @@ interface AdminDashboardPayload {
   };
 }
 
-type AdminTab = "analytics" | "enrollments" | "finance" | "students" | "admins" | "community" | "reviews" | "projects" | "assignments" | "certificates" | "discounts" | "settings" | "content" | "blog";
+type AdminTab = "analytics" | "enrollments" | "finance" | "students" | "admins" | "community" | "reviews" | "projects" | "assignments" | "certificates" | "discounts" | "settings" | "content" | "blog" | "messages";
 
 type AdminResponse<T> = {
   success?: boolean;
@@ -237,10 +247,10 @@ type AdminResponse<T> = {
   actorRole?: "admin" | "staff";
 };
 
-const adminTabs: AdminTab[] = ["analytics", "enrollments", "finance", "students", "admins", "community", "reviews", "projects", "assignments", "certificates", "discounts", "settings", "content", "blog"];
+const adminTabs: AdminTab[] = ["analytics", "enrollments", "finance", "students", "admins", "community", "reviews", "projects", "assignments", "certificates", "discounts", "settings", "content", "blog", "messages"];
 // Staff accounts are limited to day-to-day moderation/grading tabs - everything
 // financial, account-level, or content/marketing-related requires full admin.
-const STAFF_TABS: AdminTab[] = ["community", "reviews", "projects", "assignments", "certificates"];
+const STAFF_TABS: AdminTab[] = ["community", "reviews", "projects", "assignments", "certificates", "messages"];
 const defaultIntakeSettings: UpcomingIntakeSettings = {
   id: "upcoming-intake",
   title: "Join the Next SCDS Class",
@@ -472,6 +482,8 @@ export default function AdminDashboard() {
   const [myRole, setMyRole] = useState<"admin" | "staff">("admin");
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [contactMessagesLoading, setContactMessagesLoading] = useState(false);
   const [blogLoading, setBlogLoading] = useState(false);
   const [blogForm, setBlogForm] = useState({ id: "", title: "", category: "", excerpt: "", image: "", tags: "", body: "" });
   const [blogSaving, setBlogSaving] = useState(false);
@@ -1016,6 +1028,27 @@ export default function AdminDashboard() {
     void loadAuditLog(password);
   }, [authed, password, tab, myRole, loadAuditLog]);
 
+  const loadContactMessages = useCallback(async (pw?: string) => {
+    setContactMessagesLoading(true);
+    try {
+      const { res, data } = await fetchAdminJson<ContactMessage[]>("/api/admin/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pw ? { password: pw } : {}),
+      });
+      if (res.ok && data.success && Array.isArray(data.data)) setContactMessages(data.data);
+    } catch {
+      // Non-critical - the messages panel just stays stale.
+    } finally {
+      setContactMessagesLoading(false);
+    }
+  }, [fetchAdminJson]);
+
+  useEffect(() => {
+    if (!authed || tab !== "messages") return;
+    void loadContactMessages(password);
+  }, [authed, password, tab, loadContactMessages]);
+
   const loadBlogPosts = useCallback(async (pw?: string) => {
     setBlogLoading(true);
     try {
@@ -1177,6 +1210,37 @@ export default function AdminDashboard() {
       () => setCourseFeedback((prev) => prev.filter((f) => f.id !== id)),
       "DELETE"
     );
+  };
+
+  const setMessageStatus = async (id: string, status: "read" | "unread") => {
+    await runMutation<ContactMessage>(
+      `message-${id}`,
+      "/api/admin/messages",
+      { password, id, status },
+      (updated) => setContactMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...updated } : m)))
+    );
+  };
+
+  const deleteMessage = async (id: string, name: string) => {
+    if (!window.confirm(`Delete the message from ${name}? This cannot be undone.`)) return;
+    setPendingAction(`message-delete-${id}`);
+    setNotice("");
+    try {
+      const { res, data } = await fetchAdminJson<null>("/api/admin/messages", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, id }),
+      });
+      if (!res.ok || !data.success) {
+        setNotice(data.message || "Could not delete message. Try again.");
+        return;
+      }
+      setContactMessages((prev) => prev.filter((m) => m.id !== id));
+    } catch {
+      setNotice("Could not delete message. Check your connection and try again.");
+    } finally {
+      setPendingAction("");
+    }
   };
 
   const setReviewApproval = async (id: string, approved: boolean) => {
@@ -3002,6 +3066,69 @@ export default function AdminDashboard() {
             </div>
           );
         })()}
+
+        {tab === "messages" && (
+          <div key="messages-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-6 py-4">
+              <div>
+                <h3 className="font-bold text-dark">Contact Messages</h3>
+                <p className="text-xs text-gray-500 mt-1">Messages submitted through the website&apos;s contact form. An email alert is also sent when a new one arrives, if configured.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void loadContactMessages(password)}
+                disabled={contactMessagesLoading}
+                className={`shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
+              >
+                {contactMessagesLoading ? "Checking..." : "Refresh"}
+              </button>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {contactMessages.length === 0 ? (
+                <div className="py-12 text-center text-gray-400">
+                  {contactMessagesLoading ? "Checking..." : "No contact messages yet."}
+                </div>
+              ) : (
+                contactMessages.map((msg) => (
+                  <div key={msg.id} className={`px-6 py-5 ${msg.status === "unread" ? "bg-primary/5" : ""}`}>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="font-bold text-dark">{msg.name}</h4>
+                          <a href={`mailto:${msg.email}`} className="text-xs font-semibold text-primary hover:underline">{msg.email}</a>
+                          {msg.status === "unread" && (
+                            <span className="rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-white">New</span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-sm font-bold text-dark">{msg.subject}</p>
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600">{msg.message}</p>
+                        <p className="mt-3 text-xs text-gray-400">{new Date(msg.date).toLocaleString()}</p>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void setMessageStatus(msg.id, msg.status === "unread" ? "read" : "unread")}
+                          disabled={pendingAction === `message-${msg.id}`}
+                          className={`rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-dark disabled:opacity-50 ${adminActionMotion}`}
+                        >
+                          {msg.status === "unread" ? "Mark Read" : "Mark Unread"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteMessage(msg.id, msg.name)}
+                          disabled={pendingAction === `message-delete-${msg.id}`}
+                          className={`rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50 ${adminActionMotion}`}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {tab === "reviews" && (
           <div key="reviews-panel" className={`admin-tab-panel bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${adminPanelMotion}`}>

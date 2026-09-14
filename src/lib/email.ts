@@ -508,6 +508,49 @@ function adminNewEnrollmentAlertHtml(input: SendAdminNewEnrollmentAlertEmailInpu
   `);
 }
 
+interface SendAdminContactMessageAlertEmailInput {
+  to: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  adminUrl: string;
+}
+
+export async function sendAdminContactMessageAlertEmail(input: SendAdminContactMessageAlertEmailInput) {
+  return sendTransactionalEmail({
+    to: input.to,
+    subject: `New contact message: ${input.subject}`,
+    html: adminContactMessageAlertHtml(input),
+    text: adminContactMessageAlertText(input),
+  });
+}
+
+function adminContactMessageAlertText(input: SendAdminContactMessageAlertEmailInput) {
+  return [
+    `New message from the website contact form.`,
+    `From: ${input.name} <${input.email}>`,
+    `Subject: ${input.subject}`,
+    "",
+    input.message,
+    "",
+    "View and reply in the admin dashboard:",
+    input.adminUrl,
+    "",
+    "Sam Creative Design School",
+  ].join("\n");
+}
+
+function adminContactMessageAlertHtml(input: SendAdminContactMessageAlertEmailInput) {
+  return emailShell(`
+    <h1 style="margin:0 0 12px;font-size:24px;color:#050914">New contact message</h1>
+    <p><strong>${escapeHtml(input.name)}</strong> (${escapeHtml(input.email)}) sent a message via the website contact form.</p>
+    <p style="color:#374151"><strong>${escapeHtml(input.subject)}</strong></p>
+    <p style="background:#F3F4F6;border-radius:12px;padding:16px;color:#111827;white-space:pre-wrap">${escapeHtml(input.message)}</p>
+    ${emailButton("View in Admin Dashboard", input.adminUrl)}
+  `);
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
