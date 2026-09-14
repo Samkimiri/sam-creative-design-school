@@ -248,17 +248,20 @@ export default function CoursePlayer() {
 
   useEffect(() => { loadVideoProgress(); }, [loadVideoProgress]);
 
-  const reportVideoProgress = useCallback((lessonId: string, positionSeconds: number, durationSeconds: number) => {
+  const reportVideoProgress = useCallback((lessonId: string, positionSeconds: number, durationSeconds: number, isReset: boolean) => {
     setVideoPositions((current) => {
       const next = { ...(current ?? {}), [lessonId]: positionSeconds };
       writeLocalVideoProgress(next);
       return next;
     });
 
+    // force=false lets the backend refuse to move the saved position backward -
+    // without that, a second tab open on the same lesson (further behind) would
+    // silently undo real progress made in another tab on its next periodic report.
     fetch("/api/video-progress", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ courseId, lessonId, positionSeconds, durationSeconds }),
+      body: JSON.stringify({ courseId, lessonId, positionSeconds, durationSeconds, force: isReset }),
     }).catch(() => {
       // Local copy is already saved; the next tick will retry the sync.
     });

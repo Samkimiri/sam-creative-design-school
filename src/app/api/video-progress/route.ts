@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, upsertDBRecord } from "@/lib/db";
+import { getDB, getDBRecord, upsertDBRecord } from "@/lib/db";
 import { courses, lessons } from "@/data/courses";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
     const lessonId = typeof body.lessonId === "string" ? body.lessonId : "";
     const rawPosition = Number(body.positionSeconds);
     const rawDuration = Number(body.durationSeconds);
+    const force = body.force === true;
 
     if (!courseId || !lessonId || !Number.isFinite(rawPosition) || rawPosition < 0) {
       return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
@@ -73,10 +74,26 @@ export async function POST(request: Request) {
     }
 
     const durationSeconds = Number.isFinite(rawDuration) && rawDuration > 0 ? rawDuration : undefined;
-    const positionSeconds = durationSeconds ? Math.min(rawPosition, durationSeconds) : rawPosition;
+    const cappedPosition = durationSeconds ? Math.min(rawPosition, durationSeconds) : rawPosition;
+
+    const recordId = `${session.user.id}__${lessonId}`;
+
+    // Two tabs open on the same lesson both report periodically while playing;
+    // whichever fires last would otherwise win outright, silently rewinding
+    // the saved resume position if the other tab had actually progressed
+    // further. Only an explicit reset (restart, or the video ending) is
+    // allowed to move the position backward - every other report can only
+    // advance it, using the furthest point reached across all tabs.
+    let positionSeconds = cappedPosition;
+    if (!force) {
+      const existing = await getDBRecord<VideoProgressRecord>("video-progress.json", recordId);
+      if (existing && existing.positionSeconds > positionSeconds) {
+        positionSeconds = existing.positionSeconds;
+      }
+    }
 
     const record: VideoProgressRecord = {
-      id: `${session.user.id}__${lessonId}`,
+      id: recordId,
       studentId: session.user.id as string,
       courseId,
       lessonId,

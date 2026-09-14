@@ -81,7 +81,16 @@ interface LessonVideoPlayerProps {
   videoUrl: string;
   /** null means "not loaded yet" - resume seeking waits for a real value. */
   initialPositionSeconds: number | null;
-  onProgress: (lessonId: string, positionSeconds: number, durationSeconds: number) => void;
+  /**
+   * isReset is true only for an explicit restart/end-of-video reset to 0 -
+   * everything else (periodic reports while playing, pause, unmount) is
+   * false. The backend uses this to distinguish "the user deliberately
+   * restarted" from an ordinary progress tick, since ordinary ticks must
+   * never move the saved resume position backward (a second tab open on
+   * the same lesson, further behind, would otherwise silently undo real
+   * progress made in another tab).
+   */
+  onProgress: (lessonId: string, positionSeconds: number, durationSeconds: number, isReset: boolean) => void;
 }
 
 const LessonVideoPlayer = forwardRef<LessonVideoPlayerHandle, LessonVideoPlayerProps>(function LessonVideoPlayer(
@@ -110,7 +119,7 @@ const LessonVideoPlayer = forwardRef<LessonVideoPlayerHandle, LessonVideoPlayerP
     const currentTime = player.getCurrentTime();
     const duration = player.getDuration();
     if (Number.isFinite(currentTime) && currentTime >= 0) {
-      onProgressRef.current(lessonId, currentTime, Number.isFinite(duration) ? duration : 0);
+      onProgressRef.current(lessonId, currentTime, Number.isFinite(duration) ? duration : 0, false);
     }
   };
 
@@ -130,7 +139,7 @@ const LessonVideoPlayer = forwardRef<LessonVideoPlayerHandle, LessonVideoPlayerP
       const player = playerRef.current;
       if (!player) return;
       player.seekTo(0, true);
-      onProgressRef.current(lessonId, 0, player.getDuration() || 0);
+      onProgressRef.current(lessonId, 0, player.getDuration() || 0, true);
     },
   }), [lessonId]);
 
@@ -163,7 +172,7 @@ const LessonVideoPlayer = forwardRef<LessonVideoPlayerHandle, LessonVideoPlayerP
               reportProgress();
             } else if (event.data === state.ENDED) {
               stopPolling();
-              onProgressRef.current(lessonId, 0, playerRef.current?.getDuration() || 0);
+              onProgressRef.current(lessonId, 0, playerRef.current?.getDuration() || 0, true);
             }
           },
         },
