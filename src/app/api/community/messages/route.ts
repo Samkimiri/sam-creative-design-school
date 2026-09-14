@@ -18,6 +18,17 @@ import type { Student } from "@/types";
 
 const MAX_MESSAGE_LENGTH = 500;
 const RESPECT_MESSAGE = "That message isn't allowed here. Keep the community respectful.";
+// The public feed and a DM thread are both polled every 5s while their view is open, and
+// neither the full public log nor a single conversation's full history is useful to render
+// at once - capping to the most recent window keeps both the response payload and the
+// server-side filter/sort work bounded no matter how long the platform or a conversation
+// has been running.
+const MAX_VISIBLE_MESSAGES = 200;
+// dmList scans every private message ever sent (across every conversation) to find each
+// partner's most recent message - bounding the scan window keeps that cheap as history
+// grows; a partner whose most recent DM falls outside the window simply won't show until
+// they message again, which is an acceptable tradeoff for a "recent conversations" list.
+const DM_LIST_SCAN_WINDOW = 2000;
 
 function buildReplyPreview(original: CommunityMessage | undefined) {
   if (!original) return undefined;
@@ -52,7 +63,8 @@ export async function GET(request: Request) {
   }
 
   if (view === "dmList") {
-    const myPrivate = kept.filter(
+    const scanWindow = kept.length > DM_LIST_SCAN_WINDOW ? kept.slice(-DM_LIST_SCAN_WINDOW) : kept;
+    const myPrivate = scanWindow.filter(
       (message) => !message.deletedAt && isPrivateMessage(message) &&
         (message.studentId === session.user.id || message.recipientId === session.user.id)
     );
@@ -84,7 +96,8 @@ export async function GET(request: Request) {
           ((message.studentId === session.user.id && message.recipientId === withId) ||
             (message.studentId === withId && message.recipientId === session.user.id))
       )
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      .slice(-MAX_VISIBLE_MESSAGES);
     return NextResponse.json({ success: true, data: thread });
   }
 
@@ -92,7 +105,7 @@ export async function GET(request: Request) {
   const visible = kept
     .filter((message) => !message.deletedAt && !isPrivateMessage(message) && !myBlocks.includes(message.studentId))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .slice(-200);
+    .slice(-MAX_VISIBLE_MESSAGES);
 
   return NextResponse.json({ success: true, data: visible });
 }

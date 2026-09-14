@@ -220,6 +220,16 @@ export interface CommunityNotificationSummary {
   latestMessage?: CommunityMessage;
 }
 
+// The unread badge is polled every 20s from every logged-in page (not just the
+// community page), so its message scan is the single most-repeated read in the
+// app. Scanning the platform's entire lifetime message history on every poll
+// gets slower forever as the community grows. A badge only needs to know
+// "are there unread messages" (and which is latest) - it doesn't need an exact
+// count once someone is hundreds of messages behind, so bounding the scan to
+// the most recent window keeps this cheap indefinitely with no visible change
+// for any realistic amount of actual unread messages.
+const UNREAD_SCAN_WINDOW = 1000;
+
 export function getUnreadSummary(
   messages: CommunityMessage[],
   blocks: CommunityBlock[],
@@ -227,8 +237,9 @@ export function getUnreadSummary(
   lastSeenAt: string | undefined
 ): CommunityNotificationSummary {
   const since = lastSeenAt ? new Date(lastSeenAt).getTime() : 0;
+  const scanWindow = messages.length > UNREAD_SCAN_WINDOW ? messages.slice(-UNREAD_SCAN_WINDOW) : messages;
 
-  const relevant = messages.filter((message) => {
+  const relevant = scanWindow.filter((message) => {
     if (message.deletedAt || message.studentId === currentUserId) return false;
     if (new Date(message.createdAt).getTime() <= since) return false;
     if (isPrivateMessage(message)) return message.recipientId === currentUserId;
