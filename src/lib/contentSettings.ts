@@ -1,6 +1,30 @@
 import { courses, lessons } from "@/data/courses";
 import { getDBRecord, upsertDBRecord } from "@/lib/db";
-import type { ContentSettings, FAQSection } from "@/types";
+import type { AboutContentSettings, ContentSettings, FAQSection } from "@/types";
+
+export const defaultAboutContent: AboutContentSettings = {
+  eyebrow: "Our Story",
+  title: "Empowering Creatives Through Excellence",
+  storyParagraphs: [
+    "SCDS (Sam Creative Design School) was founded with a single mission: to bridge the gap between academic theory and practical, industry-level creative skills.",
+    "We believe that everyone has a creative spark, and with the right tools, mentorship, and practical projects, that spark can be turned into a professional career that pays.",
+  ],
+  mission: "Being Exceptional, Strategic, and Realistic",
+  vision: "To be East Africa's leading digital school for creative and technical skills, known for turning beginners into industry-ready professionals through practical, mentor-led training.",
+  coreValues: [
+    { title: "Practical First", description: "Every lesson builds toward a real, portfolio-ready project - not just theory." },
+    { title: "Accessible Learning", description: "Flexible online classes and LMS access so students can learn from anywhere in Kenya." },
+    { title: "Mentorship", description: "Direct WhatsApp and Zoom support from instructors, not just pre-recorded videos." },
+    { title: "Integrity", description: "Honest pricing, real certificates, and transparent progress tracking for every student." },
+  ],
+  yearsExperience: "5+",
+  instructorName: "Samuel Kimiri",
+  instructorRole: "Founder of SCDS | Instructor",
+  instructorBio: "Samuel is the Founder and Lead Instructor at Sam Creative Design School (SCDS). He is a multi-talented professional with a background in both Engineering and Creative Design. With years of experience in industry-level design work and technical engineering projects, he brings a unique perspective to training-focusing on precision, strategy, and real-world application.",
+  instructorImage: "/images/samuel.png",
+  boardCtaTitle: "Join Our Board of Management",
+  boardCtaText: "We are looking for visionary leaders, industry experts, and passionate individuals to help shape the future of creative education at SCDS. If you share our mission, we would love to connect with you.",
+};
 
 export const defaultFAQs: FAQSection[] = [
   {
@@ -99,6 +123,7 @@ export const defaultContentSettings: ContentSettings = {
       },
     ],
   },
+  about: defaultAboutContent,
   courses: [],
   lessons: [],
   faqs: defaultFAQs,
@@ -141,6 +166,11 @@ export async function getManagedLessons() {
 export async function getManagedFAQs() {
   const settings = await getContentSettings();
   return settings.faqs.length ? settings.faqs : defaultFAQs;
+}
+
+export async function getManagedAbout() {
+  const settings = await getContentSettings();
+  return settings.about;
 }
 
 export function mergeCourses(settings: ContentSettings) {
@@ -217,6 +247,7 @@ function normalizeContentSettings(input?: Partial<ContentSettings> | null): Cont
       learningBundle: normalizeLearningBundle(input?.homepage?.learningBundle),
       toolStacks: normalizeToolStacks(input?.homepage?.toolStacks),
     },
+    about: normalizeAboutContent(input?.about),
     courses: Array.isArray(input?.courses) ? input.courses.map((course) => ({
       ...course,
       id: String(course.id || ""),
@@ -246,6 +277,42 @@ function normalizeFAQs(faqs: unknown): FAQSection[] {
   })).filter((section) => section.category && section.items.length);
 
   return normalized.length ? normalized : defaultFAQs;
+}
+
+function normalizeAboutContent(input: unknown): AboutContentSettings {
+  const record = (input && typeof input === "object" ? input : {}) as Partial<AboutContentSettings>;
+
+  const storyParagraphs = Array.isArray(record.storyParagraphs)
+    ? record.storyParagraphs.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+
+  const coreValues = Array.isArray(record.coreValues)
+    ? record.coreValues
+        .map((item) => {
+          const value = item as Record<string, unknown>;
+          return {
+            title: String(value?.title || "").trim(),
+            description: String(value?.description || "").trim(),
+          };
+        })
+        .filter((item) => item.title && item.description)
+    : [];
+
+  return {
+    eyebrow: String(record.eyebrow || "").trim() || defaultAboutContent.eyebrow,
+    title: String(record.title || "").trim() || defaultAboutContent.title,
+    storyParagraphs: storyParagraphs.length ? storyParagraphs : defaultAboutContent.storyParagraphs,
+    mission: String(record.mission || "").trim() || defaultAboutContent.mission,
+    vision: String(record.vision || "").trim() || defaultAboutContent.vision,
+    coreValues: coreValues.length ? coreValues : defaultAboutContent.coreValues,
+    yearsExperience: String(record.yearsExperience || "").trim() || defaultAboutContent.yearsExperience,
+    instructorName: String(record.instructorName || "").trim() || defaultAboutContent.instructorName,
+    instructorRole: String(record.instructorRole || "").trim() || defaultAboutContent.instructorRole,
+    instructorBio: String(record.instructorBio || "").trim() || defaultAboutContent.instructorBio,
+    instructorImage: String(record.instructorImage || "").trim() || defaultAboutContent.instructorImage,
+    boardCtaTitle: String(record.boardCtaTitle || "").trim() || defaultAboutContent.boardCtaTitle,
+    boardCtaText: String(record.boardCtaText || "").trim() || defaultAboutContent.boardCtaText,
+  };
 }
 
 function normalizeStats(stats: unknown) {

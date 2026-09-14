@@ -232,6 +232,22 @@ export interface HomepageContentSettings {
   toolStacks: { title: string; note: string; tools: string[] }[];
 }
 
+export interface AboutContentSettings {
+  eyebrow: string;
+  title: string;
+  storyParagraphs: string[];
+  mission: string;
+  vision: string;
+  coreValues: { title: string; description: string }[];
+  yearsExperience: string;
+  instructorName: string;
+  instructorRole: string;
+  instructorBio: string;
+  instructorImage: string;
+  boardCtaTitle: string;
+  boardCtaText: string;
+}
+
 export interface CourseContentOverride {
   id: string;
   title?: string;
@@ -266,6 +282,7 @@ export interface LessonContentOverride {
 export interface ContentSettings {
   id: "content-manager";
   homepage: HomepageContentSettings;
+  about: AboutContentSettings;
   courses: CourseContentOverride[];
   lessons: LessonContentOverride[];
   faqs: FAQSection[];

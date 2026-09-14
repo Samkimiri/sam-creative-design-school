@@ -89,6 +89,41 @@
         }
       ]
     },
+    "about": {
+      "eyebrow": "Our Story",
+      "title": "Empowering Creatives Through Excellence",
+      "storyParagraphs": [
+        "SCDS (Sam Creative Design School) was founded with a single mission: to bridge the gap between academic theory and practical, industry-level creative skills.",
+        "We believe that everyone has a creative spark, and with the right tools, mentorship, and practical projects, that spark can be turned into a professional career that pays."
+      ],
+      "mission": "Being Exceptional, Strategic, and Realistic",
+      "vision": "To be East Africa's leading digital school for creative and technical skills, known for turning beginners into industry-ready professionals through practical, mentor-led training.",
+      "coreValues": [
+        {
+          "title": "Practical First",
+          "description": "Every lesson builds toward a real, portfolio-ready project - not just theory."
+        },
+        {
+          "title": "Accessible Learning",
+          "description": "Flexible online classes and LMS access so students can learn from anywhere in Kenya."
+        },
+        {
+          "title": "Mentorship",
+          "description": "Direct WhatsApp and Zoom support from instructors, not just pre-recorded videos."
+        },
+        {
+          "title": "Integrity",
+          "description": "Honest pricing, real certificates, and transparent progress tracking for every student."
+        }
+      ],
+      "yearsExperience": "5+",
+      "instructorName": "Samuel Kimiri",
+      "instructorRole": "Founder of SCDS | Instructor",
+      "instructorBio": "Samuel is the Founder and Lead Instructor at Sam Creative Design School (SCDS). He is a multi-talented professional with a background in both Engineering and Creative Design. With years of experience in industry-level design work and technical engineering projects, he brings a unique perspective to training-focusing on precision, strategy, and real-world application.",
+      "instructorImage": "/images/samuel.png",
+      "boardCtaTitle": "Join Our Board of Management",
+      "boardCtaText": "We are looking for visionary leaders, industry experts, and passionate individuals to help shape the future of creative education at SCDS. If you share our mission, we would love to connect with you."
+    },
     "courses": [],
     "lessons": [],
     "faqs": [
@@ -144,6 +179,6 @@
         ]
       }
     ],
-    "updatedAt": "2026-08-31T14:37:43.842Z"
+    "updatedAt": "2026-09-14T08:17:24.212Z"
   }
 ]

@@ -301,6 +301,25 @@ const defaultContentSettings: ContentSettings = {
       },
     ],
   },
+  about: {
+    eyebrow: "Our Story",
+    title: "Empowering Creatives Through Excellence",
+    storyParagraphs: [
+      "SCDS (Sam Creative Design School) was founded with a single mission: to bridge the gap between academic theory and practical, industry-level creative skills.",
+    ],
+    mission: "Being Exceptional, Strategic, and Realistic",
+    vision: "To be East Africa's leading digital school for creative and technical skills.",
+    coreValues: [
+      { title: "Practical First", description: "Every lesson builds toward a real, portfolio-ready project." },
+    ],
+    yearsExperience: "5+",
+    instructorName: "Samuel Kimiri",
+    instructorRole: "Founder of SCDS | Instructor",
+    instructorBio: "Samuel is the Founder and Lead Instructor at Sam Creative Design School (SCDS).",
+    instructorImage: "/images/samuel.png",
+    boardCtaTitle: "Join Our Board of Management",
+    boardCtaText: "We are looking for visionary leaders to help shape the future of creative education at SCDS.",
+  },
   courses: [],
   lessons: [],
   faqs: [
@@ -418,6 +437,22 @@ function textToToolStacks(value: string) {
       };
     })
     .filter((item) => item.title && item.note && item.tools.length);
+}
+
+function coreValuesToText(items?: { title: string; description: string }[]) {
+  return (items || []).map((item) => `${item.title}|${item.description}`).join("\n");
+}
+
+function textToCoreValues(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [title, ...descriptionParts] = line.split("|");
+      return { title: title.trim(), description: descriptionParts.join("|").trim() };
+    })
+    .filter((item) => item.title && item.description);
 }
 
 export default function AdminDashboard() {
@@ -3480,6 +3515,161 @@ export default function AdminDashboard() {
               bodyClassName="p-6"
             >
               <CountdownCard nextIntake={intakeSettings.nextIntake} whatsappDisplay={contentSettings.homepage.whatsappDisplay} />
+            </CollapsiblePanel>
+
+            <CollapsiblePanel
+              className={`overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ${adminPanelMotion}`}
+              headerClassName="border-b border-gray-100 px-6 py-5"
+              title="About Page"
+              subtitle="Mission, vision, values, and instructor bio shown on the public About page (linked in the footer)."
+              bodyClassName="p-6 space-y-6"
+            >
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Eyebrow Label</label>
+                  <input
+                    value={contentSettings.about.eyebrow}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, eyebrow: e.target.value } }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+                    maxLength={40}
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Page Title</label>
+                  <input
+                    value={contentSettings.about.title}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, title: e.target.value } }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+                    maxLength={90}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Our Story</label>
+                <p className="mb-2 text-xs text-gray-500">One paragraph per line.</p>
+                <textarea
+                  value={listToText(contentSettings.about.storyParagraphs)}
+                  onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, storyParagraphs: textToList(e.target.value) } }))}
+                  rows={4}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Our Mission</label>
+                  <textarea
+                    value={contentSettings.about.mission}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, mission: e.target.value } }))}
+                    rows={3}
+                    maxLength={200}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Our Vision</label>
+                  <textarea
+                    value={contentSettings.about.vision}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, vision: e.target.value } }))}
+                    rows={3}
+                    maxLength={300}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Core Values</label>
+                <p className="mb-2 text-xs text-gray-500">One value per line, as Title|Description.</p>
+                <textarea
+                  value={coreValuesToText(contentSettings.about.coreValues)}
+                  onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, coreValues: textToCoreValues(e.target.value) } }))}
+                  rows={5}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 font-mono text-xs outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Years of Experience</label>
+                  <input
+                    value={contentSettings.about.yearsExperience}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, yearsExperience: e.target.value } }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+                    maxLength={10}
+                    placeholder="5+"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Instructor Photo URL</label>
+                  <input
+                    value={contentSettings.about.instructorImage}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, instructorImage: e.target.value } }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary"
+                    placeholder="/images/samuel.png"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Instructor Name</label>
+                  <input
+                    value={contentSettings.about.instructorName}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, instructorName: e.target.value } }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+                    maxLength={80}
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Instructor Role</label>
+                  <input
+                    value={contentSettings.about.instructorRole}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, instructorRole: e.target.value } }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+                    maxLength={80}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Instructor Bio</label>
+                <textarea
+                  value={contentSettings.about.instructorBio}
+                  onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, instructorBio: e.target.value } }))}
+                  rows={4}
+                  maxLength={800}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Board CTA Title</label>
+                  <input
+                    value={contentSettings.about.boardCtaTitle}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, boardCtaTitle: e.target.value } }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+                    maxLength={80}
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-gray-400">Board CTA Text</label>
+                  <input
+                    value={contentSettings.about.boardCtaText}
+                    onChange={(e) => setContentSettings((prev) => ({ ...prev, about: { ...prev.about, boardCtaText: e.target.value } }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-primary"
+                    maxLength={280}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void saveContentSettings()}
+                disabled={pendingAction === "content-save"}
+                className={`rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white disabled:opacity-50 ${adminActionMotion}`}
+              >
+                {pendingAction === "content-save" ? "Saving..." : "Save About Page"}
+              </button>
             </CollapsiblePanel>
           </div>
         )}

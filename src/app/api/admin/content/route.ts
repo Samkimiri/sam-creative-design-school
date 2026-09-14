@@ -5,6 +5,7 @@ import { requireFullAdminRequest } from "@/lib/adminAuth";
 
 const contentPaths = [
   "/",
+  "/about",
   "/courses",
   "/enroll",
   "/faq",
