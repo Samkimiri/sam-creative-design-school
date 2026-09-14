@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import StudentProjects from "@/components/StudentProjects";
@@ -61,7 +62,13 @@ export default function GalleryPage() {
               {/* Thumbnail */}
               <div className={`h-52 bg-gradient-to-br ${project.color} flex items-center justify-center relative overflow-hidden`}>
                 {project.image ? (
-                  <img src={project.image} alt={project.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <Image
+                    src={project.image}
+                    alt={project.title}
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
                 ) : (
                   <span className="text-5xl font-black text-white group-hover:scale-110 transition-transform duration-300">{project.fallbackLabel}</span>
                 )}

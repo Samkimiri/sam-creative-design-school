@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
@@ -218,7 +219,15 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
               </div>
             </div>
             <div className="premium-card overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl" data-reveal>
-              <img src={course.image} alt={course.title} className="h-72 w-full object-cover md:h-96" />
+              <div className="relative h-72 w-full md:h-96">
+                <Image
+                  src={course.image}
+                  alt={course.title}
+                  fill
+                  sizes="(min-width: 768px) 400px, 100vw"
+                  className="object-cover"
+                />
+              </div>
               <div className="p-6">
                 <p className="text-sm font-bold text-white/60">Course Fee</p>
                 <p className="mt-1 text-4xl font-extrabold text-primary-light">Ksh {course.price.toLocaleString()}</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { courses } from "@/data/courses";
 import { slugifyName } from "@/lib/slugs";
 import type { ProjectSubmission } from "@/types";
@@ -91,9 +92,15 @@ export default function StudentProjects() {
 
             return (
               <article key={project.id} className="premium-card group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-lg motion-safe:hover:-translate-y-1" data-reveal style={{ "--reveal-delay": `${index * 55}ms` } as CSSProperties}>
-                <Link href={projectHref} className="block h-48 bg-primary/10 overflow-hidden" aria-label={`View ${project.title}`}>
+                <Link href={projectHref} className="relative block h-48 bg-primary/10 overflow-hidden" aria-label={`View ${project.title}`}>
                   {project.imageUrl ? (
-                    <img src={project.imageUrl} alt={project.title} className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" />
+                    <Image
+                      src={project.imageUrl}
+                      alt={project.title}
+                      fill
+                      sizes="(min-width: 768px) 25vw, 50vw"
+                      className="object-cover transition-transform duration-500 motion-safe:group-hover:scale-105"
+                    />
                   ) : (
                     <div className="flex h-full items-center justify-center text-5xl font-black text-primary transition-transform duration-300 motion-safe:group-hover:scale-110">{project.courseName.slice(0, 1)}</div>
                   )}

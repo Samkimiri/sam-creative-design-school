@@ -128,7 +128,7 @@ export const blogPosts: BlogPost[] = [
     category: "Online Learning",
     date: "June 6, 2026",
     readTime: "6 min read",
-    image: "/images/course-vibe-designing-ui-ux.png",
+    image: "/images/course-vibe-designing-uiux.png",
     gradient: "from-violet-500 to-fuchsia-600",
     tags: ["Online design courses with certificate", "Kenya", "LMS"],
     content: [

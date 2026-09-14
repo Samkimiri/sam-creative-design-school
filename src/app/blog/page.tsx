@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { blogPosts as staticBlogPosts } from "@/data/blog";
 import { getCmsBlogPosts } from "@/lib/blogCms";
 
@@ -47,8 +48,14 @@ export default async function BlogPage() {
           {blogPosts.map((post) => (
             <article key={post.id} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
               <Link href={`/blog/${post.id}`} className="block">
-                <div className="h-48 bg-light-gray">
-                  <img src={post.image} alt={post.title} className="h-full w-full object-cover" />
+                <div className="relative h-48 bg-light-gray">
+                  <Image
+                    src={post.image}
+                    alt={post.title}
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                    className="object-cover"
+                  />
                 </div>
                 <div className="p-6">
                   <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wider">

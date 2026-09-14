@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { BookOpen, CheckCircle2, Eye, Star, UserPlus } from "lucide-react";
 import { getManagedCourses } from "@/lib/contentSettings";
@@ -77,10 +78,12 @@ export default async function Courses() {
             <div key={course.id} className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-12 items-center border-b border-gray-100 pb-16 last:border-0 animate-fade-in`}>
               <div className="flex-1 w-full">
                 <div className="aspect-video bg-dark rounded-3xl overflow-hidden shadow-2xl relative group transition-all duration-300 motion-safe:hover:-translate-y-1 hover:shadow-primary/20">
-                  <img 
-                    src={course.image} 
-                    alt={course.title} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                  <Image
+                    src={course.image}
+                    alt={course.title}
+                    fill
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <div className="absolute top-6 left-6 bg-primary text-white px-4 py-2 rounded-lg font-bold transition-transform duration-300 motion-safe:group-hover:scale-105">

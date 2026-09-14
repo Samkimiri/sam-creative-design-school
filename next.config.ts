@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,
+    // Course, blog post, and student project images can be admin- or
+    // student-provided external URLs (not just local /images/* files), so
+    // next/image needs a broad remote allowlist rather than a fixed list of
+    // known hosts.
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
   async headers() {
     return [

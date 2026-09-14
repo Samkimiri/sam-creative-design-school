@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { galleryProjects, type GalleryProject } from "@/data/galleryProjects";
 import { seedProjects } from "@/data/projectSubmissions";
@@ -62,9 +63,15 @@ export default async function GalleryProjectPage({ params }: GalleryProjectPageP
 
         <article className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
           <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
-            <div className={`min-h-[320px] bg-gradient-to-br ${project.color} flex items-center justify-center overflow-hidden md:min-h-[520px]`}>
+            <div className={`relative min-h-[320px] bg-gradient-to-br ${project.color} flex items-center justify-center overflow-hidden md:min-h-[520px]`}>
               {project.image ? (
-                <img src={project.image} alt={project.title} className="h-full min-h-[320px] w-full object-cover md:min-h-[520px]" />
+                <Image
+                  src={project.image}
+                  alt={project.title}
+                  fill
+                  sizes="(min-width: 1024px) 60vw, 100vw"
+                  className="object-cover"
+                />
               ) : (
                 <span className="text-7xl font-black text-white">{project.fallbackLabel}</span>
               )}

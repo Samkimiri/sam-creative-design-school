@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getBlogPost, type BlogPost } from "@/data/blog";
 import { absoluteUrl, breadcrumbJsonLd, jsonLdScript, siteName } from "@/lib/seo";
 
@@ -63,8 +64,14 @@ export default function BlogArticleView({ id, post: providedPost }: { id?: strin
               <p className="mt-5 max-w-2xl text-lg text-white/85">{post.excerpt}</p>
               <p className="mt-6 text-sm text-white/70">{post.date}</p>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/10 shadow-2xl">
-              <img src={post.image} alt={post.title} className="h-72 w-full object-cover md:h-96" />
+            <div className="relative h-72 overflow-hidden rounded-2xl border border-white/15 bg-white/10 shadow-2xl md:h-96">
+              <Image
+                src={post.image}
+                alt={post.title}
+                fill
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="object-cover"
+              />
             </div>
           </div>
         </div>
