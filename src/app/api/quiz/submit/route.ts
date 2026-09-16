@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, saveDB } from "@/lib/db";
+import { getDBRecord, upsertDBRecord } from "@/lib/db";
 import { lessons } from "@/data/courses";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 
 interface QuizAttempt {
+  id?: string;
   studentId: string;
   courseId: string;
   lessonId: string;
@@ -16,6 +17,7 @@ interface QuizAttempt {
 }
 
 interface ProgressRecord {
+  id?: string;
   studentId: string;
   courseId: string;
   completedLessons: string[];
@@ -25,6 +27,10 @@ interface ProgressRecord {
 
 function isProgressRecord(record: Partial<ProgressRecord>): record is ProgressRecord {
   return Boolean(record.studentId && record.courseId && Array.isArray(record.completedLessons));
+}
+
+function progressRecordId(studentId: string, courseId: string) {
+  return `${studentId}:${courseId}`;
 }
 
 export async function POST(request: Request) {
@@ -102,8 +108,12 @@ export async function POST(request: Request) {
     const percentage = Math.round((score / total) * 100);
     const passed = percentage >= 70;
 
-    const quizAttempts = await getDB<QuizAttempt>("quiz-attempts.json");
-    quizAttempts.push({
+    // Each attempt is its own row under a unique id - a plain insert, never a
+    // read-modify-write of the whole collection, so concurrent submissions
+    // from other students (or this student's own retakes) can never race.
+    const attemptId = `${session.user.id}:${lessonId}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+    await upsertDBRecord<QuizAttempt>("quiz-attempts.json", {
+      id: attemptId,
       studentId: session.user.id as string,
       courseId,
       lessonId,
@@ -113,34 +123,39 @@ export async function POST(request: Request) {
       passed,
       date: new Date().toISOString(),
     });
-    await saveDB("quiz-attempts.json", quizAttempts);
 
     // Quiz results also live on the student's progress record so the leaderboard's
     // quiz-average bonus and the admin Students tab's per-lesson quiz breakdown have
     // something to read - quiz-attempts.json alone only powers the completion gate above.
-    const progress = (await getDB<ProgressRecord>("progress.json")).filter(isProgressRecord);
-    const progressIndex = progress.findIndex(
-      (p) => p.studentId === session.user.id && p.courseId === courseId
-    );
+    // Read and write only this student's one course record (by a deterministic
+    // id), not the whole progress collection - see /api/progress for why a
+    // full-collection read-modify-write was silently erasing other students'
+    // progress.
+    const recordId = progressRecordId(session.user.id, courseId);
+    const existing = await getDBRecord<ProgressRecord>("progress.json", recordId);
     const quizResultEntry = { lessonId, score, total, date: new Date().toISOString() };
 
-    if (progressIndex > -1) {
-      const existingScores = progress[progressIndex].quizScores || [];
-      progress[progressIndex].quizScores = [
-        ...existingScores.filter((entry) => entry.lessonId !== lessonId),
-        quizResultEntry,
-      ];
-      progress[progressIndex].lastAccessed = new Date().toISOString();
-    } else {
-      progress.push({
-        studentId: session.user.id as string,
-        courseId,
-        completedLessons: [],
-        quizScores: [quizResultEntry],
-        lastAccessed: new Date().toISOString(),
-      });
-    }
-    await saveDB("progress.json", progress);
+    const savedProgress: ProgressRecord =
+      existing && isProgressRecord(existing)
+        ? {
+            ...existing,
+            id: recordId,
+            quizScores: [
+              ...(existing.quizScores || []).filter((entry) => entry.lessonId !== lessonId),
+              quizResultEntry,
+            ],
+            lastAccessed: new Date().toISOString(),
+          }
+        : {
+            id: recordId,
+            studentId: session.user.id as string,
+            courseId,
+            completedLessons: [],
+            quizScores: [quizResultEntry],
+            lastAccessed: new Date().toISOString(),
+          };
+
+    await upsertDBRecord("progress.json", savedProgress);
 
     return NextResponse.json({ success: true, score, total, percentage, passed, results });
   } catch (error) {

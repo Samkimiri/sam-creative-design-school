@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
+import { deleteDBRecord, findDBRecordsByField, getDB, saveDB, upsertDBRecord } from "@/lib/db";
 import { badRequest, getRequiredString, notFound, requireAdminRequest, requireFullAdminRequest, type AdminActor, type AdminRequestBody } from "@/lib/adminAuth";
 import { logAdminAction } from "@/lib/auditLog";
 import { courses, lessons } from "@/data/courses";
@@ -291,11 +291,11 @@ export async function DELETE(request: Request) {
   const nameLower = target.name.trim().toLowerCase();
   const emailLower = target.email.trim().toLowerCase();
 
-  await saveDB("students.json", students.filter((s) => s.id !== target.id));
+  await deleteDBRecord("students.json", target.id);
 
   const [
     enrollments,
-    progress,
+    studentProgress,
     assignments,
     projects,
     feedback,
@@ -309,7 +309,7 @@ export async function DELETE(request: Request) {
     communityReactions,
   ] = await Promise.all([
     getDB<Enrollment>("enrollments.json"),
-    getDB<ProgressRecord>("progress.json"),
+    findDBRecordsByField<ProgressRecord>("progress.json", { studentId: target.id }),
     getDB<AssignmentSubmission>("assignments.json"),
     getDB<ProjectSubmission>("projects.json"),
     getDB<CourseFeedback>("course-feedback.json"),
@@ -328,7 +328,12 @@ export async function DELETE(request: Request) {
       "enrollments.json",
       enrollments.filter((e) => e.studentId !== target.id && e.studentEmail?.trim().toLowerCase() !== emailLower)
     ),
-    saveDB("progress.json", progress.filter((p) => p.studentId !== target.id)),
+    // Deleted one row at a time (never the whole collection) so removing this
+    // student's progress can't race with - and silently erase - a different
+    // student completing a lesson or a quiz at the same moment.
+    ...studentProgress.map((p) =>
+      deleteDBRecord("progress.json", p.id || `${p.studentId}:${p.courseId}`)
+    ),
     saveDB("assignments.json", assignments.filter((a) => a.studentId !== target.id)),
     saveDB("projects.json", projects.filter((p) => p.studentName.trim().toLowerCase() !== nameLower)),
     saveDB("course-feedback.json", feedback.filter((f) => f.studentId !== target.id)),

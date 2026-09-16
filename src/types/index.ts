@@ -31,6 +31,7 @@ export interface AlumniReferral {
 }
 
 export interface ProgressRecord {
+  id?: string;
   studentId: string;
   courseId: string;
   completedLessons: string[];

@@ -6,6 +6,7 @@ import {
   deleteSupabaseRecord,
   findSupabaseRecordByJsonField,
   findSupabaseRecordByJsonFieldInsensitive,
+  findSupabaseRecordsByJsonFields,
   getSupabaseCollection,
   getSupabaseRecord,
   hasSupabaseConfig,
@@ -35,6 +36,8 @@ const HIGH_WRITE_FILES = new Set([
   "enrollments.json",
   "messages.json",
   "password-resets.json",
+  "progress.json",
+  "quiz-attempts.json",
   "rate-limits.json",
   "site-settings.json",
   // Community collections are polled and written to constantly by many
@@ -277,6 +280,36 @@ export async function findDBRecordByField<T>(
   return data.find((item) =>
     String((item as Record<string, unknown>)[field] || "").trim().toLowerCase() === cleanValue.toLowerCase()
   ) ?? null;
+}
+
+/**
+ * Returns every record matching all of `filters` (field -> value, exact
+ * match), filtered server-side where possible instead of pulling the whole
+ * collection into memory - use this instead of getDB()+.filter() whenever
+ * the caller only needs one student's (or one student+lesson's) rows out of
+ * a collection that grows with every student, e.g. progress or quiz-attempts.
+ */
+export async function findDBRecordsByField<T>(
+  filename: string,
+  filters: Record<string, string>
+): Promise<T[]> {
+  if (hasSupabaseConfig()) {
+    try {
+      return await findSupabaseRecordsByJsonFields<T>(getCollectionName(filename), filters);
+    } catch (error) {
+      console.error("Supabase findDBRecordsByField error:", error);
+      if (requiresPersistentStorage(filename) && !hasMongoConfig() && !hasKVConfig()) {
+        throw error instanceof Error ? error : persistentStorageError(filename);
+      }
+    }
+  }
+
+  const data = await getDB<T>(filename);
+  return data.filter((item) =>
+    Object.entries(filters).every(
+      ([field, value]) => String((item as Record<string, unknown>)[field] || "") === value
+    )
+  );
 }
 
 function escapeRegex(value: string) {

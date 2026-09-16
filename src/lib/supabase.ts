@@ -148,6 +148,39 @@ export async function findSupabaseRecordByJsonFieldInsensitive<T>(
   return rows[0]?.data ?? null;
 }
 
+/**
+ * Like findSupabaseRecordByJsonField, but returns every match instead of just
+ * the first - and filters server-side in Postgres instead of pulling the
+ * whole collection into the function to filter in JS. This is what keeps a
+ * "this student's progress" or "this student's attempts at this lesson"
+ * lookup cheap as the collection grows into the thousands of rows.
+ */
+export async function findSupabaseRecordsByJsonFields<T>(
+  collection: string,
+  filters: Record<string, string>
+): Promise<T[]> {
+  const query = new URLSearchParams({
+    collection: `eq.${collection}`,
+    select: "data",
+    order: "position.asc",
+  });
+  for (const [field, value] of Object.entries(filters)) {
+    query.set(`data->>${field}`, `eq.${value}`);
+  }
+
+  const response = await fetchSupabase(getRestUrl(`app_records?${query.toString()}`), {
+    headers: getHeaders(),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase field read failed: ${await parseSupabaseError(response)}`);
+  }
+
+  const rows = (await response.json()) as SupabaseRecord<T>[];
+  return rows.map((row) => row.data);
+}
+
 export async function saveSupabaseCollection<T>(collection: string, data: T[]): Promise<void> {
   const deleteResponse = await fetchSupabase(
     getRestUrl(`app_records?collection=eq.${encodeURIComponent(collection)}`),

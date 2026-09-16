@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, saveDB, upsertDBRecord } from "@/lib/db";
+import { findDBRecordsByField, getDBRecord, upsertDBRecord } from "@/lib/db";
 import { courses, lessons } from "@/data/courses";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 import { sendProgressMilestoneEmail } from "@/lib/email";
@@ -8,6 +8,7 @@ import { absoluteUrl } from "@/lib/seo";
 import type { Student } from "@/types";
 
 interface ProgressRecord {
+  id?: string;
   studentId: string;
   courseId: string;
   completedLessons: string[];
@@ -23,6 +24,10 @@ interface QuizAttempt {
 
 function isProgressRecord(record: Partial<ProgressRecord>): record is ProgressRecord {
   return Boolean(record.studentId && record.courseId && Array.isArray(record.completedLessons));
+}
+
+function progressRecordId(studentId: string, courseId: string) {
+  return `${studentId}:${courseId}`;
 }
 
 export async function GET(request: Request) {
@@ -44,20 +49,23 @@ export async function GET(request: Request) {
     }
   }
 
-  const progress = await getDB<ProgressRecord>("progress.json");
-  const userProgress = progress.filter((p) => isProgressRecord(p) && p.studentId === session.user.id);
-
   if (courseId) {
-    const courseRecord = userProgress.find((p) => p.courseId === courseId) || {
-      studentId: session.user.id,
-      courseId,
-      completedLessons: [],
-      quizScores: [],
-      lastAccessed: new Date().toISOString()
-    };
+    const record = await getDBRecord<ProgressRecord>("progress.json", progressRecordId(session.user.id, courseId));
+    const courseRecord: ProgressRecord = record && isProgressRecord(record)
+      ? record
+      : {
+          studentId: session.user.id,
+          courseId,
+          completedLessons: [],
+          quizScores: [],
+          lastAccessed: new Date().toISOString(),
+        };
     return NextResponse.json({ success: true, data: courseRecord });
   }
 
+  const userProgress = (
+    await findDBRecordsByField<ProgressRecord>("progress.json", { studentId: session.user.id })
+  ).filter(isProgressRecord);
   return NextResponse.json({ success: true, data: userProgress });
 }
 
@@ -88,40 +96,45 @@ export async function POST(request: Request) {
     // complete (and eventually get a certificate for) a quiz lesson never
     // actually attempted.
     if (lesson.quiz && session.user.role !== "admin") {
-      const attempts = await getDB<QuizAttempt>("quiz-attempts.json");
-      const hasPassed = attempts.some(
-        (attempt) => attempt.studentId === session.user.id && attempt.lessonId === lessonId && attempt.passed
-      );
+      const attempts = await findDBRecordsByField<QuizAttempt>("quiz-attempts.json", {
+        studentId: session.user.id,
+        lessonId,
+      });
+      const hasPassed = attempts.some((attempt) => attempt.passed);
       if (!hasPassed) {
         return NextResponse.json({ error: "Pass this lesson's quiz before marking it complete." }, { status: 403 });
       }
     }
 
-    const progress = (await getDB<ProgressRecord>("progress.json")).filter(isProgressRecord);
-    const existingIndex = progress.findIndex(
-      (p) => p.studentId === session.user.id && p.courseId === courseId
-    );
-    let savedRecord: ProgressRecord;
-    const beforeCompleted = existingIndex > -1 ? progress[existingIndex].completedLessons.length : 0;
+    // Read and write exactly this student's one course record (by a
+    // deterministic id) instead of the whole progress collection - reading
+    // it all in only to rewrite it all back was how a lesson completion from
+    // one student could silently erase another student's progress that was
+    // saved in between the read and the write (see git history for details).
+    const recordId = progressRecordId(session.user.id, courseId);
+    const existing = await getDBRecord<ProgressRecord>("progress.json", recordId);
+    const beforeCompleted = existing && isProgressRecord(existing) ? existing.completedLessons.length : 0;
 
-    if (existingIndex > -1) {
-      if (!progress[existingIndex].completedLessons.includes(lessonId)) {
-        progress[existingIndex].completedLessons.push(lessonId);
-      }
-      progress[existingIndex].lastAccessed = new Date().toISOString();
-      savedRecord = progress[existingIndex];
-    } else {
-      savedRecord = {
-        studentId: session.user.id as string,
-        courseId,
-        completedLessons: [lessonId],
-        quizScores: [],
-        lastAccessed: new Date().toISOString(),
-      };
-      progress.push(savedRecord);
-    }
+    const savedRecord: ProgressRecord =
+      existing && isProgressRecord(existing)
+        ? {
+            ...existing,
+            id: recordId,
+            completedLessons: existing.completedLessons.includes(lessonId)
+              ? existing.completedLessons
+              : [...existing.completedLessons, lessonId],
+            lastAccessed: new Date().toISOString(),
+          }
+        : {
+            id: recordId,
+            studentId: session.user.id as string,
+            courseId,
+            completedLessons: [lessonId],
+            quizScores: [],
+            lastAccessed: new Date().toISOString(),
+          };
 
-    await saveDB("progress.json", progress);
+    await upsertDBRecord("progress.json", savedRecord);
 
     const totalLessons = lessons.filter((item) => item.courseId === courseId).length;
     if (totalLessons > 0 && student?.email) {
@@ -151,12 +164,13 @@ export async function POST(request: Request) {
         const studentId = student.id;
         after(async () => {
           try {
-            const allStudents = await getDB<Student>("students.json");
-            const index = allStudents.findIndex((item) => item.id === studentId);
-            if (index > -1 && !allStudents[index].isAlumni) {
-              allStudents[index].isAlumni = true;
-              allStudents[index].alumniSince = new Date().toISOString();
-              await upsertDBRecord("students.json", allStudents[index]);
+            const currentStudent = await getDBRecord<Student>("students.json", studentId);
+            if (currentStudent && !currentStudent.isAlumni) {
+              await upsertDBRecord("students.json", {
+                ...currentStudent,
+                isAlumni: true,
+                alumniSince: new Date().toISOString(),
+              });
             }
           } catch (error) {
             console.error("Auto-alumni update failed (non-fatal):", error);
