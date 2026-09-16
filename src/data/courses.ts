@@ -3835,6 +3835,45 @@ const enhancedKeyPoints: Record<string, string[]> = {
   ...capcutExpansionKeyPoints,
 };
 
+// Per-lesson video overrides so each lesson gets a distinct, individually
+// researched video instead of the single shared video its generator plan
+// was created with. Populated course-by-course as videos are researched.
+const videoOverrides: Record<string, string> = {
+  "ps-1": youtubeEmbed("v0j6JFufdiM"),
+  "ps-2": youtubeEmbed("MsukMXtEYFQ"),
+  "ps-3": youtubeEmbed("VNSe8BglAHs"),
+  "ps-4": youtubeEmbed("dBqhAIoQkdU"),
+  "ps-5": youtubeEmbed("WUqASG_y1x4"),
+  "ps-6": youtubeEmbed("Tznnrjkhp7E"),
+  "ps-7": youtubeEmbed("mPwvZA4Xbd8"),
+  "ps-8": youtubeEmbed("11jwSwUu2WI"),
+  "ps-9": youtubeEmbed("NaiUhziolfs"),
+  "ps-10": youtubeEmbed("haCtIHbd0gw"),
+  "ps-11": youtubeEmbed("VPv8-alBjvs"),
+  "ps-12": youtubeEmbed("hi5DufAc3ro"),
+  "ps-13": youtubeEmbed("r1OoH9lo3Oo"),
+  "ps-14": youtubeEmbed("G2OhLub-yCA"),
+  "ps-15": youtubeEmbed("eHi_Y64tiYE"),
+  "ps-16": youtubeEmbed("pfur6mP1Z3U"),
+  "ps-17": youtubeEmbed("i8WNvjLDzfQ"),
+
+  "ai-1": youtubeEmbed("LTqXn3qT5H0"),
+  "ai-2": youtubeEmbed("I7CoMhF6pQ8"),
+  "ai-3": youtubeEmbed("IpFyYahyPmE"),
+  "ai-4": youtubeEmbed("y9ySa3y85qw"),
+  "ai-5": youtubeEmbed("c1afVPG32yA"),
+  "ai-6": youtubeEmbed("zWzWtqCtRIw"),
+  "ai-7": youtubeEmbed("ngdasKemfl4"),
+  "ai-8": youtubeEmbed("GLPANT_FC7c"),
+  "ai-9": youtubeEmbed("ofFyRI6ROTI"),
+  "ai-10": youtubeEmbed("KYiAImHbMvM"),
+  "ai-11": youtubeEmbed("JHfQUSOPCu4"),
+  "ai-12": youtubeEmbed("ITRZ75OKrG0"),
+  "ai-13": youtubeEmbed("T8xAXeP3-kw"),
+  "ai-14": youtubeEmbed("4LgPxxAaJAE"),
+  "ai-15": youtubeEmbed("mhUMNu7XeTE"),
+};
+
 export const lessons: Lesson[] = [
   ...baseLessons,
   ...photoshopProfessionalLessons,
@@ -3850,6 +3889,7 @@ export const lessons: Lesson[] = [
   content: enhancedContent[lesson.id] ?? lesson.content,
   keyPoints: enhancedKeyPoints[lesson.id] ?? lesson.keyPoints,
   quiz: quizEnhancements[lesson.id] ?? lesson.quiz,
+  videoUrl: videoOverrides[lesson.id] ?? lesson.videoUrl,
   resources: [
     { name: `${lesson.title} Notes.pdf`, url: `/api/notes/${lesson.id}`, type: "pdf" },
     ...lesson.resources.filter((resource) => resource.url !== "#"),
