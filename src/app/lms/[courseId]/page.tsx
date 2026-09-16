@@ -67,6 +67,8 @@ export default function CoursePlayer() {
   const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied" | "paused">(isPreview ? "allowed" : "checking");
   const [videoPositions, setVideoPositions] = useState<Record<string, number> | null>(null);
   const videoPlayerRef = useRef<LessonVideoPlayerHandle>(null);
+  const [progressLoaded, setProgressLoaded] = useState(false);
+  const hasAppliedInitialResumeRef = useRef(false);
 
   const progressStorageKey = `scds-progress-${courseId}`;
   const videoProgressStorageKey = `scds-video-progress-${courseId}`;
@@ -191,10 +193,26 @@ export default function CoursePlayer() {
       }
     } catch {
       // Leave any local progress visible if the backend cannot be reached.
+    } finally {
+      setProgressLoaded(true);
     }
   }, [courseId, readLocalProgress, syncLessonProgress, writeLocalProgress]);
 
   useEffect(() => { loadProgress(); }, [loadProgress]);
+
+  // Once progress has loaded for the first time, jump straight to the first
+  // lesson the student hasn't completed yet - "continue where you left off"
+  // instead of always reopening lesson 1. Guarded to run exactly once per
+  // page load so it never fights the student's own later navigation.
+  useEffect(() => {
+    if (!progressLoaded || hasAppliedInitialResumeRef.current || isPreview) return;
+    hasAppliedInitialResumeRef.current = true;
+
+    const resumeLesson = courseLessons.find((lesson) => !completedLessons.includes(lesson.id));
+    if (resumeLesson && resumeLesson.id !== activeLesson.id) {
+      setActiveLesson(resumeLesson);
+    }
+  }, [progressLoaded, completedLessons, courseLessons, activeLesson.id, isPreview]);
 
   const readLocalVideoProgress = useCallback((): Record<string, number> => {
     if (typeof window === "undefined") return {};

@@ -429,6 +429,35 @@ function splitIntoSentences(text: string): string[] {
     .filter(Boolean);
 }
 
+// Stem phrasings for the questions every module checkpoint quiz asks beyond
+// Q1 - cycled by module index and always naming the module itself, so no two
+// checkpoints (in this course or any other course built with this same
+// generator) ever ask the literal same question.
+const checkpointSubmissionStems = [
+  (title: string) => `Before submitting the ${title} checkpoint, what should it include?`,
+  (title: string) => `What makes a ${title} checkpoint submission complete?`,
+  (title: string) => `Which combination best describes a ready-to-review ${title} checkpoint?`,
+  (title: string) => `What should reviewers expect to see in a finished ${title} checkpoint?`,
+];
+const checkpointFeedbackStems = [
+  (title: string) => `Why is tutor feedback valuable after finishing ${title}?`,
+  (title: string) => `Why should you get feedback before moving past ${title}?`,
+  (title: string) => `What is the benefit of tutor review at the ${title} stage?`,
+  (title: string) => `Why does a second opinion matter once ${title} is done?`,
+];
+const checkpointHabitStems = [
+  (title: string) => `Which habit makes revisiting your ${title} work easier later?`,
+  (title: string) => `What habit during ${title} makes future revisions simpler?`,
+  (title: string) => `Which practice keeps ${title} work easy to revise later?`,
+  (title: string) => `What organizing habit pays off most during ${title}?`,
+];
+const checkpointNextStepStems = [
+  (title: string) => `What is the best next step after finishing the ${title} project?`,
+  (title: string) => `Once your ${title} project is done, what should come next?`,
+  (title: string) => `After completing ${title}, what is the smartest next move?`,
+  (title: string) => `What should follow right after wrapping up ${title}?`,
+];
+
 function createModuleLessons(
   courseId: string,
   prefix: string,
@@ -488,28 +517,28 @@ ${voice.workflow}${checkpointRecap}`,
                   },
                   {
                     id: `${id}-q2`,
-                    question: "What should every portfolio checkpoint include?",
+                    question: checkpointSubmissionStems[moduleIndex % checkpointSubmissionStems.length](module.title),
                     options: ["A goal, process notes, and final evidence", "Only a screenshot", "Only the software name", "Nothing until graduation"],
                     answer: 0,
                     explanation: "Portfolio work is stronger when it shows the brief, process, choices, and finished result.",
                   },
                   {
                     id: `${id}-q3`,
-                    question: "Why is tutor feedback important before certification?",
+                    question: checkpointFeedbackStems[moduleIndex % checkpointFeedbackStems.length](module.title),
                     options: ["It makes the project slower only", "It helps improve weak choices before final delivery", "It replaces practice", "It removes the need for a portfolio"],
                     answer: 1,
                     explanation: "Feedback helps students correct gaps and present cleaner graduation work.",
                   },
                   {
                     id: `${id}-q4`,
-                    question: "Which habit makes work easier to revise?",
+                    question: checkpointHabitStems[moduleIndex % checkpointHabitStems.length](module.title),
                     options: ["Naming files and layers clearly", "Deleting all drafts", "Avoiding notes", "Saving only screenshots"],
                     answer: 0,
                     explanation: "Clear naming and organized files make revision, feedback, and final presentation easier.",
                   },
                   {
                     id: `${id}-q5`,
-                    question: "What is the best next step after finishing a module project?",
+                    question: checkpointNextStepStems[moduleIndex % checkpointNextStepStems.length](module.title),
                     options: ["Archive it without review", "Test, document, and improve it", "Start over without checking", "Hide the source files"],
                     answer: 1,
                     explanation: "Testing, documenting, and improving the project turns practice into portfolio-ready work.",
@@ -604,6 +633,19 @@ const capcutProfessionalPlans = [
   },
 ];
 
+const capcutSubmissionStems = [
+  (title: string) => `What should every "${title}" portfolio checkpoint include?`,
+  (title: string) => `Before wrapping up "${title}", what should the checkpoint include?`,
+  (title: string) => `What makes a "${title}" checkpoint ready to show a client?`,
+  (title: string) => `Which combination is expected in the "${title}" checkpoint?`,
+];
+const capcutMobileReviewStems = [
+  (title: string) => `Why should the "${title}" export be reviewed on a phone?`,
+  (title: string) => `After finishing "${title}", why check the export on mobile?`,
+  (title: string) => `What is the reason to preview "${title}" on a phone screen?`,
+  (title: string) => `Why does "${title}" call for a mobile playback check?`,
+];
+
 const capcutProfessionalLessons: Lesson[] = capcutProfessionalPlans.map((plan, index) => {
   const order = index + 3;
   const id = `cc-${order}`;
@@ -646,14 +688,14 @@ Portfolio checkpoint: save the final export, one timeline screenshot, one before
         },
         {
           id: `${id}-q2`,
-          question: "What should every CapCut portfolio checkpoint include?",
+          question: capcutSubmissionStems[index % capcutSubmissionStems.length](plan.title),
           options: ["Final export, evidence, and process notes", "Only an unnamed draft", "Only the app icon", "Nothing until graduation"],
           answer: 0,
           explanation: "Portfolio evidence shows the brief, process, improvements, and final result.",
         },
         {
           id: `${id}-q3`,
-          question: "Why should exports be reviewed on a phone?",
+          question: capcutMobileReviewStems[index % capcutMobileReviewStems.length](plan.title),
           options: ["Most short-form viewers watch on mobile", "It deletes bad clips automatically", "It changes the course price", "It removes all captions"],
           answer: 0,
           explanation: "Mobile review helps catch caption, cropping, sound, and readability issues before publishing.",
@@ -684,6 +726,22 @@ type DisciplineVoice = {
   workflow: string;
   checkpointClosing: string;
 };
+
+// Same idea as the checkpoint stems above, but for every lesson these
+// professional-expansion courses generate (not just checkpoints) - cycled by
+// lesson index and always naming the lesson itself.
+const expansionSubmissionStems = [
+  (title: string) => `What should a strong submission for "${title}" include?`,
+  (title: string) => `Before marking "${title}" complete, what should the submission show?`,
+  (title: string) => `What makes a "${title}" submission ready for review?`,
+  (title: string) => `Which combination is expected in a "${title}" submission?`,
+];
+const expansionEditableStems = [
+  (title: string) => `Why should your working files for "${title}" stay editable?`,
+  (title: string) => `During "${title}", why keep source files editable rather than flattened?`,
+  (title: string) => `What is the benefit of editable files while working on "${title}"?`,
+  (title: string) => `Why does "${title}" call for keeping the working file editable?`,
+];
 
 function createProfessionalExpansionLessons(plan: CourseExpansionPlan & { voice: DisciplineVoice }): Lesson[] {
   return plan.lessons.map((lesson, index) => {
@@ -729,14 +787,14 @@ Portfolio checkpoint: ${plan.voice.checkpointClosing}`,
           },
           {
             id: `${id}-q2`,
-            question: "What should a strong lesson submission include?",
+            question: expansionSubmissionStems[index % expansionSubmissionStems.length](lesson.title),
             options: ["Working file, final export, process evidence, and notes", "Only a screenshot", "Only a file name", "Nothing until graduation"],
             answer: 0,
             explanation: "A complete submission shows both the final result and the process used to create it.",
           },
           {
             id: `${id}-q3`,
-            question: "Why should files remain editable?",
+            question: expansionEditableStems[index % expansionEditableStems.length](lesson.title),
             options: ["So corrections and client changes are easier", "So the file cannot open", "So layers disappear", "So the project loses quality"],
             answer: 0,
             explanation: "Editable files make review, revision, and professional delivery much easier.",

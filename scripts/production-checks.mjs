@@ -19,7 +19,7 @@ const resetConfirmRoute = read("src/app/api/auth/reset-password/confirm/route.ts
 assert(resetConfirmRoute.includes("codeHash"), "reset-password confirmation must accept reset codes");
 
 const enrollRoute = read("src/app/api/enroll/route.ts");
-assert(enrollRoute.includes("import { courses }"), "enroll route must validate course IDs against course data");
+assert(enrollRoute.includes("getManagedCourses"), "enroll route must validate course IDs against course data");
 assert(enrollRoute.includes("Use the admin enrollments endpoint"), "public enrollments list must not be exposed");
 
 const payRoute = read("src/app/api/pay/route.ts");
@@ -57,7 +57,7 @@ assert(mongoLib.includes("export function hasMongoConfig"), "MongoDB helper must
 const middleware = read("src/middleware.ts");
 assert(middleware.includes('pathname.startsWith("/admin")'), "middleware must protect admin routes");
 assert(middleware.includes('sessionUser?.role !== "admin"'), "admin routes must require an admin session role");
-assert(middleware.includes('loginUrl.searchParams.set("next", "/admin")'), "admin redirects must preserve the admin login target");
+assert(middleware.includes('authUrl.searchParams.set("next", "/admin")'), "admin redirects must preserve the admin login target");
 assert(middleware.includes('request.nextUrl.searchParams.get("preview") === "1"'), "middleware must allow public LMS lesson previews");
 
 const adminPage = read("src/app/admin/page.tsx");
