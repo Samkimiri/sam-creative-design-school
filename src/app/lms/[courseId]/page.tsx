@@ -79,6 +79,15 @@ export default function CoursePlayer() {
   const videoProgressStorageKey = `scds-video-progress-${courseId}`;
 
   useEffect(() => {
+    // Fetches once per course, not on every lesson switch - this used to
+    // depend on activeLesson?.id and refire on every navigation, which both
+    // hammered the API while quickly clicking through lessons and raced:
+    // a slow-to-resolve fetch from an earlier lesson could land after a
+    // newer one and reset the page's lesson list out from under whichever
+    // lesson the student had already moved on to. Re-syncing activeLesson
+    // via a functional state update (reading the latest value at apply
+    // time, not from this effect's closure) keeps it accurate without that
+    // dependency.
     fetch("/api/content")
       .then((res) => res.json())
       .then((data) => {
@@ -86,12 +95,11 @@ export default function CoursePlayer() {
         if (Array.isArray(data.data?.courses)) setManagedCourses(data.data.courses);
         if (Array.isArray(data.data?.lessons)) {
           setManagedLessons(data.data.lessons);
-          const refreshedLesson = data.data.lessons.find((lesson: Lesson) => lesson.id === activeLesson?.id);
-          if (refreshedLesson) setActiveLesson(refreshedLesson);
+          setActiveLesson((current) => data.data.lessons.find((lesson: Lesson) => lesson.id === current.id) ?? current);
         }
       })
       .catch(() => undefined);
-  }, [activeLesson?.id]);
+  }, [courseId]);
 
   useEffect(() => {
     if (isPreview) {
@@ -207,14 +215,19 @@ export default function CoursePlayer() {
 
   // Once progress has loaded for the first time, jump straight to the first
   // lesson the student hasn't completed yet - "continue where you left off"
-  // instead of always reopening lesson 1. Guarded to run exactly once per
-  // page load so it never fights the student's own later navigation.
+  // instead of always reopening lesson 1. If every lesson is already done,
+  // land on the last lesson (its notes/certificate) instead of resetting to
+  // lesson 1, since there's nothing left to "continue" to. Guarded to run
+  // exactly once per page load so it never fights the student's own later
+  // navigation.
   useEffect(() => {
     if (!progressLoaded || hasAppliedInitialResumeRef.current || isPreview) return;
+    if (courseLessons.length === 0) return;
     hasAppliedInitialResumeRef.current = true;
 
-    const resumeLesson = courseLessons.find((lesson) => !completedLessons.includes(lesson.id));
-    if (resumeLesson && resumeLesson.id !== activeLesson.id) {
+    const resumeLesson =
+      courseLessons.find((lesson) => !completedLessons.includes(lesson.id)) ?? courseLessons[courseLessons.length - 1];
+    if (resumeLesson.id !== activeLesson.id) {
       setActiveLesson(resumeLesson);
     }
   }, [progressLoaded, completedLessons, courseLessons, activeLesson.id, isPreview]);
@@ -328,8 +341,10 @@ export default function CoursePlayer() {
     } catch { /* handle offline */ }
   };
 
-  const selectLesson = (lesson: Lesson) => {
+  const selectLesson = (lesson: Lesson | undefined) => {
+    if (!lesson) return;
     const lessonIndex = courseLessons.findIndex((item) => item.id === lesson.id);
+    if (lessonIndex === -1) return;
     const isUnlocked = isPreview
       ? lessonIndex === 0
       : lessonIndex === 0 || courseLessons.slice(0, lessonIndex).every((item) => completedLessons.includes(item.id));
@@ -347,6 +362,7 @@ export default function CoursePlayer() {
   const nextLesson = () => {
     if (isPreview) return;
     const idx = courseLessons.findIndex((l) => l.id === activeLesson.id);
+    if (idx === -1) return;
     if (completedLessons.includes(activeLesson.id) && idx < courseLessons.length - 1) {
       selectLesson(courseLessons[idx + 1]);
     }

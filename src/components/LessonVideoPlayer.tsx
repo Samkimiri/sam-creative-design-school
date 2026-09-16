@@ -115,11 +115,20 @@ const LessonVideoPlayer = forwardRef<LessonVideoPlayerHandle, LessonVideoPlayerP
 
   const reportProgress = () => {
     const player = playerRef.current;
-    if (!player) return;
-    const currentTime = player.getCurrentTime();
-    const duration = player.getDuration();
-    if (Number.isFinite(currentTime) && currentTime >= 0) {
-      onProgressRef.current(lessonId, currentTime, Number.isFinite(duration) ? duration : 0, false);
+    // The YouTube IFrame API's player methods aren't safe to call until
+    // onReady has actually fired - calling them earlier (e.g. during an
+    // unmount that races ahead of player initialization, which happens
+    // often when a student switches lessons quickly) can throw, and an
+    // exception thrown from a useEffect cleanup crashes the whole page.
+    if (!player || !isReadyRef.current) return;
+    try {
+      const currentTime = player.getCurrentTime();
+      const duration = player.getDuration();
+      if (Number.isFinite(currentTime) && currentTime >= 0) {
+        onProgressRef.current(lessonId, currentTime, Number.isFinite(duration) ? duration : 0, false);
+      }
+    } catch {
+      // Player was mid-teardown or otherwise not queryable - nothing to report.
     }
   };
 
@@ -137,9 +146,13 @@ const LessonVideoPlayer = forwardRef<LessonVideoPlayerHandle, LessonVideoPlayerP
   useImperativeHandle(ref, () => ({
     restart: () => {
       const player = playerRef.current;
-      if (!player) return;
-      player.seekTo(0, true);
-      onProgressRef.current(lessonId, 0, player.getDuration() || 0, true);
+      if (!player || !isReadyRef.current) return;
+      try {
+        player.seekTo(0, true);
+        onProgressRef.current(lessonId, 0, player.getDuration() || 0, true);
+      } catch {
+        // Player wasn't in a queryable state - nothing to restart.
+      }
     },
   }), [lessonId]);
 
@@ -172,7 +185,11 @@ const LessonVideoPlayer = forwardRef<LessonVideoPlayerHandle, LessonVideoPlayerP
               reportProgress();
             } else if (event.data === state.ENDED) {
               stopPolling();
-              onProgressRef.current(lessonId, 0, playerRef.current?.getDuration() || 0, true);
+              try {
+                onProgressRef.current(lessonId, 0, playerRef.current?.getDuration() || 0, true);
+              } catch {
+                onProgressRef.current(lessonId, 0, 0, true);
+              }
             }
           },
         },
@@ -183,7 +200,11 @@ const LessonVideoPlayer = forwardRef<LessonVideoPlayerHandle, LessonVideoPlayerP
       cancelled = true;
       stopPolling();
       reportProgress();
-      playerRef.current?.destroy();
+      try {
+        playerRef.current?.destroy();
+      } catch {
+        // Iframe may already be gone by the time destroy() runs during a fast unmount.
+      }
       playerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
