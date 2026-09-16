@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type CSSProperties } from "react";
 import Link from "next/link";
 import { courses as fallbackCourses, lessons as fallbackLessons, type Course, type Lesson } from "@/data/courses";
 import { useParams, useSearchParams } from "next/navigation";
@@ -50,10 +50,15 @@ export default function CoursePlayer() {
   const [managedCourses, setManagedCourses] = useState<Course[]>(fallbackCourses);
   const [managedLessons, setManagedLessons] = useState<Lesson[]>(fallbackLessons);
   const course = managedCourses.find((c) => c.id === courseId);
-  const realCourseLessons = managedLessons.filter((l) => l.courseId === courseId).sort((a, b) => a.order - b.order);
   // A freshly admin-created course can exist with no lessons yet - fall back to a
   // single placeholder so every downstream usage of courseLessons[0] stays safe.
-  const courseLessons = realCourseLessons.length > 0 ? realCourseLessons : [buildComingSoonLesson(courseId)];
+  // Memoized so effects that depend on it (like the resume-progress jump
+  // below) don't re-run on every render just because this filter+sort
+  // produces a new array reference each time.
+  const courseLessons = useMemo(() => {
+    const realCourseLessons = managedLessons.filter((l) => l.courseId === courseId).sort((a, b) => a.order - b.order);
+    return realCourseLessons.length > 0 ? realCourseLessons : [buildComingSoonLesson(courseId)];
+  }, [managedLessons, courseId]);
 
   const [activeLesson, setActiveLesson] = useState<Lesson>(courseLessons[0]);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
