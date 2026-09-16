@@ -703,27 +703,61 @@ export default function CoursePlayer() {
 
                   {activeTab === "assignment" && (
                     <div className="mt-8 animate-fade-in pt-8 border-t border-gray-100">
-                      <h4 className="font-bold text-dark mb-4 text-sm uppercase tracking-wider">Submit Assignment</h4>
-                      <form onSubmit={submitAssignment} className="rounded-2xl border border-gray-100 bg-gray-50 p-5 transition duration-300 focus-within:border-primary/30 focus-within:shadow-lg focus-within:shadow-primary/5">
-                        <div className="grid grid-cols-1 gap-4">
-                          <input
-                            value={assignmentForm.fileUrl}
-                            onChange={(event) => setAssignmentForm({ ...assignmentForm, fileUrl: event.target.value })}
-                            placeholder="Project link, file URL, Google Drive link, or portfolio URL"
-                            className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-all duration-300 focus:-translate-y-0.5 focus:border-primary focus:shadow-sm"
-                          />
-                          <textarea
-                            value={assignmentForm.notes}
-                            onChange={(event) => setAssignmentForm({ ...assignmentForm, notes: event.target.value })}
-                            placeholder="Explain what you created or ask for feedback"
-                            rows={5}
-                            className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition-all duration-300 focus:-translate-y-0.5 focus:border-primary focus:shadow-sm"
-                          />
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <h4 className="font-bold text-dark text-sm uppercase tracking-wider">Submit Assignment</h4>
+                        <span className="text-xs font-bold text-gray-400">{activeLesson.title}</span>
+                      </div>
+                      <form
+                        onSubmit={submitAssignment}
+                        className="rounded-2xl border border-gray-100 bg-gradient-to-br from-blue-50/40 via-white to-white p-5 shadow-sm transition-all duration-300 focus-within:border-primary/30 focus-within:shadow-lg focus-within:shadow-primary/10 md:p-6"
+                      >
+                        <div className="grid grid-cols-1 gap-5">
+                          <div>
+                            <label htmlFor="assignment-file-url" className="mb-2 block text-xs font-bold uppercase tracking-widest text-gray-500">
+                              Project link
+                            </label>
+                            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 transition-all duration-300 focus-within:-translate-y-0.5 focus-within:border-primary focus-within:shadow-sm">
+                              <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5 21 3m0 0h-5.25M21 3v5.25M11 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                              </svg>
+                              <input
+                                id="assignment-file-url"
+                                value={assignmentForm.fileUrl}
+                                onChange={(event) => setAssignmentForm({ ...assignmentForm, fileUrl: event.target.value })}
+                                placeholder="Google Drive, portfolio, or file link"
+                                className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="mb-2 flex items-center justify-between">
+                              <label htmlFor="assignment-notes" className="block text-xs font-bold uppercase tracking-widest text-gray-500">
+                                Notes for your tutor
+                              </label>
+                              <span className={`text-[11px] font-bold ${assignmentForm.notes.length > 900 ? "text-amber-600" : "text-gray-300"}`}>
+                                {assignmentForm.notes.length}/1000
+                              </span>
+                            </div>
+                            <textarea
+                              id="assignment-notes"
+                              value={assignmentForm.notes}
+                              onChange={(event) => setAssignmentForm({ ...assignmentForm, notes: event.target.value.slice(0, 1000) })}
+                              placeholder="Explain what you created, the decisions you made, or ask for feedback on something specific"
+                              rows={5}
+                              className="w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-sm leading-relaxed outline-none transition-all duration-300 placeholder:text-gray-400 focus:-translate-y-0.5 focus:border-primary focus:shadow-sm"
+                            />
+                          </div>
                         </div>
-                        <button className="mt-4 rounded-xl bg-primary px-6 py-3 font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0">
-                          Submit for Marking
-                        </button>
-                        {assignmentStatus && <p className="mt-3 animate-fade-in text-sm font-medium text-gray-600">{assignmentStatus}</p>}
+                        <div className="mt-5 flex flex-col-reverse items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          {assignmentStatus ? (
+                            <p className="animate-fade-in text-sm font-medium text-gray-600">{assignmentStatus}</p>
+                          ) : (
+                            <p className="text-xs text-gray-400">Your tutor is notified as soon as you submit.</p>
+                          )}
+                          <button className="premium-button w-full shrink-0 rounded-xl bg-primary px-6 py-3 font-bold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 sm:w-auto">
+                            Submit for Marking
+                          </button>
+                        </div>
                       </form>
                     </div>
                   )}
