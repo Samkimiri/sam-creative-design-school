@@ -29,6 +29,30 @@ type LessonTab = "video" | "notes" | "resources" | "assignment" | "quiz";
 
 const mergeLessonIds = (...lessonGroups: string[][]) => Array.from(new Set(lessonGroups.flat()));
 
+// Lightweight markdown-lite for lesson notes: **text** -> bold, __text__ -> underline.
+// Kept deliberately simple (no nesting, no italics) since it only needs to let
+// content authors flag key terms for students, not full markdown support.
+function renderEmphasizedText(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*|__[^_]+__)/g).filter((part) => part.length > 0);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={index} className="font-extrabold text-dark">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("__") && part.endsWith("__")) {
+      return (
+        <u key={index} className="underline decoration-primary decoration-2 underline-offset-2">
+          {part.slice(2, -2)}
+        </u>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
+
 function buildComingSoonLesson(courseId: string): Lesson {
   return {
     id: `${courseId}-coming-soon`,
@@ -592,31 +616,7 @@ export default function CoursePlayer() {
                       </div>
                       <h1 className="text-xl font-extrabold text-dark sm:text-2xl">{activeLesson.title}</h1>
                     </div>
-                    <div className="flex w-full flex-col gap-3 shrink-0 sm:w-auto sm:flex-row">
-                      {!isPreview && !activeLesson.quiz && !completedLessons.includes(activeLesson.id) && (
-                        <button
-                          onClick={() => markComplete(activeLesson.id)}
-                          className="premium-button bg-green-500 text-white px-4 py-2 rounded-xl font-bold text-sm hover:-translate-y-0.5 hover:bg-green-600 active:translate-y-0 transition-all duration-300"
-                        >
-                          Mark Complete
-                        </button>
-                      )}
-                      {activeLesson.quiz && (
-                        <button
-                          onClick={() => openTab("quiz")}
-                          className="premium-button bg-primary text-white px-4 py-2 rounded-xl font-bold text-sm hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 transition-all duration-300"
-                        >
-                          Take Quiz
-                        </button>
-                      )}
-                    </div>
                   </div>
-
-                  {activeLesson.quiz && !isActiveLessonComplete && (
-                    <div className="mb-6 animate-fade-in rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
-                      Pass this 5-question quiz with 70% or above to unlock the next lesson.
-                    </div>
-                  )}
 
                   {progress === 100 && (
                     <div className="premium-card mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" data-reveal>
@@ -669,12 +669,12 @@ export default function CoursePlayer() {
                               return (
                                 <div key={index} className="animate-fade-in" style={{ animationDelay: `${index * 60}ms` }}>
                                   <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-1.5">{heading}</h4>
-                                  <p>{body}</p>
+                                  <p>{renderEmphasizedText(body)}</p>
                                 </div>
                               );
                             }
                             return (
-                              <p key={index} className="animate-fade-in" style={{ animationDelay: `${index * 60}ms` }}>{paragraph}</p>
+                              <p key={index} className="animate-fade-in" style={{ animationDelay: `${index * 60}ms` }}>{renderEmphasizedText(paragraph)}</p>
                             );
                           })}
                         </div>
@@ -689,7 +689,7 @@ export default function CoursePlayer() {
                                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-black text-primary">
                                   {index + 1}
                                 </span>
-                                <span>{point}</span>
+                                <span>{renderEmphasizedText(point)}</span>
                               </li>
                             ))}
                           </ul>
@@ -697,6 +697,49 @@ export default function CoursePlayer() {
                       )}
                     </div>
                   </div>
+
+                  {activeLesson.quiz ? (
+                    <div
+                      className={`premium-card mt-6 flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between ${
+                        isActiveLessonComplete ? "border-green-200 bg-green-50" : "border-primary/20 bg-primary/5"
+                      }`}
+                      data-reveal
+                    >
+                      <div>
+                        <p className={`text-sm font-black uppercase tracking-widest ${isActiveLessonComplete ? "text-green-700" : "text-primary"}`}>
+                          {isActiveLessonComplete ? "Quiz passed" : "Finished reading?"}
+                        </p>
+                        <h3 className="text-xl font-extrabold text-dark">
+                          {isActiveLessonComplete ? "Review or retake the quiz" : "Take the 5-question quiz"}
+                        </h3>
+                        {!isActiveLessonComplete && (
+                          <p className="mt-1 text-sm text-gray-600">Pass with 70% or above to unlock the next lesson.</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => openTab("quiz")}
+                        className="premium-button shrink-0 bg-primary px-5 py-3 rounded-xl font-bold text-sm text-white hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0 transition-all duration-300"
+                      >
+                        {isActiveLessonComplete ? "Retake Quiz" : "Take Quiz"}
+                      </button>
+                    </div>
+                  ) : (
+                    !isPreview &&
+                    !completedLessons.includes(activeLesson.id) && (
+                      <div className="premium-card mt-6 flex flex-col gap-4 rounded-2xl border border-green-200 bg-green-50 p-5 sm:flex-row sm:items-center sm:justify-between" data-reveal>
+                        <div>
+                          <p className="text-sm font-black uppercase tracking-widest text-green-700">Finished reading?</p>
+                          <h3 className="text-xl font-extrabold text-dark">Mark this lesson complete</h3>
+                        </div>
+                        <button
+                          onClick={() => markComplete(activeLesson.id)}
+                          className="premium-button shrink-0 bg-green-500 px-5 py-3 rounded-xl font-bold text-sm text-white hover:-translate-y-0.5 hover:bg-green-600 active:translate-y-0 transition-all duration-300"
+                        >
+                          Mark Complete
+                        </button>
+                      </div>
+                    )
+                  )}
 
                   {activeLesson.resources && activeLesson.resources.length > 0 && (
                     <div className="mt-8 pt-8 border-t border-gray-100">

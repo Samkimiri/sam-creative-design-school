@@ -19,6 +19,11 @@ function cleanText(value: string): string {
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, "'")
     .replace(/[–—]/g, "-")
+    // Strip the UI's **bold**/__underline__ emphasis markers - the PDF has no
+    // inline-styled-run text layout, so keep the wording and drop the markup
+    // rather than printing literal asterisks/underscores.
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
     .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, "");
 }
 
