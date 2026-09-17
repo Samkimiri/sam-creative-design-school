@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDBRecord, upsertDBRecord } from "@/lib/db";
+import { getDBRecord, upsertDBRecord, findDBRecordsByField } from "@/lib/db";
 import { lessons } from "@/data/courses";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
+
+interface QuizAttemptResult {
+  questionId: string;
+  question: string;
+  selectedAnswer: number;
+  selectedOption: string;
+  correctAnswer: number;
+  correctOption: string;
+  correct: boolean;
+  explanation: string;
+}
 
 interface QuizAttempt {
   id?: string;
@@ -14,6 +25,7 @@ interface QuizAttempt {
   percentage: number;
   passed: boolean;
   date: string;
+  results?: QuizAttemptResult[];
 }
 
 interface ProgressRecord {
@@ -122,6 +134,7 @@ export async function POST(request: Request) {
       percentage,
       passed,
       date: new Date().toISOString(),
+      results,
     });
 
     // Quiz results also live on the student's progress record so the leaderboard's
@@ -161,5 +174,50 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Quiz submission failed:", error);
     return NextResponse.json({ error: "Quiz submission failed" }, { status: 500 });
+  }
+}
+
+// Lets a student revisit their most recent quiz attempt for a lesson - which
+// answers were right/wrong and why - without retaking it, so they can review
+// for revision instead of only ever seeing results right after submitting.
+export async function GET(request: Request) {
+  try {
+    const session = await getSession();
+    if (!session || !session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const courseId = searchParams.get("courseId");
+    const lessonId = searchParams.get("lessonId");
+    if (!courseId || !lessonId) {
+      return NextResponse.json({ error: "Course and lesson are required" }, { status: 400 });
+    }
+
+    const studentId = session.user.id as string;
+    if (session.user.role !== "admin") {
+      const student = await getStudentWithConfirmedEnrollmentAccess(studentId);
+      if (!hasCourseAccess(student, courseId)) {
+        return NextResponse.json({ error: "Course access requires admin approval" }, { status: 403 });
+      }
+    }
+
+    const attempts = await findDBRecordsByField<QuizAttempt>("quiz-attempts.json", { studentId, lessonId, courseId });
+    if (attempts.length === 0) {
+      return NextResponse.json({ attempt: null });
+    }
+
+    const latest = attempts.reduce((most, current) => (current.date > most.date ? current : most));
+    return NextResponse.json({
+      attempt: {
+        score: latest.score,
+        total: latest.total,
+        percentage: latest.percentage,
+        passed: latest.passed,
+        date: latest.date,
+        results: latest.results ?? [],
+      },
+    });
+  } catch (error) {
+    console.error("Quiz attempt lookup failed:", error);
+    return NextResponse.json({ error: "Could not load your last attempt" }, { status: 500 });
   }
 }

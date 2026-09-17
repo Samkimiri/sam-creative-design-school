@@ -148,6 +148,7 @@ export interface Lesson {
   imageAlt?: string;
   content: string;
   keyPoints?: string[];
+  assignment?: string;
   resources: { name: string; url: string; type: "pdf" | "zip" | "link" }[];
   quiz?: { questions: QuizQuestion[] };
   order: number;
@@ -167,6 +168,7 @@ const baseLessons: Lesson[] = [
       "DPI standards: use 72 DPI for web and social media, and 300 DPI for high-quality printing such as flyers, posters, and banners.",
       "New document: press Ctrl+N to start, and always name your files properly from the start.",
     ],
+    assignment: "Create a new 1080x1080px document for social media and a separate 300 DPI print document for a flyer. In each, create and rename at least three layers (not \"Layer 1\", \"Layer 2\"), then export one file as a web-ready JPEG and the other as a print-ready PDF, naming both files correctly.",
     resources: [{ name: "Workspace Cheatsheet.pdf", url: "#", type: "pdf" }],
     quiz: {
       questions: [
@@ -187,6 +189,7 @@ const baseLessons: Lesson[] = [
       "Opacity vs Fill: Opacity affects the whole layer, while Fill does not affect layer styles like drop shadows.",
       "Organization: group your layers with Ctrl+G to stay organized as a file grows.",
     ],
+    assignment: "Combine two source photos into one composite using at least two different blending modes (e.g. Multiply for a shadow or texture, Screen for a glow or light leak). Keep every element on its own named, grouped layer, then export a screenshot of your Layers panel alongside the final image so your layer structure is visible.",
     resources: [{ name: "Layer Exercise Assets.zip", url: "#", type: "zip" }],
     quiz: {
       questions: [
@@ -207,6 +210,7 @@ const baseLessons: Lesson[] = [
       "Select and Mask workspace: use Refine Edge for complex details like hair or fur.",
       "Layer masks: never use the Eraser tool - a mask lets white reveal and black hide, so you can bring back hidden areas later.",
     ],
+    assignment: "Cut a subject cleanly out of its background using a layer mask (no Eraser tool allowed), then place it onto a new background. Zoom in to 100% on the trickiest edge (hair, fur, or fine detail) and fix any visible fringing before exporting your before-and-after comparison.",
     resources: [{ name: "Cutout Practice Photos.zip", url: "#", type: "zip" }],
     quiz: {
       questions: [
@@ -226,6 +230,7 @@ const baseLessons: Lesson[] = [
       "Frequency separation: splits the image into a texture layer and a color layer, so skin can be smoothed without losing natural detail.",
       "Dodge and Burn: adds highlights and shadows to give the face more depth and structure.",
     ],
+    assignment: "Retouch a portrait photo using frequency separation (or a comparable non-destructive technique), keeping natural skin texture visible rather than blurring it away. Add subtle dodge and burn for depth, then export a side-by-side before/after comparison at full resolution.",
     resources: [{ name: "Retouching Workflow.pdf", url: "#", type: "pdf" }],
   },
   {
@@ -240,6 +245,7 @@ const baseLessons: Lesson[] = [
       "Clipping masks: place an image inside text with Ctrl+Alt+G for a bold editorial effect.",
       "Layout: use the rule of thirds to place elements where the eye naturally looks first.",
     ],
+    assignment: "Design a complete poster for a real or invented school event, using at least two font weights, deliberate tracking/kerning on the headline, and one layer-style effect (drop shadow, glow, or clipping mask). Export the final piece print-ready at 300 DPI with correct dimensions for an A3 or A4 print.",
     resources: [{ name: "Poster Templates.zip", url: "#", type: "zip" }],
   },
 
@@ -256,6 +262,7 @@ const baseLessons: Lesson[] = [
       "Selection (V) vs Direct Selection (A): use Direct Selection to edit individual points on a path.",
       "Print vs web: use CMYK color mode for logos that will be printed, and RGB only for screens.",
     ],
+    assignment: "Recreate a simple existing logo or icon as clean vector shapes using the correct color mode for its intended use (CMYK for print, RGB for screen). Export it at three very different sizes (e.g. 32px, 512px, and A3 poster size) and confirm every version stays perfectly sharp.",
     resources: [{ name: "Vector Basics.pdf", url: "#", type: "pdf" }],
     quiz: {
       questions: [
@@ -275,6 +282,7 @@ const baseLessons: Lesson[] = [
       "Curvature Tool: a faster, beginner-friendly way to draw smooth curves.",
       "Practice: tracing existing logos is one of the fastest ways to train your hand and eye for precision.",
     ],
+    assignment: "Trace a photo of an everyday object using only the Pen Tool - use at least one smooth curved handle and one sharp corner anchor point. Keep your anchor point count as low as possible while still matching the photo's outline closely.",
     resources: [{ name: "Pen Tool Tracing Pack.pdf", url: "#", type: "pdf" }],
   },
   {
@@ -289,6 +297,7 @@ const baseLessons: Lesson[] = [
       "Grids: use circles and lines to build a balanced, golden-ratio-style logo structure.",
       "Expanding: convert strokes into filled shapes so the logo scales correctly everywhere.",
     ],
+    assignment: "Build a geometric logo mark using only the Shape Builder tool to combine at least three basic shapes (circles, rectangles, triangles) into one clean, single-color mark. Expand all strokes into filled shapes before exporting, and confirm the mark still reads clearly at a very small size.",
     resources: [{ name: "Logo Grid Template.zip", url: "#", type: "zip" }],
   },
 
@@ -305,6 +314,7 @@ const baseLessons: Lesson[] = [
       "Audio extraction: pull the audio track from one video to reuse on another.",
       "Smooth cuts: remove gaps and dead air between words to keep the energy high and viewers watching.",
     ],
+    assignment: "Edit a 15-30 second clip in 9:16 format with a hook in the first 3 seconds, at least one extracted or replaced audio track, and every dead-air gap between words trimmed out. Export and watch it back on a phone screen before submitting.",
     resources: [{ name: "Practice Clips.zip", url: "#", type: "zip" }],
     quiz: {
       questions: [
@@ -324,6 +334,7 @@ const baseLessons: Lesson[] = [
       "Blending: adjust overlays so they look like a natural part of the original scene.",
       "Velocity editing: speed up or slow down clips for dramatic impact.",
     ],
+    assignment: "Animate a title or logo onto screen using at least two keyframes (position, scale, or opacity), then add one overlay clip blended naturally into the background footage and one velocity-edited speed change. Export the result and note in one sentence what each effect was meant to communicate.",
     resources: [],
   },
 
@@ -340,6 +351,7 @@ const baseLessons: Lesson[] = [
       "Fully defined sketches: black lines mean geometry cannot move accidentally - blue lines are a warning sign in engineering.",
       "Mirror Entities: design one half of a symmetric part and mirror it to save time and guarantee symmetry.",
     ],
+    assignment: "Create a fully-defined 2D sketch of a simple bracket or mounting plate using Smart Dimension and at least two geometric relations. Every line in the sketch must turn black (fully defined) with zero blue underdefined geometry before you save it.",
     resources: [{ name: "Sketch Exercises.pdf", url: "#", type: "pdf" }],
     quiz: {
       questions: [
@@ -360,6 +372,7 @@ const baseLessons: Lesson[] = [
       "Extrude Cut: removes material from an existing solid.",
       "Fillet and Chamfer: round or flatten edges for safety and manufacturing quality.",
     ],
+    assignment: "Model two parts from fully-defined sketches: one using Extrude Boss/Base (e.g. a bracket) and one using Revolve (e.g. a bolt, knob, or bottle). Add at least one fillet or chamfer to each part for manufacturing quality, and save both as separate part files.",
     resources: [{ name: "Part Design Brief.pdf", url: "#", type: "pdf" }],
   }
 ];
@@ -367,7 +380,7 @@ const baseLessons: Lesson[] = [
 type ModulePlan = {
   title: string;
   theme: string;
-  lessons: string[];
+  lessons: { title: string; practice: string }[];
 };
 
 const youtubeEmbed = (videoId: string) => `https://www.youtube.com/embed/${videoId}`;
@@ -468,11 +481,12 @@ function createModuleLessons(
   voice: CourseModuleVoice,
 ): Lesson[] {
   return modules.flatMap((module, moduleIndex) =>
-    module.lessons.map((lessonTitle, lessonIndex) => {
+    module.lessons.map((lessonPlan, lessonIndex) => {
+      const lessonTitle = lessonPlan.title;
       const order = moduleIndex * 7 + lessonIndex + 1;
       const id = `${prefix}-${moduleIndex + 1}-${lessonIndex + 1}`;
       const isModuleCheckpoint = lessonIndex === module.lessons.length - 1;
-      const previousLessonTitle = lessonIndex > 0 ? module.lessons[lessonIndex - 1] : null;
+      const previousLessonTitle = lessonIndex > 0 ? module.lessons[lessonIndex - 1].title : null;
 
       const bridge = isModuleCheckpoint
         ? `This checkpoint closes out the ${module.title} module.`
@@ -480,8 +494,9 @@ function createModuleLessons(
           ? `Following on from "${previousLessonTitle}", this lesson moves into ${lessonTitle.toLowerCase()}.`
           : `This is the opening lesson of the ${module.title} module.`;
 
+      const priorLessonTitles = module.lessons.slice(0, -1).map((l) => l.title).join(", ");
       const checkpointRecap = isModuleCheckpoint
-        ? `\n\nModule recap: this checkpoint brings together everything covered in ${module.title} - ${module.lessons.slice(0, -1).join(", ")}. Look back at your work from each of these lessons before submitting this checkpoint, and make sure it reflects what you learned across the whole module, not just the most recent lesson.`
+        ? `\n\nModule recap: this checkpoint brings together everything covered in ${module.title} - ${priorLessonTitles}. Look back at your work from each of these lessons before submitting this checkpoint, and make sure it reflects what you learned across the whole module, not just the most recent lesson.`
         : "";
 
       return {
@@ -501,8 +516,9 @@ ${voice.expertNotes}
 
 ${voice.workflow}${checkpointRecap}`,
         keyPoints: isModuleCheckpoint
-          ? [`Review checkpoint covering: ${module.lessons.slice(0, -1).join(", ")}.`, ...splitIntoSentences(module.theme)]
+          ? [`Review checkpoint covering: ${priorLessonTitles}.`, ...splitIntoSentences(module.theme)]
           : [`This lesson's focus: ${lessonTitle}.`, ...splitIntoSentences(module.theme)],
+        assignment: lessonPlan.practice,
         resources: [{ name: `${courseLabel} ${module.title} Workbook.pdf`, url: "#", type: "pdf" }],
         ...(isModuleCheckpoint
           ? {
@@ -623,13 +639,13 @@ const capcutProfessionalPlans = [
     module: "Delivery and Portfolio",
     title: "Portfolio Packaging and Case Study Notes",
     theme: "A video portfolio should show process, not only final exports. Document the brief, audience, platform, timeline decisions, improvements, final file, and selected screenshots.",
-    practice: "Create a mini case study for one CapCut edit with timeline screenshots, final export link, and three improvements made.",
+    practice: "Create a mini case study for one CapCut edit: the original brief, timeline screenshots showing key decisions, a before/after comparison, the final export link, and three specific improvements you made between drafts.",
   },
   {
     module: "Delivery and Portfolio",
     title: "Graduation Edit and Final Quality Check",
     theme: "The final project combines planning, story, audio, captions, motion, color, export, and presentation into one portfolio-ready video.",
-    practice: "Submit a 30 to 60-second edited video with planning notes, revision evidence, final export, and reflection.",
+    practice: "Produce one complete 30-60 second portfolio video combining everything from the course: a written plan (hook, audience, platform, call-to-action), a locked rough cut, cleaned audio with music timing, captions and lower thirds, at least one keyframe animation and one speed ramp, color-corrected footage, and a platform-correct export. Submit it with your planning notes, one before/after screenshot, and a short reflection on what you'd improve next time.",
   },
 ];
 
@@ -676,6 +692,7 @@ Practice task: ${plan.practice}
 
 Portfolio checkpoint: save the final export, one timeline screenshot, one before-after comparison where relevant, and three notes explaining what improved in this lesson compared to the previous one.`,
     keyPoints: [...splitIntoSentences(plan.theme), `Practice focus: ${plan.practice}`],
+    assignment: plan.practice,
     resources: [{ name: `${plan.title} Workbook.pdf`, url: "#", type: "pdf" }],
     quiz: {
       questions: [
@@ -775,6 +792,7 @@ Practice task: ${lesson.practice}
 
 Portfolio checkpoint: ${plan.voice.checkpointClosing}`,
       keyPoints: [...splitIntoSentences(lesson.theme), `Practice focus: ${lesson.practice}`],
+      assignment: lesson.practice,
       resources: [{ name: `${lesson.title} Workbook.pdf`, url: "#", type: "pdf" }],
       quiz: {
         questions: [
@@ -889,7 +907,7 @@ const photoshopProfessionalLessons = createProfessionalExpansionLessons({
       module: "Client Workflow",
       title: "Photoshop Portfolio Packaging",
       theme: "Present finished work with project goals, process screenshots, before-after comparisons, mockups, and clear captions so clients can trust your skill.",
-      practice: "Build a one-page portfolio case study for your strongest Photoshop project.",
+      practice: "Build a complete portfolio case study for your strongest Photoshop project from this course: the original brief, 3-4 process screenshots showing your layer, mask, or retouching decisions, a clear before-and-after comparison, one realistic mockup of the final piece in context, and a short written explanation of the choices you made and why. Package it as a single PDF or web page ready to share with a client or employer.",
     },
   ],
 });
@@ -978,7 +996,7 @@ const illustratorProfessionalLessons = createProfessionalExpansionLessons({
       module: "Professional Delivery",
       title: "Illustrator Graduation Brand Kit",
       theme: "Combine logo, icons, color system, typography, pattern, brand guide, and export package into a complete portfolio project.",
-      practice: "Submit a complete brand kit with source files, exports, mockups, and a short project explanation.",
+      practice: "Design a complete brand identity kit from scratch: a logo with a simple construction grid, a 6-10 icon set in a consistent style, a color system with hex codes, a two-typeface pairing, one repeating pattern, and a one-page brand guide showing correct and incorrect logo usage. Export a full package (vector source files, PNG/SVG exports, and print-ready PDFs) with a one-paragraph explanation of the brand concept.",
     },
   ],
 });
@@ -1067,7 +1085,7 @@ const solidworksProfessionalLessons = createProfessionalExpansionLessons({
       module: "Simulation and Rendering",
       title: "SolidWorks Graduation Mechanical Project",
       theme: "Combine sketching, features, assemblies, drawings, BOM, material notes, and presentation renders into one complete engineering project.",
-      practice: "Submit a complete mechanical project with part files, assembly, drawing sheet, exploded view, and project summary.",
+      practice: "Design and document a complete small mechanical assembly (at least 3 distinct parts) from scratch: fully-defined part sketches, appropriate features (holes, patterns, shells, or sheet metal as relevant), an assembly with correct mates, an exploded view, a dimensioned drawing sheet with a bill of materials, and assigned materials with a mass properties summary. Submit all files plus a one-page project summary explaining your design decisions.",
     },
   ],
 });
@@ -1082,27 +1100,67 @@ const vibeDesigningLessons = createModuleLessons(
     {
       title: "UX Foundations",
       theme: "Start by understanding what UI and UX mean, how users move through products, and how designers solve real problems before making screens.",
-      lessons: ["Product Design Mindset", "User Problems and Goals", "Personas and Empathy Maps", "User Journeys", "Information Architecture", "Mobile First Thinking", "UX Foundations Checkpoint"],
+      lessons: [
+        { title: "Product Design Mindset", practice: "Pick a real app you use often and write a one-paragraph problem framing for one of its screens: who the user is, what job they're hiring the screen to do, and one business goal it serves." },
+        { title: "User Problems and Goals", practice: "Write a problem statement for a feature idea using the format: [user] needs a way to [need] because [insight], but [obstacle]. Keep it to two sentences." },
+        { title: "Personas and Empathy Maps", practice: "Build one persona and one four-quadrant empathy map (Says, Thinks, Does, Feels) for a specific user of an app idea, grounded in real observations or research you can point to." },
+        { title: "User Journeys", practice: "Map a full user journey for one task (e.g. signing up, checking out) across at least five stages, noting the user's emotion at each stage." },
+        { title: "Information Architecture", practice: "Sketch a sitemap or content hierarchy for a small app (8-12 screens), grouping related screens and showing how a user navigates between them." },
+        { title: "Mobile First Thinking", practice: "Design the same screen twice: first for a 375px mobile width, then adapt it for a 1200px desktop width, and note two layout decisions that had to change." },
+        { title: "UX Foundations Checkpoint", practice: "Submit your persona, problem statement, and user journey from this module as one combined brief, ready to hand to a teammate who has never seen the project." },
+      ],
     },
     {
       title: "Wireframes and Flows",
       theme: "Plan structure before styling so every screen has a clear purpose and every user action has a logical next step.",
-      lessons: ["Sketching Fast Ideas", "Low Fidelity Wireframes", "Screen Flow Mapping", "Navigation Patterns", "Forms and Input States", "Feedback and Error States", "Wireframe Review Checkpoint"],
+      lessons: [
+        { title: "Sketching Fast Ideas", practice: "Hand-sketch five different layout ideas for the same screen in under 15 minutes total, then circle the strongest one and explain why in one sentence." },
+        { title: "Low Fidelity Wireframes", practice: "Turn your strongest sketch into a low-fidelity digital wireframe (grayscale, no real content) covering at least 3 connected screens." },
+        { title: "Screen Flow Mapping", practice: "Diagram the full screen flow for a core task (e.g. booking, purchasing) showing every screen and every possible path, including error paths." },
+        { title: "Navigation Patterns", practice: "Wireframe the same app using two different navigation patterns (e.g. bottom tab bar vs. hamburger menu) and note one tradeoff of each." },
+        { title: "Forms and Input States", practice: "Design a multi-field form wireframe showing its default, filled, and error states for at least two fields." },
+        { title: "Feedback and Error States", practice: "Design an empty state and an error state for one screen, each with a clear message and a next action for the user to take." },
+        { title: "Wireframe Review Checkpoint", practice: "Submit your full wireframe flow for review, including one navigation pattern choice and one form with all three states, and note what you'd change after reviewing it yourself." },
+      ],
     },
     {
       title: "Visual Interface Design",
       theme: "Use spacing, typography, color, icons, and layout rhythm to make interfaces clean, attractive, and easy to scan.",
-      lessons: ["Typography for Interfaces", "Color Systems and Contrast", "Spacing and Layout Grids", "Buttons and Components", "Cards, Lists, and Tables", "Responsive UI Decisions", "Visual Design Checkpoint"],
+      lessons: [
+        { title: "Typography for Interfaces", practice: "Build a type scale (at least 4 sizes) for your app idea and apply it consistently across one full screen." },
+        { title: "Color Systems and Contrast", practice: "Build a small color palette (primary, secondary, neutral, semantic colors) and check every text/background pairing against WCAG AA contrast." },
+        { title: "Spacing and Layout Grids", practice: "Redesign one wireframe screen using a consistent 8pt spacing system and a column grid, then compare it to the unaligned original." },
+        { title: "Buttons and Components", practice: "Design a button component with four states (default, hover, active, disabled) and at least two size variants." },
+        { title: "Cards, Lists, and Tables", practice: "Design a card component and a list-view alternative for the same content, and note when you'd use each." },
+        { title: "Responsive UI Decisions", practice: "Take one visual screen and design its mobile, tablet, and desktop breakpoints, showing what content reflows vs. what gets hidden." },
+        { title: "Visual Design Checkpoint", practice: "Apply your type scale, color system, and spacing grid to a complete 3-screen mini flow, then submit it as a portfolio-ready visual design set." },
+      ],
     },
     {
       title: "Figma Prototyping",
       theme: "Turn static screens into clickable flows that can be tested with users, tutors, and clients before development begins.",
-      lessons: ["Figma File Setup", "Reusable Components", "Auto Layout Basics", "Interactive Prototypes", "Microcopy and Empty States", "Usability Testing", "Prototype Checkpoint"],
+      lessons: [
+        { title: "Figma File Setup", practice: "Set up a Figma file with organized pages (Cover, Wireframes, UI Kit, Screens, Prototype) and a documented naming convention." },
+        { title: "Reusable Components", practice: "Turn five repeated UI elements (buttons, cards, inputs) into Figma components with at least one variant each." },
+        { title: "Auto Layout Basics", practice: "Rebuild one screen using Auto Layout end-to-end so it resizes correctly when text content changes length." },
+        { title: "Interactive Prototypes", practice: "Wire up a clickable prototype covering your core user flow from Module 2, with at least 6 connected screens and real transitions." },
+        { title: "Microcopy and Empty States", practice: "Write real microcopy (button labels, helper text, empty states) for your prototype instead of Lorem Ipsum, and justify one word choice." },
+        { title: "Usability Testing", practice: "Run a 5-minute usability test of your prototype with one real person, record what they got stuck on, and list two changes you'd make." },
+        { title: "Prototype Checkpoint", practice: "Submit your interactive prototype link plus your usability test notes and the two changes you made in response." },
+      ],
     },
     {
       title: "Portfolio Case Study",
       theme: "Package the full design process into a professional story that shows the brief, research, decisions, final screens, and lessons learned.",
-      lessons: ["Choosing a Capstone Brief", "Before and After Improvements", "Case Study Storytelling", "Exporting Screens and Assets", "Presentation Deck Design", "Portfolio Review", "Graduation Case Study Checkpoint"],
+      lessons: [
+        { title: "Choosing a Capstone Brief", practice: "Choose the project you'll turn into your graduation case study and write a one-paragraph brief covering the problem, users, and constraints." },
+        { title: "Before and After Improvements", practice: "Find or create a 'before' version of a screen from your capstone project and redesign it, documenting at least three specific improvements you made and why." },
+        { title: "Case Study Storytelling", practice: "Write the first full draft of your case study narrative (problem, process, decisions, outcome) in your own words, aiming for a structure a stranger could follow." },
+        { title: "Exporting Screens and Assets", practice: "Export every final screen and asset from your capstone at the correct resolution and format, organized into a clearly labeled folder." },
+        { title: "Presentation Deck Design", practice: "Build a presentation deck (8-12 slides) that walks through your capstone case study visually, one idea per slide." },
+        { title: "Portfolio Review", practice: "Get feedback on your case study draft from at least one other person and record two pieces of specific feedback you acted on." },
+        { title: "Graduation Case Study Checkpoint", practice: "Assemble the complete graduation case study: brief, before/after, full written narrative, exported assets, and presentation deck, ready to link from a CV or portfolio." },
+      ],
     },
   ],
   {
@@ -1121,42 +1179,106 @@ const vibeCodingLessons = createModuleLessons(
     {
       title: "Web Foundations",
       theme: "Build a solid understanding of how websites are structured, styled, loaded, and viewed across devices.",
-      lessons: ["How the Web Works", "HTML Document Structure", "Semantic Content", "CSS Selectors", "Box Model and Spacing", "Responsive Units", "Foundations Checkpoint"],
+      lessons: [
+        { title: "How the Web Works", practice: "Write a plain-English explanation (5-6 sentences) of what happens between typing a URL and seeing a page, including DNS, a request, and a response." },
+        { title: "HTML Document Structure", practice: "Build a valid HTML5 document from scratch (doctype, head, body) with a title, a heading, and two paragraphs, and validate it with an HTML validator." },
+        { title: "Semantic Content", practice: "Rebuild one non-semantic div-only page into semantic HTML using header, nav, main, article, and footer, and explain why each tag was chosen." },
+        { title: "CSS Selectors", practice: "Style a small page using at least one element selector, one class selector, one ID selector, and one attribute selector, without repeating any style unnecessarily." },
+        { title: "Box Model and Spacing", practice: "Build a 3-box layout and fix a padding/width overflow bug using box-sizing: border-box, documenting the bug and the fix." },
+        { title: "Responsive Units", practice: "Rebuild a fixed-pixel layout using rem/em for type and % or vw/vh for layout, and confirm it scales when the browser zoom changes." },
+        { title: "Foundations Checkpoint", practice: "Submit one complete semantic HTML page, styled with CSS selectors and responsive units, validated with no errors." },
+      ],
     },
     {
       title: "Modern Layouts",
       theme: "Create professional layouts that adapt across phones, tablets, and desktops without breaking content.",
-      lessons: ["Flexbox Patterns", "CSS Grid Systems", "Navigation Bars", "Hero and Section Layouts", "Cards and Lists", "Responsive Debugging", "Layout Checkpoint"],
+      lessons: [
+        { title: "Flexbox Patterns", practice: "Build a responsive navbar and a 3-item feature row using only Flexbox, with no floats or absolute positioning." },
+        { title: "CSS Grid Systems", practice: "Build a 12-column grid layout for a simple dashboard or gallery page using CSS Grid." },
+        { title: "Navigation Bars", practice: "Build a navigation bar that collapses into a mobile menu below 768px width, using only CSS (no JS required yet)." },
+        { title: "Hero and Section Layouts", practice: "Design and build a hero section with a headline, subtext, and call-to-action button, followed by one content section below it." },
+        { title: "Cards and Lists", practice: "Build a responsive card grid (at least 6 cards) that reflows from 1 column on mobile to 3 columns on desktop." },
+        { title: "Responsive Debugging", practice: "Take a broken responsive layout, use Chrome DevTools to find and fix at least three layout bugs at mobile width, and note what each bug was." },
+        { title: "Layout Checkpoint", practice: "Submit a complete responsive landing page combining a navbar, hero section, and card grid, tested at mobile, tablet, and desktop widths." },
+      ],
     },
     {
       title: "JavaScript Essentials",
       theme: "Make pages interactive by reading state, responding to events, and changing the user interface safely.",
-      lessons: ["Variables and Types", "Functions and Scope", "DOM Selection", "Events and Forms", "Arrays and Objects", "Local Storage", "JavaScript Checkpoint"],
+      lessons: [
+        { title: "Variables and Types", practice: "Write a script that declares variables of each core type (string, number, boolean, array, object) and logs their typeof to the console." },
+        { title: "Functions and Scope", practice: "Write three functions demonstrating function scope, block scope, and a closure, with comments explaining what each one proves." },
+        { title: "DOM Selection", practice: "Select five different elements on a page using querySelector/querySelectorAll and change one property on each without touching the HTML." },
+        { title: "Events and Forms", practice: "Build a form that validates one field on submit using an event listener, showing an inline error message if the field is empty." },
+        { title: "Arrays and Objects", practice: "Take an array of at least 5 objects (e.g. products) and use map, filter, and one other array method to render a filtered list to the page." },
+        { title: "Local Storage", practice: "Build a small feature that saves a value to localStorage and restores it on page reload, so a user's input survives a refresh." },
+        { title: "JavaScript Checkpoint", practice: "Submit one small interactive page (e.g. a to-do list) combining DOM selection, events, array methods, and localStorage persistence." },
+      ],
     },
     {
       title: "React Components",
       theme: "Break interfaces into reusable components with props, state, lists, and predictable interaction patterns.",
-      lessons: ["React Mental Model", "Components and Props", "State and Events", "Rendering Lists", "Forms in React", "Component Styling", "React Checkpoint"],
+      lessons: [
+        { title: "React Mental Model", practice: "Explain in your own words (written, not code) the difference between a React component re-rendering and the actual DOM updating, using one example." },
+        { title: "Components and Props", practice: "Build three reusable components that each accept and display different props, and compose them together on one page." },
+        { title: "State and Events", practice: "Build a counter or toggle component using useState and an onClick handler, with the UI updating live." },
+        { title: "Rendering Lists", practice: "Render a list of at least 6 items from an array using .map(), each with a proper unique key, and fix any 'missing key' warning." },
+        { title: "Forms in React", practice: "Build a controlled form (at least 2 inputs) where every field's value comes from React state, and log the values on submit." },
+        { title: "Component Styling", practice: "Style the same component two different ways (e.g. CSS Modules and Tailwind, or inline styles vs. a stylesheet) and note one tradeoff of each approach." },
+        { title: "React Checkpoint", practice: "Submit a small multi-component React page (list + form + state) that runs without console errors or warnings." },
+      ],
     },
     {
       title: "Next.js App Building",
       theme: "Use routing, layouts, metadata, assets, and server-ready patterns to build production-friendly web apps.",
-      lessons: ["App Router Basics", "Pages and Layouts", "Links and Navigation", "Images and Assets", "Loading and Error States", "Metadata and SEO", "Next.js Checkpoint"],
+      lessons: [
+        { title: "App Router Basics", practice: "Create a new Next.js App Router project with at least two route folders, and confirm both pages load correctly." },
+        { title: "Pages and Layouts", practice: "Build a shared layout (e.g. header + footer) that wraps two different pages without being duplicated in each page's code." },
+        { title: "Links and Navigation", practice: "Convert every internal link on a small multi-page site to use next/link, and confirm navigation doesn't cause a full page reload." },
+        { title: "Images and Assets", practice: "Replace at least two <img> tags with next/image, and set width/height correctly so there's no layout shift when images load." },
+        { title: "Loading and Error States", practice: "Add a loading.tsx and error.tsx to one route so users see a proper loading state and a graceful error message instead of a blank screen." },
+        { title: "Metadata and SEO", practice: "Add a page title, meta description, and Open Graph tags to at least two pages using the Metadata API." },
+        { title: "Next.js Checkpoint", practice: "Submit a small multi-page Next.js site with a shared layout, working navigation, optimized images, and metadata on every page." },
+      ],
     },
     {
       title: "APIs and Data",
       theme: "Connect interfaces to data sources and understand how requests, responses, validation, and errors work.",
-      lessons: ["HTTP and JSON", "Fetching Data", "API Route Basics", "Form Submission", "Validation and Errors", "Saving User Progress", "API Checkpoint"],
+      lessons: [
+        { title: "HTTP and JSON", practice: "Use a tool like Postman or curl to make one GET request to a public API, and explain the status code and JSON shape you got back." },
+        { title: "Fetching Data", practice: "Fetch data from a public API in a Next.js page and render at least 5 items from the response on screen." },
+        { title: "API Route Basics", practice: "Build one custom API route in your Next.js app that returns JSON, and call it from the frontend." },
+        { title: "Form Submission", practice: "Wire a form to POST its data to your own API route, and confirm the submitted data is received correctly server-side." },
+        { title: "Validation and Errors", practice: "Add server-side validation to your API route (e.g. reject empty fields) and show the resulting error message on the frontend." },
+        { title: "Saving User Progress", practice: "Persist one piece of user state (e.g. a completed task) to a simple backend store so it survives a page refresh." },
+        { title: "API Checkpoint", practice: "Submit a small feature that fetches data, submits a form to your own API route, validates it, and reflects the saved result back to the user." },
+      ],
     },
     {
       title: "Project Polish",
       theme: "Improve performance, accessibility, visual quality, and reliability before showing a project to a client.",
-      lessons: ["Accessibility Basics", "Keyboard and Focus States", "Performance Checks", "Empty and Error UI", "Mobile QA", "Code Cleanup", "Polish Checkpoint"],
+      lessons: [
+        { title: "Accessibility Basics", practice: "Run an accessibility check (e.g. Lighthouse or axe) on one page, then fix at least three flagged issues (alt text, labels, contrast)." },
+        { title: "Keyboard and Focus States", practice: "Tab through an entire page using only the keyboard and fix any element that's unreachable or has no visible focus state." },
+        { title: "Performance Checks", practice: "Run a Lighthouse performance audit on one page and make one concrete change (image size, unused code, etc.) that measurably improves the score." },
+        { title: "Empty and Error UI", practice: "Add a real empty state and a real error state to one data-driven component instead of a blank screen or console error." },
+        { title: "Mobile QA", practice: "Test one full page on an actual phone screen (or device emulator) and fix at least two issues you find (tap targets, overflow, text size)." },
+        { title: "Code Cleanup", practice: "Remove all console.logs, dead code, and unused imports from one feature, and rename at least two unclear variable names." },
+        { title: "Polish Checkpoint", practice: "Submit a before/after comparison of one page showing the accessibility, performance, and cleanup improvements you made." },
+      ],
     },
     {
       title: "Deployment and Portfolio",
       theme: "Ship a working web project, document it clearly, and present it as proof that you can build real products.",
-      lessons: ["Git Workflow", "Environment Variables", "Production Build", "Deployment Setup", "Domain and SEO Basics", "Project README", "Graduation Deployment Checkpoint"],
+      lessons: [
+        { title: "Git Workflow", practice: "Initialize a git repo for your project (if not already), make at least 5 meaningful commits with clear messages, and push to GitHub." },
+        { title: "Environment Variables", practice: "Move one hardcoded secret or config value into a .env file, and confirm the app still works with it read from process.env." },
+        { title: "Production Build", practice: "Run a production build of your app locally, fix any build errors, and confirm it runs correctly in production mode." },
+        { title: "Deployment Setup", practice: "Deploy your project live (e.g. to Vercel) and confirm the deployed version works end-to-end, not just localhost." },
+        { title: "Domain and SEO Basics", practice: "Set a custom project name or domain on your deployment and confirm your page title and meta description show correctly when shared." },
+        { title: "Project README", practice: "Write a README for your project covering what it does, how to run it locally, and a link to the live deployment." },
+        { title: "Graduation Deployment Checkpoint", practice: "Ship one complete, deployed web project with working navigation, at least one API-backed feature, accessibility and performance fixes applied, and a README, ready to link from a CV or portfolio." },
+      ],
     },
   ],
   {
@@ -1175,17 +1297,41 @@ const aiPromptLessons = createModuleLessons(
     {
       title: "Prompt Foundations",
       theme: "Learn how context, task, constraints, examples, and evaluation turn vague prompts into useful AI instructions.",
-      lessons: ["How AI Assistants Respond", "Prompt Anatomy", "Context and Role Design", "Constraints and Output Formats", "Few Shot Examples", "Testing Prompt Quality", "Prompt Foundations Checkpoint"],
+      lessons: [
+        { title: "How AI Assistants Respond", practice: "Ask the same question to an AI assistant three different ways (vague, specific, with an example) and compare the three responses side by side." },
+        { title: "Prompt Anatomy", practice: "Rewrite one vague one-line prompt into a structured prompt with role, task, context, and constraints, and compare the two outputs." },
+        { title: "Context and Role Design", practice: "Write two prompts for the same task with two different assigned roles or personas (e.g. 'strict editor' vs. 'friendly tutor') and compare tone and content differences." },
+        { title: "Constraints and Output Formats", practice: "Write a prompt that forces a specific output format (e.g. a table, bullet list, or JSON) and confirm the AI actually follows the format." },
+        { title: "Few Shot Examples", practice: "Write a zero-shot prompt and a few-shot version (with 2-3 examples) for the same task, and compare consistency across three runs of each." },
+        { title: "Testing Prompt Quality", practice: "Run the same prompt three times and note whether the outputs are consistent; if not, revise the prompt to reduce the variation." },
+        { title: "Prompt Foundations Checkpoint", practice: "Submit your three best prompts from this module (one structured, one role-based, one constrained) along with the outputs they produced." },
+      ],
     },
     {
       title: "Creative and Business Workflows",
       theme: "Use AI to support design, writing, research, planning, and customer-facing workflows without losing human judgment.",
-      lessons: ["Content Planning Prompts", "Design Brief Prompts", "Image Prompting Basics", "Research Summaries", "Customer Response Drafts", "Workflow Templates", "Workflow Checkpoint"],
+      lessons: [
+        { title: "Content Planning Prompts", practice: "Use AI to generate a one-week content calendar for a real or invented small business, then edit at least two entries to fix generic or inaccurate suggestions." },
+        { title: "Design Brief Prompts", practice: "Use AI to draft a creative brief for a design project, then revise it by hand to add specifics only you would know (budget, audience, deadline)." },
+        { title: "Image Prompting Basics", practice: "Write three image-generation prompts for the same concept, varying only the level of visual detail, and compare the results." },
+        { title: "Research Summaries", practice: "Use AI to summarize a real article or document, then fact-check at least two claims in the summary against the original source." },
+        { title: "Customer Response Drafts", practice: "Use AI to draft a response to a tricky customer complaint, then edit it by hand to make it sound less generic and more specific to the situation." },
+        { title: "Workflow Templates", practice: "Build a reusable prompt template (with placeholders) for a task you'd repeat often, and test it with two different sets of inputs." },
+        { title: "Workflow Checkpoint", practice: "Submit one real workflow (content, design brief, or customer response) showing your AI-generated draft and your hand-edited final version side by side." },
+      ],
     },
     {
       title: "Responsible AI Systems",
       theme: "Create practical AI systems that are reviewed, documented, safe, and ready for real school or business use.",
-      lessons: ["Fact Checking Outputs", "Bias and Safety Review", "Prompt Libraries", "Automation Planning", "Human Approval Steps", "AI Portfolio Project", "Graduation AI System Checkpoint"],
+      lessons: [
+        { title: "Fact Checking Outputs", practice: "Ask an AI assistant a factual question in a field you're familiar with, then verify every claim in its answer against a real source, flagging anything incorrect or unverifiable." },
+        { title: "Bias and Safety Review", practice: "Review one AI-generated piece of content (e.g. a job description or customer persona) for biased assumptions, and rewrite the flagged parts." },
+        { title: "Prompt Libraries", practice: "Organize your five best prompts from this course into a simple reusable library (a doc, spreadsheet, or note file) with a short description of when to use each." },
+        { title: "Automation Planning", practice: "Pick one repetitive task in your own life or work and write a step-by-step plan for how AI could automate part of it, including where a human must still check the output." },
+        { title: "Human Approval Steps", practice: "Design a simple review checklist a human should complete before publishing or acting on AI-generated output for a task of your choice." },
+        { title: "AI Portfolio Project", practice: "Build one complete AI-assisted project (a document, plan, or small tool) from prompt to finished output, documenting each revision you made." },
+        { title: "Graduation AI System Checkpoint", practice: "Assemble a complete AI system for a real task: your prompt library, a documented workflow with human approval steps, a fact-checked output, and your finished portfolio project." },
+      ],
     },
   ],
   {
@@ -3857,7 +4003,7 @@ const videoOverrides: Record<string, string> = {
   "ps-16": youtubeEmbed("pfur6mP1Z3U"),
   "ps-17": youtubeEmbed("i8WNvjLDzfQ"),
 
-  "ai-1": youtubeEmbed("LTqXn3qT5H0"),
+  "ai-1": youtubeEmbed("0IUVEYX8KnU"),
   "ai-2": youtubeEmbed("I7CoMhF6pQ8"),
   "ai-3": youtubeEmbed("IpFyYahyPmE"),
   "ai-4": youtubeEmbed("y9ySa3y85qw"),
@@ -3869,7 +4015,7 @@ const videoOverrides: Record<string, string> = {
   "ai-10": youtubeEmbed("KYiAImHbMvM"),
   "ai-11": youtubeEmbed("JHfQUSOPCu4"),
   "ai-12": youtubeEmbed("ITRZ75OKrG0"),
-  "ai-13": youtubeEmbed("T8xAXeP3-kw"),
+  "ai-13": youtubeEmbed("IDmn6g0cHig"),
   "ai-14": youtubeEmbed("4LgPxxAaJAE"),
   "ai-15": youtubeEmbed("mhUMNu7XeTE"),
 
@@ -3881,7 +4027,7 @@ const videoOverrides: Record<string, string> = {
   "vd-1-6": youtubeEmbed("q6qA_609UOE"),
   "vd-1-7": youtubeEmbed("_3k7uaT4km0"),
   "vd-2-1": youtubeEmbed("5p1WoXx8w3M"),
-  "vd-2-2": youtubeEmbed("_syykYZ3WOo"),
+  "vd-2-2": youtubeEmbed("ZV2WJs1uYkY"),
   "vd-2-3": youtubeEmbed("GbG_lp5B6PQ"),
   "vd-2-4": youtubeEmbed("nyoyDXc0Rw0"),
   "vd-2-5": youtubeEmbed("KgXSeWM50vU"),
@@ -3899,7 +4045,7 @@ const videoOverrides: Record<string, string> = {
   "vd-4-3": youtubeEmbed("WxSYc5afjDY"),
   "vd-4-4": youtubeEmbed("AZUj_IEoKiM"),
   "vd-4-5": youtubeEmbed("TOTsxwquAN0"),
-  "vd-4-6": youtubeEmbed("xuq4mTh50p4"),
+  "vd-4-6": youtubeEmbed("jn6nT5JVmoc"),
   "vd-4-7": youtubeEmbed("X5qiBwqptek"),
   "vd-5-1": youtubeEmbed("N-34Q9mhwvs"),
   "vd-5-2": youtubeEmbed("f2NR7xL8jAc"),
@@ -3923,7 +4069,7 @@ const videoOverrides: Record<string, string> = {
   "vc-2-5": youtubeEmbed("Eqfz3RFo890"),
   "vc-2-6": youtubeEmbed("dkOj_GDtlwQ"),
   "vc-2-7": youtubeEmbed("9zA8cB-54SA"),
-  "vc-3-1": youtubeEmbed("edlFjlzxkSI"),
+  "vc-3-1": youtubeEmbed("L9-3VBOjNH4"),
   "vc-3-2": youtubeEmbed("gNhdufVqXeE"),
   "vc-3-3": youtubeEmbed("U8Klu6oqnjc"),
   "vc-3-4": youtubeEmbed("YiOlaiscqDY"),
@@ -3967,7 +4113,7 @@ const videoOverrides: Record<string, string> = {
   "vc-8-7": youtubeEmbed("Cxftp90K_ek"),
 
   "ape-1-1": youtubeEmbed("LPZh9BOjkQs"),
-  "ape-1-2": youtubeEmbed("bCgVLhKjgk4"),
+  "ape-1-2": youtubeEmbed("_ZvnD73m40o"),
   "ape-1-3": youtubeEmbed("XvCq4nPqE0Y"),
   "ape-1-4": youtubeEmbed("h6RFksMw99Q"),
   "ape-1-5": youtubeEmbed("Ns7oxTn5U6A"),
@@ -3989,15 +4135,15 @@ const videoOverrides: Record<string, string> = {
   "ape-3-7": youtubeEmbed("HVi0F3YT13I"),
 
   "cc-1": youtubeEmbed("j5_471mO14c"),
-  "cc-2": youtubeEmbed("2q2TuJ_Bz8E"),
+  "cc-2": youtubeEmbed("22Nn_OXJO8Y"),
   "cc-3": youtubeEmbed("ovgbuoeAPDs"),
   "cc-4": youtubeEmbed("UuwIAPhvcJQ"),
-  "cc-5": youtubeEmbed("LKeyhTQMFoE"),
+  "cc-5": youtubeEmbed("GXeUuVED2xo"),
   "cc-6": youtubeEmbed("EeU6Og9lRhc"),
   "cc-7": youtubeEmbed("uJPG4_jgmDw"),
   "cc-8": youtubeEmbed("c_yUkyAdrx8"),
   "cc-9": youtubeEmbed("pp8ICDf8Go0"),
-  "cc-10": youtubeEmbed("5EgNDG9h3O4"),
+  "cc-10": youtubeEmbed("_e0Pk65yPg8"),
   "cc-11": youtubeEmbed("sMf-rNE8xQU"),
   "cc-12": youtubeEmbed("8G0udS0ut5o"),
   "cc-13": youtubeEmbed("lDIix00jVuI"),
@@ -4005,17 +4151,17 @@ const videoOverrides: Record<string, string> = {
   "cc-15": youtubeEmbed("Eapm0SOGvng"),
 
   "sw-1": youtubeEmbed("ZynPfr0gGYw"),
-  "sw-2": youtubeEmbed("H3_NcpCEkCU"),
+  "sw-2": youtubeEmbed("Jy5fZVg6D38"),
   "sw-3": youtubeEmbed("G7AP7giy6t8"),
   "sw-4": youtubeEmbed("LC-PwGtOMsA"),
   "sw-5": youtubeEmbed("Ufmx1VkiauI"),
   "sw-6": youtubeEmbed("y90KCBmnXH0"),
   "sw-7": youtubeEmbed("VlzBeWPEexE"),
   "sw-8": youtubeEmbed("lEv7pktIzqg"),
-  "sw-9": youtubeEmbed("85iYUxN1bkk"),
+  "sw-9": youtubeEmbed("3F0_2WCnrGE"),
   "sw-10": youtubeEmbed("UlltrlJt08g"),
   "sw-11": youtubeEmbed("KTnCuDoFJQs"),
-  "sw-12": youtubeEmbed("fF6BcSlWhhI"),
+  "sw-12": youtubeEmbed("IL60XOkNQOE"),
   "sw-13": youtubeEmbed("bEePwuqsEBs"),
   "sw-14": youtubeEmbed("CSYqOFStOns"),
 };

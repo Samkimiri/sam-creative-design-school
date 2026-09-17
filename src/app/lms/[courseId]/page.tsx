@@ -90,6 +90,8 @@ export default function CoursePlayer() {
   const [activeTab, setActiveTab] = useState<LessonTab>("video");
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
+  const [reviewingAttempt, setReviewingAttempt] = useState(false);
+  const [reviewAttemptNotFound, setReviewAttemptNotFound] = useState(false);
   const [assignmentForm, setAssignmentForm] = useState({ fileUrl: "", notes: "" });
   const [assignmentStatus, setAssignmentStatus] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -335,6 +337,25 @@ export default function CoursePlayer() {
     await syncLessonProgress(lessonId);
   };
 
+  const reviewLastAttempt = async () => {
+    if (!activeLesson.quiz) return;
+    setReviewingAttempt(true);
+    setReviewAttemptNotFound(false);
+    try {
+      const res = await fetch(`/api/quiz/submit?courseId=${courseId}&lessonId=${activeLesson.id}`);
+      const data = await res.json();
+      if (!res.ok || !data.attempt) {
+        setReviewAttemptNotFound(true);
+        return;
+      }
+      setQuizResult({ ...data.attempt, error: undefined });
+    } catch {
+      setReviewAttemptNotFound(true);
+    } finally {
+      setReviewingAttempt(false);
+    }
+  };
+
   const handleQuizSubmit = async () => {
     if (!activeLesson.quiz) return;
     try {
@@ -379,6 +400,7 @@ export default function CoursePlayer() {
     setActiveTab("video");
     setQuizResult(null);
     setQuizAnswers([]);
+    setReviewAttemptNotFound(false);
     setAssignmentForm({ fileUrl: "", notes: "" });
     setAssignmentStatus("");
   };
@@ -766,6 +788,12 @@ export default function CoursePlayer() {
                         <h4 className="font-bold text-dark text-sm uppercase tracking-wider">Submit Assignment</h4>
                         <span className="text-xs font-bold text-gray-400">{activeLesson.title}</span>
                       </div>
+                      {activeLesson.assignment && (
+                        <div className="mb-6 rounded-2xl border border-primary/15 bg-primary/5 p-5 md:p-6">
+                          <p className="mb-2 text-xs font-black uppercase tracking-widest text-primary">Practical Task</p>
+                          <p className="text-sm leading-relaxed text-gray-700">{renderEmphasizedText(activeLesson.assignment)}</p>
+                        </div>
+                      )}
                       <form
                         onSubmit={submitAssignment}
                         className="rounded-2xl border border-gray-100 bg-gradient-to-br from-blue-50/40 via-white to-white p-5 shadow-sm transition-all duration-300 focus-within:border-primary/30 focus-within:shadow-lg focus-within:shadow-primary/10 md:p-6"
@@ -849,9 +877,21 @@ export default function CoursePlayer() {
                 {!quizResult ? (
                   <>
                     <div className="mb-6 sm:mb-8">
-                      <button onClick={() => openTab("video")} className="text-sm text-gray-500 hover:text-dark mb-4 block">
-                        Back to Lesson
-                      </button>
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <button onClick={() => openTab("video")} className="text-sm text-gray-500 hover:text-dark">
+                          Back to Lesson
+                        </button>
+                        <button
+                          onClick={reviewLastAttempt}
+                          disabled={reviewingAttempt}
+                          className="text-sm font-bold text-primary hover:text-primary/80 disabled:opacity-50"
+                        >
+                          {reviewingAttempt ? "Loading..." : "Review My Last Attempt"}
+                        </button>
+                      </div>
+                      {reviewAttemptNotFound && (
+                        <p className="mb-4 text-sm font-medium text-amber-600">You haven&apos;t submitted this quiz yet - answer it below first.</p>
+                      )}
                       <h2 className="text-2xl font-extrabold text-dark mb-1">Lesson Quiz</h2>
                       <p className="text-gray-500">{activeLesson.title} - Answer all questions to complete this lesson</p>
                     </div>
