@@ -1,6 +1,5 @@
-import { lessons } from "@/data/courses";
+import { isCourseComplete } from "@/lib/courseCompletion";
 import { getDB } from "@/lib/db";
-import { getManagedCourses } from "@/lib/contentSettings";
 import { getCommunityPoints, type CommunityMessage } from "@/lib/community";
 
 interface ProgressRecord {
@@ -60,10 +59,9 @@ function getRankLabel(score: number) {
 }
 
 export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
-  const [students, progressRecords, courses] = await Promise.all([
+  const [students, progressRecords] = await Promise.all([
     getDB<Student>("students.json"),
     getDB<ProgressRecord>("progress.json"),
-    getManagedCourses(),
   ]);
 
   // Community messages require persistent storage in production, but the
@@ -76,12 +74,6 @@ export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
     console.error("Community points lookup failed; leaderboard will show 0 community points:", error);
   }
 
-  const courseLessonTotals = new Map(
-    courses.map((course) => [
-      course.id,
-      lessons.filter((lesson) => lesson.courseId === course.id).length,
-    ])
-  );
   const progressByStudent = new Map<string, ProgressRecord[]>();
 
   progressRecords.filter(isProgressRecord).forEach((record) => {
@@ -103,10 +95,7 @@ export async function getLeaderboardEntries(): Promise<LeaderboardEntry[]> {
       const activeCourses = records.length > 0
         ? new Set(records.map((record) => record.courseId)).size
         : student.enrolledCourses?.length ?? 0;
-      const certificates = records.filter((record) => {
-        const totalLessons = courseLessonTotals.get(record.courseId) || 0;
-        return totalLessons > 0 && new Set(record.completedLessons).size >= totalLessons;
-      }).length;
+      const certificates = records.filter((record) => isCourseComplete(record.courseId, record.completedLessons)).length;
       const quizScores = records.flatMap((record) => record.quizScores || []);
       const quizAverage = quizScores.length
         ? Math.round(

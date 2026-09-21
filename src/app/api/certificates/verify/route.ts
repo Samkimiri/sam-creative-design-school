@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { courses, lessons } from "@/data/courses";
+import { courses } from "@/data/courses";
+import { certificateIdFor, getCourseCompletion } from "@/lib/courseCompletion";
 import { getDB } from "@/lib/db";
 import { hasCourseAccess } from "@/lib/enrollmentAccess";
 import type { ProgressRecord, Student } from "@/types";
@@ -17,13 +18,12 @@ export async function GET(request: Request) {
 
   for (const student of students) {
     for (const course of courses) {
-      const certificateId = `SCDS-${student.id}-${course.id}`;
+      const certificateId = certificateIdFor(student.id, course.id);
       if (certificateId !== id) continue;
 
-      const courseLessons = lessons.filter((lesson) => lesson.courseId === course.id);
       const record = progress.find((item) => item.studentId === student.id && item.courseId === course.id);
-      const completed = new Set(record?.completedLessons ?? []);
-      const allLessonsCompleted = courseLessons.length > 0 && courseLessons.every((lesson) => completed.has(lesson.id));
+      const completion = getCourseCompletion(course.id, record?.completedLessons);
+      const allLessonsCompleted = completion.isComplete;
       // A certificate for a course the student no longer has access to (paused,
       // or the enrollment was later revoked - e.g. a refund) should stop
       // verifying as valid, even though the lessons were genuinely completed
@@ -38,8 +38,10 @@ export async function GET(request: Request) {
           certificateId,
           studentName: student.name,
           courseTitle: course.title,
-          completedLessons: completed.size,
-          totalLessons: courseLessons.length,
+          completedLessons: completion.completedCount,
+          totalLessons: completion.total,
+          issuedOn: record?.courseCompletedAt ?? null,
+          cohort: record?.completionCohort ?? null,
         },
       });
     }

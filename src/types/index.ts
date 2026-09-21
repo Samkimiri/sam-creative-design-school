@@ -37,6 +37,8 @@ export interface ProgressRecord {
   completedLessons: string[];
   quizScores: { lessonId: string; score: number; total: number; date: string }[];
   lastAccessed: string;
+  courseCompletedAt?: string;
+  completionCohort?: string;
 }
 
 export interface Enrollment {

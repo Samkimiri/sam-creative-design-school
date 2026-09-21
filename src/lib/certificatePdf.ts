@@ -2,19 +2,19 @@ import fs from "fs";
 import path from "path";
 import { FONT_WIDTHS } from "@/lib/pdfFontMetrics";
 
-const schoolLogoPath = path.join(process.cwd(), "public", "images", "scds-logo.jpeg");
+export const schoolLogoPath = path.join(process.cwd(), "public", "images", "scds-logo.jpeg");
 
 const PAGE_WIDTH = 792;
 const PAGE_HEIGHT = 612;
 const CENTER_X = PAGE_WIDTH / 2;
 
 // Palette
-const NAVY = "0.04 0.12 0.28";
+export const NAVY = "0.04 0.12 0.28";
 const NAVY_STROKE = NAVY;
-const SKY = "0.12 0.60 0.90";
-const GOLD = "0.78 0.60 0.22";
-const INK = "0.24 0.27 0.33";
-const MUTED = "0.45 0.49 0.56";
+export const SKY = "0.12 0.60 0.90";
+export const GOLD = "0.78 0.60 0.22";
+export const INK = "0.24 0.27 0.33";
+export const MUTED = "0.45 0.49 0.56";
 
 type PdfFont = "F1" | "F2" | "F3" | "F4" | "F5" | "F6" | "F7";
 
@@ -42,7 +42,7 @@ function escapePdfText(value: string): string {
   return cleanText(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
 
-function textWidth(value: string, size: number, font: PdfFont, spacing = 0): number {
+export function textWidth(value: string, size: number, font: PdfFont, spacing = 0): number {
   const table = FONT_WIDTHS[FONTS[font].metrics];
   const text = cleanText(value);
   let units = 0;
@@ -53,13 +53,13 @@ function textWidth(value: string, size: number, font: PdfFont, spacing = 0): num
   return (units * size) / 1000 + spacing * Math.max(0, text.length - 1);
 }
 
-function fitSize(value: string, font: PdfFont, maxSize: number, minSize: number, maxWidth: number, spacing = 0): number {
+export function fitSize(value: string, font: PdfFont, maxSize: number, minSize: number, maxWidth: number, spacing = 0): number {
   let size = maxSize;
   while (size > minSize && textWidth(value, size, font, spacing) > maxWidth) size -= 0.5;
   return size;
 }
 
-function wrapByWidth(value: string, font: PdfFont, size: number, maxWidth: number): string[] {
+export function wrapByWidth(value: string, font: PdfFont, size: number, maxWidth: number): string[] {
   const words = cleanText(value).split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let current = "";
@@ -122,7 +122,7 @@ function circlePath(cx: number, cy: number, r: number): string {
   ].join(" ");
 }
 
-function starPoints(cx: number, cy: number, outer: number, inner: number): [number, number][] {
+export function starPoints(cx: number, cy: number, outer: number, inner: number): [number, number][] {
   return Array.from({ length: 10 }, (_, index) => {
     const angle = Math.PI / 2 + (index * Math.PI) / 5;
     const radius = index % 2 === 0 ? outer : inner;
@@ -164,16 +164,20 @@ function readJpegImage(filePath: string): JpegImage | null {
   return null;
 }
 
+export function formatIssueDate(value?: string | Date): string {
+  const parsed = value ? new Date(value) : new Date();
+  const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  return new Intl.DateTimeFormat("en-KE", { dateStyle: "long", timeZone: "Africa/Nairobi" }).format(date);
+}
+
 export function buildCompletionCertificatePdf(
   studentName: string,
   courseTitle: string,
   certificateId: string,
-  cohortLabel = ""
+  cohortLabel = "",
+  issuedAt?: string | Date
 ): Buffer {
-  const issuedOn = new Intl.DateTimeFormat("en-KE", {
-    dateStyle: "long",
-    timeZone: "Africa/Nairobi",
-  }).format(new Date());
+  const issuedOn = formatIssueDate(issuedAt);
   const verifyUrl = `https://sam-creative-design-school.vercel.app/verify-certificate?id=${certificateId}`;
   const schoolLogo = readJpegImage(schoolLogoPath);
 

@@ -55,7 +55,7 @@ const slides = [
   {
     title: "Blank certificate preview",
     label: "Completion Design",
-    image: "/images/certificate-preview-blank.svg",
+    image: "/api/certificate-preview",
     alt: "Blank Sam Creative Design School certificate preview",
     href: "/certificate-preview",
     cta: "View Blank Certificate",

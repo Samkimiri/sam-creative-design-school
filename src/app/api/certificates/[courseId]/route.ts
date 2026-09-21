@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB } from "@/lib/db";
-import { courses, lessons } from "@/data/courses";
+import { getDB, upsertDBRecord } from "@/lib/db";
+import { courses } from "@/data/courses";
+import { certificateIdFor, getCourseCompletion } from "@/lib/courseCompletion";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 import type { ProgressRecord } from "@/types";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
@@ -30,7 +31,7 @@ export async function GET(
   const adminStudentId = isAdmin ? searchParams.get("studentId") : null;
   const isAdminIssuedView = isAdmin && Boolean(adminStudentId) && !isAdminPreview;
 
-  const courseLessons = lessons.filter((lesson) => lesson.courseId === courseId);
+  let completedRecord: ProgressRecord | undefined;
 
   let studentName: string;
   let certificateId: string;
@@ -48,11 +49,7 @@ export async function GET(
     const targetProgress = (await getDB<ProgressRecord>("progress.json")).find(
       (record) => record.studentId === adminStudentId && record.courseId === courseId
     );
-    const targetCompleted = new Set(targetProgress?.completedLessons ?? []);
-    const targetCompletedAllLessons =
-      courseLessons.length > 0 && courseLessons.every((lesson) => targetCompleted.has(lesson.id));
-
-    if (!targetCompletedAllLessons) {
+    if (!getCourseCompletion(courseId, targetProgress?.completedLessons).isComplete) {
       return NextResponse.json(
         { error: "This student has not completed all lessons in this course yet." },
         { status: 403 }
@@ -60,7 +57,8 @@ export async function GET(
     }
 
     studentName = targetStudent.name || "Student";
-    certificateId = `SCDS-${adminStudentId}-${course.id}`;
+    certificateId = certificateIdFor(adminStudentId as string, course.id);
+    completedRecord = targetProgress;
   } else {
     const student = await getStudentWithConfirmedEnrollmentAccess(session.user.id);
 
@@ -74,11 +72,7 @@ export async function GET(
     const progress = (await getDB<ProgressRecord>("progress.json")).find(
       (record) => record.studentId === session.user.id && record.courseId === courseId
     );
-    const completed = new Set(progress?.completedLessons ?? []);
-    const completedAllLessons =
-      courseLessons.length > 0 && courseLessons.every((lesson) => completed.has(lesson.id));
-
-    if (!isAdmin && !completedAllLessons) {
+    if (!isAdmin && !getCourseCompletion(courseId, progress?.completedLessons).isComplete) {
       return NextResponse.json(
         { error: "Certificate unlocks after completing all lessons." },
         { status: 403 }
@@ -86,14 +80,41 @@ export async function GET(
     }
 
     studentName = student?.name || session.user.name || "Student";
-    certificateId = `SCDS-${session.user.id}-${course.id}`;
+    certificateId = certificateIdFor(session.user.id, course.id);
+    completedRecord = progress;
   }
 
   const shouldDownload = (isAdminPreview || isAdminIssuedView)
     ? searchParams.get("download") === "1"
     : true;
   const intake = await getUpcomingIntakeSettings();
-  const pdf = buildCompletionCertificatePdf(studentName, course.title, certificateId, intake.currentCohort);
+
+  // The issue date and cohort come from the moment the course was actually finished (stamped
+  // by the progress API), so the same certificate reads identically on every download. Students
+  // who finished before that stamp existed get it recorded now, the first time they download.
+  let issuedAt: string | undefined = completedRecord?.courseCompletedAt;
+  let cohort = completedRecord?.completionCohort ?? intake.currentCohort;
+  if (
+    completedRecord &&
+    !issuedAt &&
+    !isAdminPreview &&
+    getCourseCompletion(courseId, completedRecord.completedLessons).isComplete
+  ) {
+    issuedAt = new Date().toISOString();
+    cohort = intake.currentCohort;
+    try {
+      await upsertDBRecord("progress.json", {
+        ...completedRecord,
+        id: completedRecord.id ?? `${completedRecord.studentId}:${completedRecord.courseId}`,
+        courseCompletedAt: issuedAt,
+        completionCohort: cohort,
+      });
+    } catch (error) {
+      console.error("Could not record certificate issue date (non-fatal):", error);
+    }
+  }
+
+  const pdf = buildCompletionCertificatePdf(studentName, course.title, certificateId, cohort, issuedAt);
   const body = new Uint8Array(pdf).buffer;
 
   return new NextResponse(body, {

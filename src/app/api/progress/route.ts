@@ -5,6 +5,8 @@ import { courses, lessons } from "@/data/courses";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 import { sendProgressMilestoneEmail } from "@/lib/email";
 import { absoluteUrl } from "@/lib/seo";
+import { getCourseCompletion, isCourseComplete } from "@/lib/courseCompletion";
+import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 import type { Student } from "@/types";
 
 interface ProgressRecord {
@@ -14,6 +16,8 @@ interface ProgressRecord {
   completedLessons: string[];
   quizScores: { lessonId: string; score: number; total: number; date: string }[];
   lastAccessed: string;
+  courseCompletedAt?: string;
+  completionCohort?: string;
 }
 
 interface QuizAttempt {
@@ -113,34 +117,43 @@ export async function POST(request: Request) {
     // saved in between the read and the write (see git history for details).
     const recordId = progressRecordId(session.user.id, courseId);
     const existing = await getDBRecord<ProgressRecord>("progress.json", recordId);
-    const beforeCompleted = existing && isProgressRecord(existing) ? existing.completedLessons.length : 0;
+    const existingRecord = existing && isProgressRecord(existing) ? existing : null;
+    const before = getCourseCompletion(courseId, existingRecord?.completedLessons);
 
-    const savedRecord: ProgressRecord =
-      existing && isProgressRecord(existing)
-        ? {
-            ...existing,
-            id: recordId,
-            completedLessons: existing.completedLessons.includes(lessonId)
-              ? existing.completedLessons
-              : [...existing.completedLessons, lessonId],
-            lastAccessed: new Date().toISOString(),
-          }
-        : {
-            id: recordId,
-            studentId: session.user.id as string,
-            courseId,
-            completedLessons: [lessonId],
-            quizScores: [],
-            lastAccessed: new Date().toISOString(),
-          };
+    const savedRecord: ProgressRecord = existingRecord
+      ? {
+          ...existingRecord,
+          id: recordId,
+          completedLessons: existingRecord.completedLessons.includes(lessonId)
+            ? existingRecord.completedLessons
+            : [...existingRecord.completedLessons, lessonId],
+          lastAccessed: new Date().toISOString(),
+        }
+      : {
+          id: recordId,
+          studentId: session.user.id as string,
+          courseId,
+          completedLessons: [lessonId],
+          quizScores: [],
+          lastAccessed: new Date().toISOString(),
+        };
+
+    // The moment the last lesson lands, stamp the completion (date and cohort) on the
+    // student's record. The certificate, verification page and admin views all read
+    // this same stamp, so they can never disagree about when or whether a course was finished.
+    const afterState = getCourseCompletion(courseId, savedRecord.completedLessons);
+    const justCompleted = afterState.isComplete && !savedRecord.courseCompletedAt;
+    if (justCompleted) {
+      savedRecord.courseCompletedAt = new Date().toISOString();
+      savedRecord.completionCohort = (await getUpcomingIntakeSettings()).currentCohort;
+    }
 
     await upsertDBRecord("progress.json", savedRecord);
 
-    const totalLessons = lessons.filter((item) => item.courseId === courseId).length;
+    const totalLessons = afterState.total;
     if (totalLessons > 0 && student?.email) {
-      const afterCompleted = savedRecord.completedLessons.length;
-      const beforeMilestone = Math.floor((beforeCompleted / totalLessons) * 10);
-      const afterMilestone = Math.floor((afterCompleted / totalLessons) * 10);
+      const beforeMilestone = Math.floor((before.completedCount / totalLessons) * 10);
+      const afterMilestone = Math.floor((afterState.completedCount / totalLessons) * 10);
 
       if (afterMilestone > beforeMilestone) {
         const course = courses.find((item) => item.id === courseId);
@@ -159,27 +172,33 @@ export async function POST(request: Request) {
           }).catch(() => {})
         );
       }
-
-      if (afterCompleted >= totalLessons && !student.isAlumni) {
-        const studentId = student.id;
-        after(async () => {
-          try {
-            const currentStudent = await getDBRecord<Student>("students.json", studentId);
-            if (currentStudent && !currentStudent.isAlumni) {
-              await upsertDBRecord("students.json", {
-                ...currentStudent,
-                isAlumni: true,
-                alumniSince: new Date().toISOString(),
-              });
-            }
-          } catch (error) {
-            console.error("Auto-alumni update failed (non-fatal):", error);
-          }
-        });
-      }
     }
 
-    return NextResponse.json({ success: true, data: savedRecord });
+    if (isCourseComplete(courseId, savedRecord.completedLessons) && student && !student.isAlumni) {
+      const studentId = student.id;
+      after(async () => {
+        try {
+          const currentStudent = await getDBRecord<Student>("students.json", studentId);
+          if (currentStudent && !currentStudent.isAlumni) {
+            await upsertDBRecord("students.json", {
+              ...currentStudent,
+              isAlumni: true,
+              alumniSince: new Date().toISOString(),
+            });
+          }
+        } catch (error) {
+          console.error("Auto-alumni update failed (non-fatal):", error);
+        }
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: savedRecord,
+      courseCompleted: afterState.isComplete,
+      justCompleted,
+      certificateUrl: afterState.isComplete ? `/api/certificates/${courseId}` : null,
+    });
   } catch (err) {
     console.error("Progress POST Error:", err);
     return NextResponse.json({ error: "Failed to update progress" }, { status: 500 });

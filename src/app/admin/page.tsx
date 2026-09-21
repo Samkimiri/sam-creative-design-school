@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { courses, lessons } from "@/data/courses";
+import { isCourseComplete } from "@/lib/courseCompletion";
 import type { ContentSettings, CourseContentOverride, CourseFeedback, DiscountSettings, FAQSection, LessonContentOverride, LessonResourceOverride, ProgressRecord, PromoCode } from "@/types";
 import type { LeaderboardEntry } from "@/lib/leaderboard";
 import { downloadCsv } from "@/lib/csv";
@@ -1697,10 +1698,10 @@ export default function AdminDashboard() {
     ? students.filter((s) => {
         if (!(s.enrolledCourses ?? []).includes(certificateCourseId)) return false;
         if (certificateCourseLessonCount === 0) return false;
-        const completed = new Set(
+        return isCourseComplete(
+          certificateCourseId,
           progress.find((p) => p.studentId === s.id && p.courseId === certificateCourseId)?.completedLessons ?? []
-        ).size;
-        return completed >= certificateCourseLessonCount;
+        );
       })
     : [];
   const pendingAccessRequests = enrollments.filter((enrollment) => enrollment.status === "pending");

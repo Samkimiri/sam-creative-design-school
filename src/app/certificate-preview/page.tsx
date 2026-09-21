@@ -31,7 +31,7 @@ export default function CertificatePreviewPage() {
             </p>
           </div>
           <a
-            href="/images/certificate-preview-blank.svg"
+            href="/api/certificate-preview"
             target="_blank"
             rel="noreferrer"
             className="premium-button inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20"
@@ -43,7 +43,7 @@ export default function CertificatePreviewPage() {
 
         <div className="premium-card overflow-hidden rounded-3xl border border-primary/15 bg-white p-3 shadow-2xl shadow-primary/10 md:p-5" data-reveal>
           <img
-            src="/images/certificate-preview-blank.svg"
+            src="/api/certificate-preview"
             alt="Blank Sam Creative Design School certificate preview with no student name"
             className="certificate-preview-image w-full rounded-2xl border border-gray-100 bg-white"
           />
