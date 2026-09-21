@@ -210,6 +210,11 @@ export interface UpcomingIntakeSettings {
   weeklyScheduleLabel: string;
   weeklySchedule: string;
   badge: string;
+  currentCohort: string;
+  currentCohortStatus: string;
+  nextCohort: string;
+  cohortStudents: string;
+  cohortHighlights: string;
   updatedAt: string;
 }
 

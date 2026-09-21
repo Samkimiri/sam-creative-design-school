@@ -5,6 +5,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ClientPerformanceWidgets from "@/components/ClientPerformanceWidgets";
 import { getContentSettings } from "@/lib/contentSettings";
+import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
+import { LiveIntakeProvider } from "@/components/LiveIntake";
+import { CohortAnnouncementBar } from "@/components/CohortBlocks";
 import {
   defaultOgImage,
   defaultSeoDescription,
@@ -114,10 +117,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const content = await getContentSettings();
+  const [content, intake] = await Promise.all([getContentSettings(), getUpcomingIntakeSettings()]);
 
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${poppins.variable}`}
+      style={{ "--cohort-bar-h": intake.currentCohort ? "36px" : "0px" } as React.CSSProperties}
+    >
       <body className="antialiased">
         <script
           type="application/ld+json"
@@ -127,12 +134,15 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={jsonLdScript(websiteJsonLd())}
         />
-        <Navbar />
-        <main className="min-h-screen">
-          {children}
-        </main>
-        <Footer />
-        <ClientPerformanceWidgets whatsappNumber={content.homepage.whatsappNumber} />
+        <LiveIntakeProvider initial={intake}>
+          <CohortAnnouncementBar />
+          <Navbar />
+          <main className="min-h-screen" style={{ paddingTop: "var(--cohort-bar-h, 0px)" }}>
+            {children}
+          </main>
+          <Footer />
+          <ClientPerformanceWidgets whatsappNumber={content.homepage.whatsappNumber} />
+        </LiveIntakeProvider>
       </body>
     </html>
   );

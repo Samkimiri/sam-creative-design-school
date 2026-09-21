@@ -33,8 +33,14 @@ export async function PATCH(request: Request) {
     weeklyScheduleLabel: auth.body.weeklyScheduleLabel,
     weeklySchedule: auth.body.weeklySchedule,
     badge: auth.body.badge,
+    currentCohort: auth.body.currentCohort,
+    currentCohortStatus: auth.body.currentCohortStatus,
+    nextCohort: auth.body.nextCohort,
+    cohortStudents: auth.body.cohortStudents,
+    cohortHighlights: auth.body.cohortHighlights,
   });
-  revalidatePath("/");
+  // The cohort announcement bar lives in the root layout, so revalidate every page.
+  revalidatePath("/", "layout");
 
   return NextResponse.json({ success: true, data: { intake } });
 }

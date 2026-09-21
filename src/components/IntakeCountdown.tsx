@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Zap } from "lucide-react";
+import { useLiveIntake } from "@/components/LiveIntake";
 
 interface IntakeCountdownProps {
   targetDate: string;
@@ -38,42 +39,11 @@ function UnitTile({ value, label }: { value: number; label: string }) {
 }
 
 export default function IntakeCountdown({ targetDate, title = "Live Intake Countdown" }: IntakeCountdownProps) {
-  // The page itself is revalidated the moment an admin saves a new intake date, so a
-  // fresh page load always gets the right date. But a tab a visitor already has open
-  // would otherwise stay locked to whatever date it loaded with - polling here means
-  // an admin changing the date is picked up by open tabs too, not just new page loads.
-  const [liveTargetDate, setLiveTargetDate] = useState(targetDate);
-  const [liveTitle, setLiveTitle] = useState(title);
-
-  useEffect(() => {
-    setLiveTargetDate(targetDate);
-  }, [targetDate]);
-
-  useEffect(() => {
-    setLiveTitle(title);
-  }, [title]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const pollIntake = async () => {
-      try {
-        const res = await fetch("/api/intake", { cache: "no-store" });
-        const json = await res.json();
-        if (cancelled || !json?.success) return;
-        if (json.data?.nextIntake) setLiveTargetDate(json.data.nextIntake);
-        if (json.data?.countdownTitle) setLiveTitle(json.data.countdownTitle);
-      } catch {
-        // Keep showing the last known date if a poll fails
-      }
-    };
-
-    const interval = window.setInterval(pollIntake, 45000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
-  }, []);
+  // The shared LiveIntakeProvider keeps these in sync with whatever the admin last
+  // saved, including in tabs that were already open; props are the server-rendered fallback.
+  const live = useLiveIntake();
+  const liveTargetDate = live?.nextIntake ?? targetDate;
+  const liveTitle = live?.countdownTitle ?? title;
 
   const target = useMemo(() => new Date(liveTargetDate).getTime(), [liveTargetDate]);
   const [remaining, setRemaining] = useState(() => getRemaining(target));

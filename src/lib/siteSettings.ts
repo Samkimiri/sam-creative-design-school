@@ -7,7 +7,7 @@ export const defaultUpcomingIntakeSettings: UpcomingIntakeSettings = {
   subtitle:
     "The next class is open for enrollment with a structured schedule, guided assignments, and mentor feedback so students know exactly what happens after joining.",
   countdownTitle: "Live Intake Countdown",
-  nextIntake: "July 20, 2026",
+  nextIntake: "October 5, 2026",
   nextIntakeLabel: "Next Intake",
   learningMode: "Online LMS + Zoom classes + WhatsApp mentorship",
   learningModeLabel: "Learning Mode",
@@ -18,6 +18,11 @@ export const defaultUpcomingIntakeSettings: UpcomingIntakeSettings = {
   weeklyScheduleLabel: "Weekly Schedule",
   weeklySchedule: "Classes will happen on Zoom, with lessons unlocking weekly and assignments reviewed before certification.",
   badge: "Limited batch",
+  currentCohort: "Cohort 11",
+  currentCohortStatus: "In session",
+  nextCohort: "Cohort 12",
+  cohortStudents: "",
+  cohortHighlights: "",
   updatedAt: new Date(0).toISOString(),
 };
 
@@ -71,12 +76,34 @@ export async function saveUpcomingIntakeSettings(input: Record<string, unknown>)
     weeklyScheduleLabel: clean(input.weeklyScheduleLabel, current.weeklyScheduleLabel, 40),
     weeklySchedule: clean(input.weeklySchedule, current.weeklySchedule, 180),
     badge: clean(input.badge, current.badge, 40),
+    currentCohort: cleanOptional(input.currentCohort, current.currentCohort, 30),
+    currentCohortStatus: cleanOptional(input.currentCohortStatus, current.currentCohortStatus, 30),
+    nextCohort: cleanOptional(input.nextCohort, current.nextCohort, 30),
+    cohortStudents: cleanOptional(input.cohortStudents, current.cohortStudents, 40),
+    cohortHighlights: cleanMultiline(input.cohortHighlights, current.cohortHighlights, 400),
     id: defaultUpcomingIntakeSettings.id,
     updatedAt: new Date().toISOString(),
   };
 
   await upsertDBRecord("site-settings.json", updated);
   return updated;
+}
+
+// Cohort fields may be deliberately cleared by an admin (e.g. hide the announcement
+// bar between cohorts), so an empty string is saved as empty instead of falling back.
+function cleanOptional(value: unknown, fallback: string, maxLength: number) {
+  if (value === undefined || value === null) return fallback;
+  return String(value).trim().replace(/\s+/g, " ").slice(0, maxLength);
+}
+
+function cleanMultiline(value: unknown, fallback: string, maxLength: number) {
+  if (value === undefined || value === null) return fallback;
+  return String(value)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, maxLength);
 }
 
 function clean(value: unknown, fallback: string, maxLength: number) {

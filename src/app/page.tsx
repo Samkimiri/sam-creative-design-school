@@ -7,6 +7,8 @@ import GamifiedRegistration from "@/components/GamifiedRegistration";
 import ReviewsSection from "@/components/ReviewsSection";
 import AlumniNetwork from "@/components/AlumniNetwork";
 import IntakeCountdown from "@/components/IntakeCountdown";
+import { LiveIntakeField } from "@/components/LiveIntake";
+import { CohortSpotlight, CohortStatusChips } from "@/components/CohortBlocks";
 import { getContentSettings, getManagedCourses } from "@/lib/contentSettings";
 import { getCourseVisual } from "@/lib/courseVisuals";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
@@ -35,7 +37,7 @@ import {
   Wallet,
 } from "lucide-react";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 const heroImages = [
   { src: "/images/hero.png", alt: "Sam Creative Design School creative workspace" },
@@ -73,10 +75,10 @@ export default async function Home() {
     Icon: trustBadgeIcons[index] || BadgeCheck,
   }));
   const intakeDetails = [
-    { label: intake.nextIntakeLabel, value: intake.nextIntake, Icon: CalendarDays },
-    { label: intake.learningModeLabel, value: intake.learningMode, Icon: MessageCircle },
-    { label: intake.classDurationLabel, value: intake.classDuration, Icon: Clock },
-    { label: intake.availableSeatsLabel, value: intake.availableSeats, Icon: UsersRound },
+    { labelField: "nextIntakeLabel" as const, valueField: "nextIntake" as const, label: intake.nextIntakeLabel, value: intake.nextIntake, Icon: CalendarDays },
+    { labelField: "learningModeLabel" as const, valueField: "learningMode" as const, label: intake.learningModeLabel, value: intake.learningMode, Icon: MessageCircle },
+    { labelField: "classDurationLabel" as const, valueField: "classDuration" as const, label: intake.classDurationLabel, value: intake.classDuration, Icon: Clock },
+    { labelField: "availableSeatsLabel" as const, valueField: "availableSeats" as const, label: intake.availableSeatsLabel, value: intake.availableSeats, Icon: UsersRound },
   ];
   const learningBundle = content.homepage.learningBundle;
   const toolStacks = content.homepage.toolStacks;
@@ -364,20 +366,21 @@ export default async function Home() {
                   Upcoming Intake
                 </span>
               </div>
+              <CohortStatusChips />
               <h2 className="text-3xl font-extrabold leading-tight md:text-4xl">
-                {intake.title}
+                <LiveIntakeField field="title" fallback={intake.title} />
               </h2>
               <p className="mt-5 max-w-xl text-base leading-7 text-white/75">
-                {intake.subtitle}
+                <LiveIntakeField field="subtitle" fallback={intake.subtitle} />
               </p>
               <div className="mt-8 grid gap-3 border-y border-white/10 py-5 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-widest text-white/40">{intake.nextIntakeLabel}</p>
-                  <p className="mt-2 text-lg font-extrabold text-white">{intake.nextIntake}</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-white/40"><LiveIntakeField field="nextIntakeLabel" fallback={intake.nextIntakeLabel} /></p>
+                  <p className="mt-2 text-lg font-extrabold text-white"><LiveIntakeField field="nextIntake" fallback={intake.nextIntake} /></p>
                 </div>
                 <div>
-                  <p className="text-xs font-black uppercase tracking-widest text-white/40">{intake.availableSeatsLabel}</p>
-                  <p className="mt-2 text-lg font-extrabold text-primary-light">{intake.availableSeats}</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-white/40"><LiveIntakeField field="availableSeatsLabel" fallback={intake.availableSeatsLabel} /></p>
+                  <p className="mt-2 text-lg font-extrabold text-primary-light"><LiveIntakeField field="availableSeats" fallback={intake.availableSeats} /></p>
                 </div>
               </div>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
@@ -404,7 +407,7 @@ export default async function Home() {
               </div>
               {intakeDetails.map(({ Icon, ...item }, index) => (
                 <div
-                  key={item.label}
+                  key={item.labelField}
                   className="premium-card rounded-2xl border border-gray-100 bg-light-gray p-5 hover:border-primary/30 hover:bg-white"
                   data-reveal
                   style={{ "--reveal-delay": `${index * 80}ms` } as CSSProperties}
@@ -412,8 +415,8 @@ export default async function Home() {
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
                     <Icon className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <p className="text-xs font-black uppercase tracking-widest text-gray-400">{item.label}</p>
-                  <p className="mt-2 text-xl font-extrabold leading-snug text-dark">{item.value}</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400"><LiveIntakeField field={item.labelField} fallback={item.label} /></p>
+                  <p className="mt-2 text-xl font-extrabold leading-snug text-dark"><LiveIntakeField field={item.valueField} fallback={item.value} /></p>
                 </div>
               ))}
               <div className="premium-card overflow-hidden rounded-2xl border border-primary/20 bg-primary/10 sm:col-span-2" data-reveal>
@@ -424,15 +427,15 @@ export default async function Home() {
                     </span>
                     <div>
                     <p className="text-xs font-black uppercase tracking-widest text-primary">
-                      {intake.weeklyScheduleLabel}
+                      <LiveIntakeField field="weeklyScheduleLabel" fallback={intake.weeklyScheduleLabel} />
                     </p>
                     <p className="mt-2 text-lg font-extrabold leading-7 text-dark">
-                      {intake.weeklySchedule}
+                      <LiveIntakeField field="weeklySchedule" fallback={intake.weeklySchedule} />
                     </p>
                     </div>
                   </div>
                   <span className="shrink-0 rounded-full bg-white px-5 py-2 text-sm font-bold text-primary shadow-sm">
-                    {intake.badge}
+                    <LiveIntakeField field="badge" fallback={intake.badge} />
                   </span>
                 </div>
                 <div className="h-1.5 bg-primary" aria-hidden="true" />
@@ -441,6 +444,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <CohortSpotlight />
 
       <GamifiedRegistration />
 

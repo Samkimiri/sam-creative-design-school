@@ -206,6 +206,11 @@ interface UpcomingIntakeSettings {
   weeklyScheduleLabel: string;
   weeklySchedule: string;
   badge: string;
+  currentCohort: string;
+  currentCohortStatus: string;
+  nextCohort: string;
+  cohortStudents: string;
+  cohortHighlights: string;
   updatedAt: string;
 }
 
@@ -256,7 +261,7 @@ const defaultIntakeSettings: UpcomingIntakeSettings = {
   title: "Join the Next SCDS Class",
   subtitle: "The next class is open for enrollment with a structured schedule, guided assignments, and mentor feedback so students know exactly what happens after joining.",
   countdownTitle: "Live Intake Countdown",
-  nextIntake: "July 20, 2026",
+  nextIntake: "October 5, 2026",
   nextIntakeLabel: "Next Intake",
   learningMode: "Online LMS + Zoom classes + WhatsApp mentorship",
   learningModeLabel: "Learning Mode",
@@ -267,6 +272,11 @@ const defaultIntakeSettings: UpcomingIntakeSettings = {
   weeklyScheduleLabel: "Weekly Schedule",
   weeklySchedule: "Classes will happen on Zoom, with lessons unlocking weekly and assignments reviewed before certification.",
   badge: "Limited batch",
+  currentCohort: "Cohort 11",
+  currentCohortStatus: "In session",
+  nextCohort: "Cohort 12",
+  cohortStudents: "",
+  cohortHighlights: "",
   updatedAt: "",
 };
 const defaultContentSettings: ContentSettings = {
@@ -1417,7 +1427,7 @@ export default function AdminDashboard() {
         return;
       }
       setIntakeSettings({ ...defaultIntakeSettings, ...data.data.intake });
-      setNotice("Upcoming intake updated. Refresh the homepage to see the latest version.");
+      setNotice("Upcoming intake updated and live on the site. Pages already open in visitors' browsers pick up the change within about 30 seconds.");
     } catch (err) {
       setNotice(err instanceof DOMException && err.name === "AbortError"
         ? "The settings update took too long. Please try again."
@@ -3680,6 +3690,56 @@ export default function AdminDashboard() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Current Cohort</label>
+                  <input
+                    value={intakeSettings.currentCohort}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, currentCohort: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={30}
+                    placeholder="Cohort 11 (leave empty to hide the announcement bar)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Current Cohort Status</label>
+                  <input
+                    value={intakeSettings.currentCohortStatus}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, currentCohortStatus: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={30}
+                    placeholder="In session"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Next Cohort</label>
+                  <input
+                    value={intakeSettings.nextCohort}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, nextCohort: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={30}
+                    placeholder="Cohort 12"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Cohort Size (optional)</label>
+                  <input
+                    value={intakeSettings.cohortStudents}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, cohortStudents: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={40}
+                    placeholder="120+ students"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Cohort Highlights (one per line, shown in the Meet the Cohort section)</label>
+                  <textarea
+                    value={intakeSettings.cohortHighlights}
+                    onChange={(e) => setIntakeSettings((prev) => ({ ...prev, cohortHighlights: e.target.value }))}
+                    className="min-h-24 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-primary"
+                    maxLength={400}
+                    placeholder="7 courses running this term, weekly live Zoom classes, students shipping portfolio projects"
+                  />
+                </div>
               </div>
 
               <div>
@@ -3800,7 +3860,7 @@ export default function AdminDashboard() {
               subtitle="Download a simple graphic showing days remaining until the next intake."
               bodyClassName="p-6"
             >
-              <CountdownCard nextIntake={intakeSettings.nextIntake} whatsappDisplay={contentSettings.homepage.whatsappDisplay} />
+              <CountdownCard nextIntake={intakeSettings.nextIntake} cohortLabel={intakeSettings.nextCohort} whatsappDisplay={contentSettings.homepage.whatsappDisplay} />
             </CollapsiblePanel>
 
             <CollapsiblePanel

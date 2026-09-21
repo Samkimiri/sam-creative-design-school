@@ -5,6 +5,7 @@ import { siteName } from "@/lib/seo";
 
 interface CountdownCardProps {
   nextIntake: string;
+  cohortLabel?: string;
   whatsappDisplay?: string;
 }
 
@@ -115,7 +116,7 @@ function drawStampBadge(ctx: CanvasRenderingContext2D, text: string) {
   ctx.restore();
 }
 
-async function drawCard(canvas: HTMLCanvasElement, days: number | null, nextIntake: string, whatsappDisplay?: string) {
+async function drawCard(canvas: HTMLCanvasElement, days: number | null, nextIntake: string, whatsappDisplay?: string, cohortLabel?: string) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
@@ -209,7 +210,7 @@ async function drawCard(canvas: HTMLCanvasElement, days: number | null, nextInta
   }
 
   // Next-intake ticket, with a small calendar glyph and a dashed inner edge.
-  const pillText = `Next Intake · ${nextIntake}`;
+  const pillText = `${cohortLabel ? `${cohortLabel} · ` : "Next Intake · "}${nextIntake}`;
   ctx.font = "700 29px Arial, Helvetica, sans-serif";
   const pillTextWidth = ctx.measureText(pillText).width;
   const pillWidth = pillTextWidth + 118;
@@ -275,7 +276,7 @@ async function drawCard(canvas: HTMLCanvasElement, days: number | null, nextInta
   ctx.textAlign = "center";
 }
 
-export default function CountdownCard({ nextIntake, whatsappDisplay }: CountdownCardProps) {
+export default function CountdownCard({ nextIntake, whatsappDisplay, cohortLabel }: CountdownCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [downloading, setDownloading] = useState(false);
   const days = getDaysRemaining(nextIntake);
@@ -283,15 +284,15 @@ export default function CountdownCard({ nextIntake, whatsappDisplay }: Countdown
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    void drawCard(canvas, days, nextIntake, whatsappDisplay);
-  }, [days, nextIntake, whatsappDisplay]);
+    void drawCard(canvas, days, nextIntake, whatsappDisplay, cohortLabel);
+  }, [days, nextIntake, whatsappDisplay, cohortLabel]);
 
   const handleDownload = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     setDownloading(true);
     try {
-      await drawCard(canvas, days, nextIntake, whatsappDisplay);
+      await drawCard(canvas, days, nextIntake, whatsappDisplay, cohortLabel);
       const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) return;
       const url = URL.createObjectURL(blob);
