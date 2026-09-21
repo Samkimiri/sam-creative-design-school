@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { getDB, upsertDBRecord } from "@/lib/db";
+import { getDB } from "@/lib/db";
+import { ensureCompletionStamp } from "@/lib/completionStamp";
 import { courses } from "@/data/courses";
 import { certificateIdFor, getCourseCompletion } from "@/lib/courseCompletion";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
@@ -86,33 +87,19 @@ export async function GET(
 
   const shouldDownload = (isAdminPreview || isAdminIssuedView)
     ? searchParams.get("download") === "1"
-    : true;
+    : searchParams.get("view") !== "1";
   const intake = await getUpcomingIntakeSettings();
 
   // The issue date and cohort come from the moment the course was actually finished (stamped
-  // by the progress API), so the same certificate reads identically on every download. Students
-  // who finished before that stamp existed get it recorded now, the first time they download.
-  let issuedAt: string | undefined = completedRecord?.courseCompletedAt;
-  let cohort = completedRecord?.completionCohort ?? intake.currentCohort;
-  if (
-    completedRecord &&
-    !issuedAt &&
-    !isAdminPreview &&
-    getCourseCompletion(courseId, completedRecord.completedLessons).isComplete
-  ) {
-    issuedAt = new Date().toISOString();
-    cohort = intake.currentCohort;
-    try {
-      await upsertDBRecord("progress.json", {
-        ...completedRecord,
-        id: completedRecord.id ?? `${completedRecord.studentId}:${completedRecord.courseId}`,
-        courseCompletedAt: issuedAt,
-        completionCohort: cohort,
-      });
-    } catch (error) {
-      console.error("Could not record certificate issue date (non-fatal):", error);
-    }
+  // by the progress API), so the same certificate reads identically on every download.
+  // Students who finished before completion dates were recorded get an estimated date
+  // stamped here on first download, with no cohort claimed.
+  let stampedRecord = completedRecord;
+  if (stampedRecord && !isAdminPreview) {
+    stampedRecord = await ensureCompletionStamp(stampedRecord);
   }
+  const issuedAt = stampedRecord?.courseCompletedAt;
+  const cohort = stampedRecord?.completionCohort ?? intake.currentCohort;
 
   const pdf = buildCompletionCertificatePdf(studentName, course.title, certificateId, cohort, issuedAt);
   const body = new Uint8Array(pdf).buffer;

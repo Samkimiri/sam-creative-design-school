@@ -1,4 +1,4 @@
-const CACHE_NAME = "scds-app-v2";
+const CACHE_NAME = "scds-app-v3";
 const APP_SHELL = [
   "/",
   "/games",
@@ -33,6 +33,10 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  // Never cache API responses - opening a certificate link is a navigation, and caching it
+  // would leave a student's personal certificate PDF sitting on a shared phone.
+  if (url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(

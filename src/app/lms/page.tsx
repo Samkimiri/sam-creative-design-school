@@ -9,6 +9,7 @@ import { attachConfirmedEnrollmentsToStudent } from "@/lib/enrollmentAccess";
 import { createReferralCode } from "@/lib/referrals";
 import { Award, BadgeCheck, Flame, Medal, Sparkles, Trophy } from "lucide-react";
 import CommunityUnreadBadge from "@/components/CommunityUnreadBadge";
+import CertificateDownload from "@/components/CertificateDownload";
 
 interface ProgressRecord {
   studentId: string;
@@ -424,9 +425,11 @@ export default async function LMSDashboard() {
                     )}
 
                     {progress === 100 && (
-                      <a href={`/api/certificates/${course.id}`} className="mb-3 block rounded-xl border border-green-500 bg-green-50 py-3 text-center font-bold text-green-700 transition hover:bg-green-100">
-                        Download Certificate
-                      </a>
+                      <CertificateDownload
+                        courseId={course.id}
+                        wrapperClassName="mb-3 flex flex-col items-center gap-1"
+                        className="block w-full rounded-xl border border-green-500 bg-green-50 py-3 text-center font-bold text-green-700 transition hover:bg-green-100 disabled:opacity-60"
+                      />
                     )}
 
                     <Link href={`/lms/${course.id}`} className="block rounded-2xl bg-dark py-3.5 text-center font-bold text-white shadow-lg shadow-slate-900/15 transition duration-300 hover:-translate-y-0.5 hover:bg-primary hover:shadow-primary/25 active:translate-y-0">

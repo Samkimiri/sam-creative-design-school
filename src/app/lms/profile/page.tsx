@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Pencil } from "lucide-react";
+import CertificateDownload from "@/components/CertificateDownload";
 import { courses, lessons } from "@/data/courses";
 import type { ProgressRecord } from "@/types";
 
@@ -236,9 +237,12 @@ export default function ProfilePage() {
                         </div>
                         <div className="flex flex-wrap gap-2 sm:justify-end">
                           {pct === 100 && (
-                            <a href={`/api/certificates/${course.id}`} className="text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-4 py-2 rounded-lg hover:-translate-y-0.5 hover:bg-green-100 transition-all duration-300">
-                              Certificate
-                            </a>
+                            <CertificateDownload
+                              courseId={course.id}
+                              label="Certificate"
+                              wrapperClassName="flex flex-wrap items-center gap-2"
+                              className="text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-4 py-2 rounded-lg hover:-translate-y-0.5 hover:bg-green-100 transition-all duration-300 disabled:opacity-60"
+                            />
                           )}
                           <Link href={`/lms/${course.id}`} className="text-xs font-bold bg-dark text-white px-4 py-2 rounded-lg hover:-translate-y-0.5 hover:bg-primary transition-all duration-300">
                             {pct === 100 ? "Review" : pct > 0 ? "Continue" : "Start"}

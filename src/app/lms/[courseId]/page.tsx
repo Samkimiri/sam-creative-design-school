@@ -4,6 +4,7 @@ import Link from "next/link";
 import { courses as fallbackCourses, lessons as fallbackLessons, type Course, type Lesson } from "@/data/courses";
 import { useParams, useSearchParams } from "next/navigation";
 import LessonVideoPlayer, { type LessonVideoPlayerHandle } from "@/components/LessonVideoPlayer";
+import CertificateDownload from "@/components/CertificateDownload";
 
 const RESUME_THRESHOLD_SECONDS = 5;
 
@@ -101,8 +102,23 @@ export default function CoursePlayer() {
   const [progressLoaded, setProgressLoaded] = useState(false);
   const hasAppliedInitialResumeRef = useRef(false);
 
-  const progressStorageKey = `scds-progress-${courseId}`;
-  const videoProgressStorageKey = `scds-video-progress-${courseId}`;
+  // Offline backups are keyed by the signed-in student, so a shared phone or computer
+  // never mixes two students' progress. The server copy is always the source of truth,
+  // which is what lets a student pick up exactly where they left off on another device.
+  const [userId, setUserId] = useState<string | null>(null);
+  const progressStorageKey = userId ? `scds-progress-${userId}-${courseId}` : "";
+  const videoProgressStorageKey = userId ? `scds-video-progress-${userId}-${courseId}` : "";
+
+  // Earlier versions saved backups under a key shared by every account on the device.
+  // They cannot be attributed to a student, so they are dropped rather than trusted.
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem(`scds-progress-${courseId}`);
+      window.localStorage.removeItem(`scds-video-progress-${courseId}`);
+    } catch {
+      // Storage unavailable - nothing to clean up.
+    }
+  }, [courseId]);
 
   useEffect(() => {
     // Fetches once per course, not on every lesson switch - this used to
@@ -142,6 +158,9 @@ export default function CoursePlayer() {
         const data = await res.json();
         if (cancelled) return;
 
+        const currentUserId = data.user?.id ?? data.student?.id;
+        if (currentUserId) setUserId(String(currentUserId));
+
         const studentCourses = Array.isArray(data.student?.enrolledCourses) ? data.student.enrolledCourses : [];
         const pausedCourses = Array.isArray(data.student?.pausedCourses) ? data.student.pausedCourses : [];
         const isAdmin = data.user?.role === "admin" || data.student?.role === "admin";
@@ -166,7 +185,7 @@ export default function CoursePlayer() {
   }, [courseId, isPreview]);
 
   const readLocalProgress = useCallback(() => {
-    if (typeof window === "undefined") return [];
+    if (typeof window === "undefined" || !progressStorageKey) return [];
 
     try {
       const savedProgress = window.localStorage.getItem(progressStorageKey);
@@ -178,7 +197,7 @@ export default function CoursePlayer() {
   }, [progressStorageKey]);
 
   const writeLocalProgress = useCallback((lessonIds: string[]) => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !progressStorageKey) return;
 
     try {
       window.localStorage.setItem(progressStorageKey, JSON.stringify(mergeLessonIds(lessonIds)));
@@ -209,13 +228,15 @@ export default function CoursePlayer() {
   }, [courseId, writeLocalProgress]);
 
   const loadProgress = useCallback(async () => {
+    // Wait until we know which student is signed in - their progress lives on the server.
+    if (!progressStorageKey) return;
     const localLessons = readLocalProgress();
     if (localLessons.length > 0) {
       setCompletedLessons(localLessons);
     }
 
     try {
-      const res = await fetch(`/api/progress?courseId=${courseId}`);
+      const res = await fetch(`/api/progress?courseId=${courseId}`, { cache: "no-store" });
       const data = await res.json();
 
       if (data.success && data.data?.completedLessons) {
@@ -235,9 +256,28 @@ export default function CoursePlayer() {
     } finally {
       setProgressLoaded(true);
     }
-  }, [courseId, readLocalProgress, syncLessonProgress, writeLocalProgress]);
+  }, [courseId, progressStorageKey, readLocalProgress, syncLessonProgress, writeLocalProgress]);
 
   useEffect(() => { loadProgress(); }, [loadProgress]);
+
+  // A student can finish lessons on their phone while this page sits open on a laptop
+  // (or the reverse). Re-checking the server when the tab comes back into view keeps
+  // every device showing the same progress.
+  useEffect(() => {
+    if (!userId || isPreview) return;
+    let lastRefresh = Date.now();
+    const refresh = () => {
+      if (document.visibilityState !== "visible" || Date.now() - lastRefresh < 15000) return;
+      lastRefresh = Date.now();
+      void loadProgress();
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [userId, isPreview, loadProgress]);
 
   // Once progress has loaded for the first time, jump straight to the first
   // lesson the student hasn't completed yet - "continue where you left off"
@@ -259,7 +299,7 @@ export default function CoursePlayer() {
   }, [progressLoaded, completedLessons, courseLessons, activeLesson.id, isPreview]);
 
   const readLocalVideoProgress = useCallback((): Record<string, number> => {
-    if (typeof window === "undefined") return {};
+    if (typeof window === "undefined" || !videoProgressStorageKey) return {};
 
     try {
       const saved = window.localStorage.getItem(videoProgressStorageKey);
@@ -277,7 +317,7 @@ export default function CoursePlayer() {
   }, [videoProgressStorageKey]);
 
   const writeLocalVideoProgress = useCallback((positions: Record<string, number>) => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !videoProgressStorageKey) return;
 
     try {
       window.localStorage.setItem(videoProgressStorageKey, JSON.stringify(positions));
@@ -287,11 +327,12 @@ export default function CoursePlayer() {
   }, [videoProgressStorageKey]);
 
   const loadVideoProgress = useCallback(async () => {
+    if (!videoProgressStorageKey) return;
     const localPositions = readLocalVideoProgress();
     setVideoPositions(localPositions);
 
     try {
-      const res = await fetch(`/api/video-progress?courseId=${courseId}`);
+      const res = await fetch(`/api/video-progress?courseId=${courseId}`, { cache: "no-store" });
       const data = await res.json();
 
       if (data.success && data.data && typeof data.data === "object") {
@@ -306,7 +347,7 @@ export default function CoursePlayer() {
     } catch {
       // Leave any local video progress visible if the backend cannot be reached.
     }
-  }, [courseId, readLocalVideoProgress, writeLocalVideoProgress]);
+  }, [courseId, videoProgressStorageKey, readLocalVideoProgress, writeLocalVideoProgress]);
 
   useEffect(() => { loadVideoProgress(); }, [loadVideoProgress]);
 
@@ -646,12 +687,12 @@ export default function CoursePlayer() {
                         <p className="text-sm font-black uppercase tracking-widest text-green-700">Course Completed</p>
                         <h3 className="text-xl font-extrabold text-green-950">Your certificate is ready.</h3>
                       </div>
-                      <a
-                        href={`/api/certificates/${course.id}`}
-                        className="premium-button bg-green-600 text-white text-center font-bold px-5 py-3 rounded-xl hover:bg-green-700 transition-colors"
-                      >
-                        Download Certificate
-                      </a>
+                      <CertificateDownload
+                        courseId={course.id}
+                        wrapperClassName="flex flex-col items-center gap-1.5"
+                        className="premium-button bg-green-600 text-white text-center font-bold px-5 py-3 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-60"
+                        viewClassName="text-xs font-bold text-green-800 underline"
+                      />
                     </div>
                   )}
 

@@ -1413,6 +1413,35 @@ export default function AdminDashboard() {
     );
   };
 
+  const backfillCertificateDates = async () => {
+    setPendingAction("certificates-backfill");
+    setNotice("");
+    try {
+      const { res, data } = await fetchAdminJson<{ checked: number; stamped: number; failed: number }>(
+        "/api/admin/certificates/backfill",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        }
+      );
+      if (!res.ok || !data.success || !data.data) {
+        setNotice(data.message || "Could not update earlier certificates.");
+        return;
+      }
+      const { stamped, failed } = data.data;
+      setNotice(
+        stamped === 0 && failed === 0
+          ? "Every finished course already has a completion date. All certificates use the current design."
+          : `Recorded a completion date for ${stamped} earlier finisher${stamped === 1 ? "" : "s"}${failed ? ` (${failed} could not be updated)` : ""}. All certificates use the current design.`
+      );
+    } catch {
+      setNotice("Could not update earlier certificates. Check your connection and try again.");
+    } finally {
+      setPendingAction("");
+    }
+  };
+
   const saveIntakeSettings = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPendingAction("settings-intake");
@@ -3443,9 +3472,20 @@ export default function AdminDashboard() {
                     Students enrolled in {courses.find((c) => c.id === certificateCourseId)?.title || "this course"} who have completed all {certificateCourseLessonCount} lesson(s). Each download is their real, verifiable certificate.
                   </p>
                 </div>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary">
-                  {eligibleCertificateStudents.length} eligible
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={backfillCertificateDates}
+                    disabled={pendingAction === "certificates-backfill"}
+                    className="rounded-xl border border-primary/20 bg-white px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/5 disabled:opacity-50"
+                    title="Records a completion date for students who finished before dates were tracked"
+                  >
+                    {pendingAction === "certificates-backfill" ? "Updating..." : "Update earlier certificates"}
+                  </button>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary">
+                    {eligibleCertificateStudents.length} eligible
+                  </span>
+                </div>
               </div>
               {eligibleCertificateStudents.length === 0 ? (
                 <p className="p-6 text-sm text-gray-400">No students have completed every lesson in this course yet.</p>
