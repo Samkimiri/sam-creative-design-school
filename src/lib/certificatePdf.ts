@@ -175,7 +175,8 @@ export function buildCompletionCertificatePdf(
   courseTitle: string,
   certificateId: string,
   cohortLabel = "",
-  issuedAt?: string | Date
+  issuedAt?: string | Date,
+  certificateFocus = "professional design"
 ): Buffer {
   const issuedOn = formatIssueDate(issuedAt);
   const verifyUrl = `https://sam-creative-design-school.vercel.app/verify-certificate?id=${certificateId}`;
@@ -184,7 +185,7 @@ export function buildCompletionCertificatePdf(
   const nameSize = fitSize(studentName, "F7", 48, 26, 540);
   const courseSize = fitSize(courseTitle, "F2", 21, 14, 580);
   const descriptionLines = wrapByWidth(
-    "at Sam Creative Design School (SCDS), demonstrating creativity, dedication, and practical skill in professional design.",
+    `at Sam Creative Design School (SCDS), demonstrating creativity, dedication, and practical skill in ${cleanText(certificateFocus).trim() || "professional design"}.`,
     "F1",
     11,
     470

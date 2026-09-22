@@ -216,6 +216,7 @@ function buildCourseFromOverride(item: ContentSettings["courses"][number]) {
     color: item.color || "bg-primary",
     level: item.level || "Beginner",
     certificate: true,
+    certificateFocus: item.certificateFocus || "professional design",
   };
 }
 

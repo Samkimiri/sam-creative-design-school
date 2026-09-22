@@ -13,6 +13,10 @@ export interface Course {
   color: string;
   level: string;
   certificate: boolean;
+  // The phrase that fills "...demonstrating creativity, dedication, and practical
+  // skill in {certificateFocus}." on the completion certificate, so a coding or
+  // engineering course doesn't read as a design course.
+  certificateFocus: string;
 }
 
 export const courses: Course[] = [
@@ -30,7 +34,8 @@ export const courses: Course[] = [
     icon: "🎨",
     color: "from-blue-500 to-indigo-600",
     level: "Beginner to Intermediate",
-    certificate: true
+    certificate: true,
+    certificateFocus: "professional design"
   },
   {
     id: "illustrator-training",
@@ -46,7 +51,8 @@ export const courses: Course[] = [
     icon: "✏️",
     color: "from-sky-400 to-cyan-500",
     level: "Beginner to Intermediate",
-    certificate: true
+    certificate: true,
+    certificateFocus: "professional design"
   },
   {
     id: "vibe-designing-uiux",
@@ -62,7 +68,8 @@ export const courses: Course[] = [
     icon: "UX",
     color: "from-emerald-400 to-teal-600",
     level: "Beginner to Intermediate",
-    certificate: true
+    certificate: true,
+    certificateFocus: "professional product design"
   },
   {
     id: "vibe-coding-web-dev",
@@ -78,7 +85,8 @@ export const courses: Course[] = [
     icon: "</>",
     color: "from-lime-400 to-green-600",
     level: "Beginner to Job-Ready",
-    certificate: true
+    certificate: true,
+    certificateFocus: "professional web development"
   },
   {
     id: "ai-prompt-engineering",
@@ -94,7 +102,8 @@ export const courses: Course[] = [
     icon: "AI",
     color: "from-fuchsia-500 to-red-500",
     level: "Beginner",
-    certificate: true
+    certificate: true,
+    certificateFocus: "applied AI and prompt engineering"
   },
   {
     id: "capcut-masterclass",
@@ -110,7 +119,8 @@ export const courses: Course[] = [
     icon: "🎬",
     color: "from-pink-500 to-rose-600",
     level: "Beginner",
-    certificate: true
+    certificate: true,
+    certificateFocus: "professional video editing"
   },
   {
     id: "solidworks-engineers",
@@ -126,7 +136,8 @@ export const courses: Course[] = [
     icon: "⚙️",
     color: "from-gray-600 to-gray-800",
     level: "Intermediate",
-    certificate: true
+    certificate: true,
+    certificateFocus: "professional engineering design"
   }
 ];
 

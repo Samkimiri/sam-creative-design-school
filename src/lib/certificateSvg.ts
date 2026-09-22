@@ -79,13 +79,14 @@ export function buildCertificateSvg(options: {
   issuedAt?: string | Date;
   dateText?: string;
   placeholder?: boolean;
+  certificateFocus?: string;
 }): string {
-  const { studentName, courseTitle, certificateId, cohortLabel = "", placeholder = false } = options;
+  const { studentName, courseTitle, certificateId, cohortLabel = "", placeholder = false, certificateFocus = "professional design" } = options;
   const issuedOn = options.dateText ?? formatIssueDate(options.issuedAt);
   const logo = logoDataUri();
 
   const description = wrapByWidth(
-    "at Sam Creative Design School (SCDS), demonstrating creativity, dedication, and practical skill in professional design.",
+    `at Sam Creative Design School (SCDS), demonstrating creativity, dedication, and practical skill in ${certificateFocus.trim() || "professional design"}.`,
     "F1",
     11,
     470

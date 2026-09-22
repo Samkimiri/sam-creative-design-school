@@ -275,6 +275,7 @@ export interface CourseContentOverride {
   icon?: string;
   color?: string;
   level?: string;
+  certificateFocus?: string;
 }
 
 export interface LessonResourceOverride {
