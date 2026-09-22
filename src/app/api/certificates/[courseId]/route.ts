@@ -8,8 +8,25 @@ import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/
 import type { ProgressRecord } from "@/types";
 import { getUpcomingIntakeSettings } from "@/lib/siteSettings";
 import { buildCompletionCertificatePdf, cleanText } from "@/lib/certificatePdf";
+import { buildCertificateSvg } from "@/lib/certificateSvg";
+import sharp from "sharp";
 
 export const runtime = "nodejs";
+
+// The certificate SVG's viewBox is 792x612 units. sharp rasterizes an SVG assuming
+// 72 units per inch unless told otherwise, so density 72*N gives an N x output -
+// explicit rather than relying on sharp's default, which has changed across versions.
+const RASTER_SCALE = 4; // -> 3168x2448, crisp for print and full-screen viewing
+const SVG_BASE_DENSITY = 72;
+const CONTENT_TYPES = { pdf: "application/pdf", png: "image/png", jpeg: "image/jpeg" } as const;
+type CertificateFormat = keyof typeof CONTENT_TYPES;
+
+function parseFormat(value: string | null): CertificateFormat | null {
+  const normalized = (value || "pdf").toLowerCase();
+  if (normalized === "jpg") return "jpeg";
+  if (normalized === "pdf" || normalized === "png" || normalized === "jpeg") return normalized;
+  return null;
+}
 
 export async function GET(
   request: Request,
@@ -27,6 +44,10 @@ export async function GET(
   }
 
   const { searchParams } = new URL(request.url);
+  const format = parseFormat(searchParams.get("format"));
+  if (!format) {
+    return NextResponse.json({ error: "Unsupported format. Use pdf, png, or jpeg." }, { status: 400 });
+  }
   const isAdmin = session.user.role === "admin";
   const isAdminPreview = isAdmin && searchParams.get("preview") === "1";
   const adminStudentId = isAdmin ? searchParams.get("studentId") : null;
@@ -101,14 +122,28 @@ export async function GET(
   const issuedAt = stampedRecord?.courseCompletedAt;
   const cohort = stampedRecord?.completionCohort ?? intake.currentCohort;
 
-  const pdf = buildCompletionCertificatePdf(studentName, course.title, certificateId, cohort, issuedAt);
-  const body = new Uint8Array(pdf).buffer;
+  const filename = `${course.id}-certificate.${format === "jpeg" ? "jpg" : format}`;
+  const headers = {
+    "Content-Type": CONTENT_TYPES[format],
+    "Content-Disposition": `${shouldDownload ? "attachment" : "inline"}; filename="${filename}"`,
+    "Cache-Control": "no-store",
+  };
 
-  return new NextResponse(body, {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `${shouldDownload ? "attachment" : "inline"}; filename="${course.id}-certificate.pdf"`,
-      "Cache-Control": "no-store",
-    },
+  if (format === "pdf") {
+    const pdf = buildCompletionCertificatePdf(studentName, course.title, certificateId, cohort, issuedAt);
+    return new NextResponse(new Uint8Array(pdf).buffer, { headers });
+  }
+
+  // PNG/JPEG are rasterized from the same SVG design the homepage preview uses, filled in
+  // with this student's real details, so every format shows an identical-looking certificate.
+  const svg = buildCertificateSvg({ studentName, courseTitle: course.title, certificateId, cohortLabel: cohort, issuedAt });
+  const image = sharp(Buffer.from(svg), { density: SVG_BASE_DENSITY * RASTER_SCALE }).resize(792 * RASTER_SCALE, 612 * RASTER_SCALE, {
+    fit: "fill",
   });
+  const raster =
+    format === "jpeg"
+      ? await image.flatten({ background: "#ffffff" }).jpeg({ quality: 92 }).toBuffer()
+      : await image.png().toBuffer();
+
+  return new NextResponse(new Uint8Array(raster).buffer, { headers });
 }

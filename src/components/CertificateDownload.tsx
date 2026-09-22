@@ -2,6 +2,14 @@
 
 import { useState } from "react";
 
+type CertificateFormat = "pdf" | "png" | "jpeg";
+
+const FORMAT_META: Record<CertificateFormat, { mime: string; extension: string; label: string }> = {
+  pdf: { mime: "application/pdf", extension: "pdf", label: "PDF" },
+  png: { mime: "image/png", extension: "png", label: "PNG" },
+  jpeg: { mime: "image/jpeg", extension: "jpg", label: "JPEG" },
+};
+
 interface CertificateDownloadProps {
   courseId: string;
   label?: string;
@@ -9,14 +17,16 @@ interface CertificateDownloadProps {
   wrapperClassName?: string;
   viewClassName?: string;
   showView?: boolean;
+  /** Extra formats offered as small links next to the main button. PDF is always the main button. */
+  showFormatPicker?: boolean;
 }
 
 // Downloads the student's certificate in a way that works on phones as well as desktops.
-// A plain link to the PDF can dump a student onto a raw error page if their session has
-// expired, and some phone browsers ignore the attachment header. This fetches the file
-// first (so errors show as a message), then saves it - through the share sheet on iPhone
-// and iPad, or a normal download elsewhere. "View" opens it in the browser's PDF viewer,
-// which is the fallback when an in-app browser blocks downloads.
+// A plain link can dump a student onto a raw error page if their session has expired, and
+// some phone browsers ignore the attachment header. This fetches the file first (so errors
+// show as a message), then saves it - through the share sheet on iPhone and iPad, or a
+// normal download elsewhere. "View" opens it in the browser's viewer, which is the fallback
+// when an in-app browser blocks downloads.
 export default function CertificateDownload({
   courseId,
   label = "Download Certificate",
@@ -24,15 +34,18 @@ export default function CertificateDownload({
   wrapperClassName = "",
   viewClassName = "text-xs font-bold text-green-700 underline",
   showView = true,
+  showFormatPicker = true,
 }: CertificateDownloadProps) {
-  const [busy, setBusy] = useState(false);
+  const [busyFormat, setBusyFormat] = useState<CertificateFormat | null>(null);
   const [message, setMessage] = useState("");
-  const url = `/api/certificates/${courseId}`;
-  const filename = `${courseId}-certificate.pdf`;
 
-  const download = async () => {
-    setBusy(true);
+  const download = async (format: CertificateFormat) => {
+    setBusyFormat(format);
     setMessage("");
+    const { mime, extension } = FORMAT_META[format];
+    const url = `/api/certificates/${courseId}?format=${format}`;
+    const filename = `${courseId}-certificate.${extension}`;
+
     try {
       const res = await fetch(url, { cache: "no-store", credentials: "same-origin" });
       if (!res.ok) {
@@ -47,8 +60,8 @@ export default function CertificateDownload({
         return;
       }
 
-      const blob = new Blob([await res.arrayBuffer()], { type: "application/pdf" });
-      const file = new File([blob], filename, { type: "application/pdf" });
+      const blob = new Blob([await res.arrayBuffer()], { type: mime });
+      const file = new File([blob], filename, { type: mime });
       const isIos =
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -73,21 +86,39 @@ export default function CertificateDownload({
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
     } catch {
       // No connection or a blocked blob download: open the viewer instead.
-      window.open(`${url}?view=1`, "_blank", "noopener");
+      window.open(`${url}&view=1`, "_blank", "noopener");
     } finally {
-      setBusy(false);
+      setBusyFormat(null);
     }
   };
 
   return (
     <div className={wrapperClassName}>
-      <button type="button" onClick={download} disabled={busy} className={className}>
-        {busy ? "Preparing..." : label}
-      </button>
-      {showView ? (
-        <a href={`${url}?view=1`} target="_blank" rel="noopener noreferrer" className={viewClassName}>
-          View
-        </a>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => download("pdf")} disabled={busyFormat !== null} className={className}>
+          {busyFormat === "pdf" ? "Preparing..." : label}
+        </button>
+        {showView ? (
+          <a href={`/api/certificates/${courseId}?view=1`} target="_blank" rel="noopener noreferrer" className={viewClassName}>
+            View
+          </a>
+        ) : null}
+      </div>
+      {showFormatPicker ? (
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Also as:</span>
+          {(["png", "jpeg"] as const).map((format) => (
+            <button
+              key={format}
+              type="button"
+              onClick={() => download(format)}
+              disabled={busyFormat !== null}
+              className="text-xs font-bold text-gray-500 underline decoration-dotted hover:text-primary disabled:opacity-50"
+            >
+              {busyFormat === format ? "Preparing..." : FORMAT_META[format].label}
+            </button>
+          ))}
+        </div>
       ) : null}
       {message ? (
         <p role="alert" className="w-full text-xs font-medium text-red-600">

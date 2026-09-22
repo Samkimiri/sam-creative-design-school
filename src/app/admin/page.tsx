@@ -3431,6 +3431,17 @@ export default function AdminDashboard() {
                       >
                         Download Sample PDF
                       </a>
+                      {(["png", "jpeg"] as const).map((format) => (
+                        <a
+                          key={format}
+                          href={`${certificatePreviewUrl}&download=1&format=${format}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`premium-button rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-600 hover:border-primary/30 hover:text-primary ${adminActionMotion}`}
+                        >
+                          {format === "png" ? "Sample PNG" : "Sample JPEG"}
+                        </a>
+                      ))}
                     </>
                   )}
                 </div>
@@ -3497,14 +3508,27 @@ export default function AdminDashboard() {
                         <p className="font-bold text-dark">{s.name}</p>
                         <p className="text-xs text-gray-500">{s.email}</p>
                       </div>
-                      <a
-                        href={`/api/certificates/${certificateCourseId}?studentId=${s.id}&download=1`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`premium-button inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white hover:bg-primary/90 ${adminActionMotion}`}
-                      >
-                        Download Certificate
-                      </a>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <a
+                          href={`/api/certificates/${certificateCourseId}?studentId=${s.id}&download=1`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`premium-button inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-white hover:bg-primary/90 ${adminActionMotion}`}
+                        >
+                          Download PDF
+                        </a>
+                        {(["png", "jpeg"] as const).map((format) => (
+                          <a
+                            key={format}
+                            href={`/api/certificates/${certificateCourseId}?studentId=${s.id}&download=1&format=${format}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs font-bold text-gray-500 underline decoration-dotted hover:text-primary"
+                          >
+                            {format === "png" ? "PNG" : "JPEG"}
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
