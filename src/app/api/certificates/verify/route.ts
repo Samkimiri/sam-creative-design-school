@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { courses } from "@/data/courses";
+import { getManagedCourses } from "@/lib/contentSettings";
 import { certificateIdFor, getCourseCompletion } from "@/lib/courseCompletion";
 import { getDB } from "@/lib/db";
 import { hasCourseAccess } from "@/lib/enrollmentAccess";
@@ -15,9 +15,10 @@ export async function GET(request: Request) {
 
   const students = await getDB<Student>("students.json");
   const progress = await getDB<ProgressRecord>("progress.json");
+  const managedCourses = await getManagedCourses();
 
   for (const student of students) {
-    for (const course of courses) {
+    for (const course of managedCourses) {
       const certificateId = certificateIdFor(student.id, course.id);
       if (certificateId !== id) continue;
 

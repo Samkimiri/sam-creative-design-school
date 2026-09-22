@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getDB } from "@/lib/db";
 import { ensureCompletionStamp } from "@/lib/completionStamp";
-import { courses } from "@/data/courses";
+import { getManagedCourses } from "@/lib/contentSettings";
 import { certificateIdFor, getCourseCompletion } from "@/lib/courseCompletion";
 import { getStudentWithConfirmedEnrollmentAccess, hasCourseAccess } from "@/lib/enrollmentAccess";
 import type { ProgressRecord } from "@/types";
@@ -38,7 +38,8 @@ export async function GET(
   }
 
   const { courseId } = await params;
-  const course = courses.find((item) => item.id === courseId);
+  const managedCourses = await getManagedCourses();
+  const course = managedCourses.find((item) => item.id === courseId);
   if (!course) {
     return NextResponse.json({ error: "Course not found" }, { status: 404 });
   }
