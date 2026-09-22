@@ -129,14 +129,16 @@ export async function GET(
     "Cache-Control": "no-store",
   };
 
+  const skills = course.skills ?? [];
+
   if (format === "pdf") {
-    const pdf = buildCompletionCertificatePdf(studentName, course.title, certificateId, cohort, issuedAt);
+    const pdf = buildCompletionCertificatePdf(studentName, course.title, certificateId, cohort, issuedAt, skills);
     return new NextResponse(new Uint8Array(pdf).buffer, { headers });
   }
 
   // PNG/JPEG are rasterized from the same SVG design the homepage preview uses, filled in
   // with this student's real details, so every format shows an identical-looking certificate.
-  const svg = buildCertificateSvg({ studentName, courseTitle: course.title, certificateId, cohortLabel: cohort, issuedAt });
+  const svg = buildCertificateSvg({ studentName, courseTitle: course.title, certificateId, cohortLabel: cohort, issuedAt, skills });
   const image = sharp(Buffer.from(svg), { density: SVG_BASE_DENSITY * RASTER_SCALE }).resize(792 * RASTER_SCALE, 612 * RASTER_SCALE, {
     fit: "fill",
   });

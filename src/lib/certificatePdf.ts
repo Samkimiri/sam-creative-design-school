@@ -170,12 +170,22 @@ export function formatIssueDate(value?: string | Date): string {
   return new Intl.DateTimeFormat("en-KE", { dateStyle: "long", timeZone: "Africa/Nairobi" }).format(date);
 }
 
+// Renders up to 4 course-specific skills as a single centered line, e.g.
+// "SKILLS GAINED   LOGO DESIGN  ·  TYPOGRAPHY  ·  BRAND IDENTITY  ·  ICON DESIGN"
+// so each course's certificate is visibly distinct, not just the title text.
+export function formatSkillsLine(skills: string[]): string {
+  const list = skills.map((skill) => cleanText(skill).trim()).filter(Boolean).slice(0, 4);
+  if (!list.length) return "";
+  return `SKILLS GAINED:   ${list.map((skill) => skill.toUpperCase()).join("   ·   ")}`;
+}
+
 export function buildCompletionCertificatePdf(
   studentName: string,
   courseTitle: string,
   certificateId: string,
   cohortLabel = "",
-  issuedAt?: string | Date
+  issuedAt?: string | Date,
+  skills: string[] = []
 ): Buffer {
   const issuedOn = formatIssueDate(issuedAt);
   const verifyUrl = `https://sam-creative-design-school.vercel.app/verify-certificate?id=${certificateId}`;
@@ -189,6 +199,8 @@ export function buildCompletionCertificatePdf(
     11,
     470
   ).slice(0, 2);
+  const skillsLine = formatSkillsLine(skills);
+  const skillsSize = skillsLine ? fitSize(skillsLine, "F2", 9, 6.5, 610, 0.5) : 9;
 
   const rings = Array.from({ length: 8 }, (_, index) => {
     const radius = 70 + index * 22;
@@ -239,6 +251,9 @@ export function buildCompletionCertificatePdf(
     ...descriptionLines.map((descriptionLine, index) =>
       text(descriptionLine, CENTER_X, 220 - index * 16, 11, { font: "F1", color: INK, align: "center" })
     ),
+    skillsLine
+      ? text(skillsLine, CENTER_X, 183, skillsSize, { font: "F2", color: GOLD, align: "center", spacing: 0.5 })
+      : "",
 
     // Left: date of issue
     text(issuedOn, 190, 122, 12.5, { font: "F2", color: NAVY, align: "center" }),

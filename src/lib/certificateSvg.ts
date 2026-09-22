@@ -3,6 +3,7 @@ import {
   GOLD,
   INK,
   fitSize,
+  formatSkillsLine,
   MUTED,
   NAVY,
   SKY,
@@ -79,8 +80,9 @@ export function buildCertificateSvg(options: {
   issuedAt?: string | Date;
   dateText?: string;
   placeholder?: boolean;
+  skills?: string[];
 }): string {
-  const { studentName, courseTitle, certificateId, cohortLabel = "", placeholder = false } = options;
+  const { studentName, courseTitle, certificateId, cohortLabel = "", placeholder = false, skills = [] } = options;
   const issuedOn = options.dateText ?? formatIssueDate(options.issuedAt);
   const logo = logoDataUri();
 
@@ -90,6 +92,8 @@ export function buildCertificateSvg(options: {
     11,
     470
   ).slice(0, 2);
+  const skillsLine = formatSkillsLine(skills);
+  const skillsSize = skillsLine ? fitSize(skillsLine, "F2", 9, 6.5, 610, 0.5) : 9;
 
   const rings = Array.from({ length: 8 }, (_, index) => {
     const radius = 70 + index * 22;
@@ -139,6 +143,7 @@ export function buildCertificateSvg(options: {
       ...placeholderOpacity,
     }),
     ...description.map((row, index) => t(row, CX, 220 - index * 16, { size: 11, fill: INK })),
+    skillsLine ? t(skillsLine, CX, 183, { size: skillsSize, fill: GOLD, weight: "bold", spacing: 0.5 }) : "",
     t(issuedOn, 190, 122, { size: 12.5, fill: NAVY, weight: "bold", ...placeholderOpacity }),
     line(100, 114, 280, 114, 0.9, NAVY),
     t("DATE OF ISSUE", 190, 100, { size: 7.5, fill: MUTED, weight: "bold", spacing: 1.8 }),
