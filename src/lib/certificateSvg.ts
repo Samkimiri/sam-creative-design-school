@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import {
   GOLD,
@@ -54,6 +55,40 @@ function embeddedFontStyle(): string {
     cachedFontStyle = "";
   }
   return cachedFontStyle;
+}
+
+// @font-face alone isn't enough: librsvg's text renderer resolves font-family
+// through Pango/fontconfig, not through the SVG's own CSS, so on a host with no
+// fonts installed at all (a bare serverless container) it never sees the
+// embedded faces above and falls back to nothing - hence the tofu boxes. This
+// points fontconfig's font database at our bundled TTFs directly, once per
+// process, so Pango finds "SCDS Sans"/"SCDS Serif" as real installed fonts
+// regardless of what the host otherwise has.
+let fontConfigReady = false;
+function ensureFontConfigEnv(): void {
+  if (fontConfigReady) return;
+  fontConfigReady = true;
+  try {
+    const confDir = path.join(os.tmpdir(), "scds-cert-fontconfig");
+    const cacheDir = path.join(confDir, "cache");
+    fs.mkdirSync(cacheDir, { recursive: true });
+    const confPath = path.join(confDir, "fonts.conf");
+    const xml = [
+      '<?xml version="1.0"?>',
+      '<!DOCTYPE fontconfig SYSTEM "fonts.dtd">',
+      "<fontconfig>",
+      `  <dir>${CERT_FONTS_DIR}</dir>`,
+      `  <cachedir>${cacheDir}</cachedir>`,
+      "</fontconfig>",
+      "",
+    ].join("\n");
+    fs.writeFileSync(confPath, xml);
+    process.env.FONTCONFIG_PATH = confDir;
+    process.env.FONTCONFIG_FILE = confPath;
+  } catch {
+    // Best-effort - if this fails, rendering falls back to whatever fonts (if
+    // any) the host already has.
+  }
 }
 
 const SERIF = "'SCDS Serif', 'Times New Roman', Times, 'Liberation Serif', serif";
@@ -115,6 +150,7 @@ export function buildCertificateSvg(options: {
   certificateFocus?: string;
 }): string {
   const { studentName, courseTitle, certificateId, cohortLabel = "", placeholder = false, certificateFocus = "professional design" } = options;
+  ensureFontConfigEnv();
   const issuedOn = options.dateText ?? formatIssueDate(options.issuedAt);
   const logo = logoDataUri();
 
