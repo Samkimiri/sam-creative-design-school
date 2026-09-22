@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { BookOpen, Flame, Gamepad2, MousePointerClick, Music2, Sparkles, Timer } from "lucide-react";
 import StudyBreakGames from "@/components/StudyBreakGames";
+import DailyGames from "@/components/DailyGames";
 
 export const metadata: Metadata = {
   title: "Study Break Games",
@@ -33,7 +34,7 @@ export default function GamesPage() {
                 Fast arcade games built for quick attention.
               </h1>
               <p className="motion-rise motion-delay-2 mt-5 max-w-2xl text-base leading-7 text-white/75">
-                Play neon tap rush, rhythm pads, glow memory, color reflex, trend picker, and glow snake. Short, bright, replayable games for quick study breaks.
+                A new Term Guess and trivia set drop every day - build a streak. Then play neon tap rush, rhythm pads, glow memory, color reflex, trend picker, and glow snake whenever you want a quick break.
               </p>
               <div className="motion-rise motion-delay-3 mt-7 flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -78,7 +79,8 @@ export default function GamesPage() {
         </div>
       </section>
 
-      <main id="play" className="container mx-auto px-6 py-12">
+      <main id="play" className="container mx-auto px-6 py-12 space-y-12">
+        <DailyGames />
         <StudyBreakGames />
       </main>
     </div>
