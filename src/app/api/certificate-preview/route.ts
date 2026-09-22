@@ -14,7 +14,6 @@ export async function GET() {
     cohortLabel: intake.currentCohort,
     dateText: "DD Month YYYY",
     placeholder: true,
-    skills: ["Skill One", "Skill Two", "Skill Three", "Skill Four"],
   });
 
   return new Response(svg, {
