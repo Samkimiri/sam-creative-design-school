@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
     cpus: 1,
     webpackBuildWorker: false,
   },
+  // The certificate routes embed src/lib/certFonts/*.ttf into the SVG they render
+  // (so PNG/JPEG downloads don't depend on the serverless host having system
+  // fonts installed). Those files are read at runtime via a path built from an
+  // array rather than a single literal fs.readFileSync(...) call, so this makes
+  // sure Vercel's build-time file tracing packages them regardless.
+  outputFileTracingIncludes: {
+    "/api/certificates/[courseId]": ["./src/lib/certFonts/**/*"],
+    "/api/certificate-preview": ["./src/lib/certFonts/**/*"],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,

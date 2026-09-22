@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import {
   GOLD,
   INK,
@@ -23,8 +24,40 @@ const H = 612;
 const CX = W / 2;
 const Y = (y: number) => H - y;
 
-const SERIF = "'Times New Roman', Times, 'Liberation Serif', serif";
-const SANS = "Helvetica, Arial, 'Liberation Sans', sans-serif";
+// System fonts aren't a safe bet once this SVG is rasterized to PNG/JPEG by sharp
+// (librsvg) on a serverless host - the box has no guarantee of Arial or Times New
+// Roman being installed, and without them every glyph renders as a blank tofu box.
+// So the exact fonts the PDF's width metrics are built from (Arial/Times, via
+// pdfFontMetrics.ts) are embedded directly in the SVG as base64 @font-face data:
+// Arimo and Tinos, Google's metric-compatible, open-licensed substitutes for
+// Arial and Times New Roman (see certFonts/LICENSE.txt).
+const CERT_FONTS_DIR = path.join(process.cwd(), "src", "lib", "certFonts");
+const FONT_FACES: { family: string; weight: string; style: string; file: string }[] = [
+  { family: "SCDS Sans", weight: "400", style: "normal", file: "Arimo-Regular.ttf" },
+  { family: "SCDS Sans", weight: "700", style: "normal", file: "Arimo-Bold.ttf" },
+  { family: "SCDS Serif", weight: "400", style: "normal", file: "Tinos-Regular.ttf" },
+  { family: "SCDS Serif", weight: "700", style: "normal", file: "Tinos-Bold.ttf" },
+  { family: "SCDS Serif", weight: "400", style: "italic", file: "Tinos-Italic.ttf" },
+  { family: "SCDS Serif", weight: "700", style: "italic", file: "Tinos-BoldItalic.ttf" },
+];
+
+let cachedFontStyle: string | undefined;
+function embeddedFontStyle(): string {
+  if (cachedFontStyle !== undefined) return cachedFontStyle;
+  try {
+    const faces = FONT_FACES.map((face) => {
+      const data = fs.readFileSync(path.join(CERT_FONTS_DIR, face.file)).toString("base64");
+      return `@font-face{font-family:'${face.family}';font-weight:${face.weight};font-style:${face.style};src:url(data:font/ttf;base64,${data}) format('truetype');}`;
+    });
+    cachedFontStyle = `<style>${faces.join("")}</style>`;
+  } catch {
+    cachedFontStyle = "";
+  }
+  return cachedFontStyle;
+}
+
+const SERIF = "'SCDS Serif', 'Times New Roman', Times, 'Liberation Serif', serif";
+const SANS = "'SCDS Sans', Helvetica, Arial, 'Liberation Sans', sans-serif";
 
 function color(triple: string): string {
   const [r, g, b] = triple.split(" ").map((part) => Math.round(Number(part) * 255));
@@ -104,6 +137,7 @@ export function buildCertificateSvg(options: {
 
   const parts = [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Sam Creative Design School certificate of completion">`,
+    embeddedFontStyle(),
     `<rect width="${W}" height="${H}" fill="rgb(254,254,253)"/>`,
     ...rings,
     `<rect x="22" y="${Y(590)}" width="748" height="568" fill="none" stroke="${color(NAVY)}" stroke-width="1.4"/>`,
