@@ -164,6 +164,30 @@ function readJpegImage(filePath: string): JpegImage | null {
   return null;
 }
 
+type RasterAsset = { rgb: Buffer; alpha: Buffer; width: number; height: number };
+
+// The founder's actual signature, pre-processed (background removed, recoloured
+// to NAVY, deflate-compressed) by scripts/_build_signature_assets.mjs into a
+// separate RGB layer and an 8-bit grey alpha layer, since this hand-rolled PDF
+// writer has no general PNG decoder - these are already in the exact form a PDF
+// image XObject (+ SMask) needs, so they're embedded as-is.
+const signatureAssetDir = path.join(process.cwd(), "src", "lib", "certFonts");
+function readSignatureAsset(): RasterAsset | null {
+  try {
+    const meta = JSON.parse(
+      fs.readFileSync(path.join(signatureAssetDir, "signature-meta.json"), "utf8")
+    ) as { width: number; height: number };
+    return {
+      rgb: fs.readFileSync(path.join(signatureAssetDir, "signature-rgb.zz")),
+      alpha: fs.readFileSync(path.join(signatureAssetDir, "signature-alpha.zz")),
+      width: meta.width,
+      height: meta.height,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function formatIssueDate(value?: string | Date): string {
   const parsed = value ? new Date(value) : new Date();
   const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
@@ -181,6 +205,11 @@ export function buildCompletionCertificatePdf(
   const issuedOn = formatIssueDate(issuedAt);
   const verifyUrl = `https://sam-creative-design-school.vercel.app/verify-certificate?id=${certificateId}`;
   const schoolLogo = readJpegImage(schoolLogoPath);
+  const signatureAsset = readSignatureAsset();
+  const sigHeight = 50;
+  const sigWidth = signatureAsset ? sigHeight * (signatureAsset.width / signatureAsset.height) : 0;
+  const sigX = 586 - sigWidth / 2;
+  const sigY = 120; // just above the underline at y=114
 
   const nameSize = fitSize(studentName, "F7", 48, 26, 540);
   const courseSize = fitSize(courseTitle, "F2", 21, 14, 580);
@@ -252,7 +281,9 @@ export function buildCompletionCertificatePdf(
 
     // Right: role-based signature (an institutional title rather than a
     // person's name, so the certificate doesn't need reissuing if the signer changes)
-    text("Founder & Director", 586, 124, signatureSize, { font: "F6", color: NAVY, align: "center" }),
+    signatureAsset
+      ? `q ${sigWidth.toFixed(2)} 0 0 ${sigHeight.toFixed(2)} ${sigX.toFixed(2)} ${sigY} cm /Signature Do Q`
+      : text("Founder & Director", 586, 124, signatureSize, { font: "F6", color: NAVY, align: "center" }),
     line(496, 114, 676, 114, 0.9, NAVY_STROKE),
     text("SAM CREATIVE DESIGN SCHOOL", 586, 100, 8.3, { font: "F2", color: NAVY, align: "center", spacing: 0.8 }),
     text("AUTHORIZED SIGNATORY", 586, 87, 7.5, { font: "F2", color: MUTED, align: "center", spacing: 1.8 }),
@@ -276,20 +307,37 @@ export function buildCompletionCertificatePdf(
     .join("\n");
 
   const fontObjectStart = 4;
-  const logoObjectNumber = fontObjectStart + FONT_ORDER.length;
-  const contentObjectNumber = schoolLogo ? logoObjectNumber + 1 : logoObjectNumber;
+  let objectCursor = fontObjectStart + FONT_ORDER.length;
+  const logoObjectNumber = schoolLogo ? objectCursor++ : null;
+  const signatureImageObjectNumber = signatureAsset ? objectCursor++ : null;
+  const signatureAlphaObjectNumber = signatureAsset ? objectCursor++ : null;
+  const contentObjectNumber = objectCursor;
+
   const fontResources = FONT_ORDER.map((name, index) => `/${name} ${fontObjectStart + index} 0 R`).join(" ");
-  const logoResource = schoolLogo ? `/XObject << /SchoolLogo ${logoObjectNumber} 0 R >>` : "";
+  const xObjectEntries = [
+    schoolLogo ? `/SchoolLogo ${logoObjectNumber} 0 R` : "",
+    signatureAsset ? `/Signature ${signatureImageObjectNumber} 0 R` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const xObjectResource = xObjectEntries ? `/XObject << ${xObjectEntries} >>` : "";
   const logoObject = schoolLogo
     ? `<< /Type /XObject /Subtype /Image /Width ${schoolLogo.width} /Height ${schoolLogo.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${schoolLogo.data.length} >>\nstream\n${schoolLogo.data.toString("latin1")}\nendstream`
+    : "";
+  const signatureImageObject = signatureAsset
+    ? `<< /Type /XObject /Subtype /Image /Width ${signatureAsset.width} /Height ${signatureAsset.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /SMask ${signatureAlphaObjectNumber} 0 R /Length ${signatureAsset.rgb.length} >>\nstream\n${signatureAsset.rgb.toString("latin1")}\nendstream`
+    : "";
+  const signatureAlphaObject = signatureAsset
+    ? `<< /Type /XObject /Subtype /Image /Width ${signatureAsset.width} /Height ${signatureAsset.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${signatureAsset.alpha.length} >>\nstream\n${signatureAsset.alpha.toString("latin1")}\nendstream`
     : "";
 
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}] /Resources << /Font << ${fontResources} >> ${logoResource} >> /Contents ${contentObjectNumber} 0 R >>`,
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}] /Resources << /Font << ${fontResources} >> ${xObjectResource} >> /Contents ${contentObjectNumber} 0 R >>`,
     ...FONT_ORDER.map((name) => `<< /Type /Font /Subtype /Type1 /BaseFont /${FONTS[name].base} >>`),
     ...(schoolLogo ? [logoObject] : []),
+    ...(signatureAsset ? [signatureImageObject, signatureAlphaObject] : []),
     `<< /Length ${Buffer.byteLength(content, "latin1")} >>\nstream\n${content}\nendstream`,
   ];
 

@@ -114,6 +114,22 @@ function logoDataUri(): string | null {
   return cachedLogo;
 }
 
+const founderSignaturePath = path.join(process.cwd(), "public", "images", "founder-signature.png");
+let cachedSignature: { dataUri: string; aspect: number } | null | undefined;
+function signatureAsset(): { dataUri: string; aspect: number } | null {
+  if (cachedSignature !== undefined) return cachedSignature;
+  try {
+    const meta = JSON.parse(
+      fs.readFileSync(path.join(CERT_FONTS_DIR, "signature-meta.json"), "utf8")
+    ) as { width: number; height: number };
+    const dataUri = `data:image/png;base64,${fs.readFileSync(founderSignaturePath).toString("base64")}`;
+    cachedSignature = { dataUri, aspect: meta.width / meta.height };
+  } catch {
+    cachedSignature = null;
+  }
+  return cachedSignature;
+}
+
 type TextOptions = {
   size: number;
   fill: string;
@@ -153,6 +169,11 @@ export function buildCertificateSvg(options: {
   ensureFontConfigEnv();
   const issuedOn = options.dateText ?? formatIssueDate(options.issuedAt);
   const logo = logoDataUri();
+  const signature = signatureAsset();
+  const sigHeight = 50;
+  const sigWidth = signature ? sigHeight * signature.aspect : 0;
+  const sigX = 586 - sigWidth / 2;
+  const sigY = 120; // just above the underline at y=114
 
   const description = wrapByWidth(
     `at Sam Creative Design School (SCDS), demonstrating creativity, dedication, and practical skill in ${certificateFocus.trim() || "professional design"}.`,
@@ -214,7 +235,9 @@ export function buildCertificateSvg(options: {
     line(100, 114, 280, 114, 0.9, NAVY),
     t("DATE OF ISSUE", 190, 100, { size: 7.5, fill: MUTED, weight: "bold", spacing: 1.8 }),
     cohortLabel ? t(cohortLabel.toUpperCase(), 190, 87, { size: 7.5, fill: SKY, weight: "bold", spacing: 1.8 }) : "",
-    t("Founder & Director", 586, 124, { size: fitSize("Founder & Director", "F6", 26, 15, 170), fill: NAVY, family: SERIF, style: "italic" }),
+    signature
+      ? `<image href="${signature.dataUri}" x="${sigX}" y="${Y(sigY + sigHeight)}" width="${sigWidth}" height="${sigHeight}"/>`
+      : t("Founder & Director", 586, 124, { size: fitSize("Founder & Director", "F6", 26, 15, 170), fill: NAVY, family: SERIF, style: "italic" }),
     line(496, 114, 676, 114, 0.9, NAVY),
     t("SAM CREATIVE DESIGN SCHOOL", 586, 100, { size: 8.3, fill: NAVY, weight: "bold", spacing: 0.8 }),
     t("AUTHORIZED SIGNATORY", 586, 87, { size: 7.5, fill: MUTED, weight: "bold", spacing: 1.8 }),
