@@ -184,6 +184,7 @@ export function buildCompletionCertificatePdf(
 
   const nameSize = fitSize(studentName, "F7", 48, 26, 540);
   const courseSize = fitSize(courseTitle, "F2", 21, 14, 580);
+  const signatureSize = fitSize("Founder & Director", "F6", 26, 15, 170);
   const descriptionLines = wrapByWidth(
     `at Sam Creative Design School (SCDS), demonstrating creativity, dedication, and practical skill in ${cleanText(certificateFocus).trim() || "professional design"}.`,
     "F1",
@@ -249,11 +250,12 @@ export function buildCompletionCertificatePdf(
       ? text(cohortLabel.toUpperCase(), 190, 87, 7.5, { font: "F2", color: SKY, align: "center", spacing: 1.8 })
       : "",
 
-    // Right: trainer signature
-    text("Samuel Ndung'u", 586, 124, 26, { font: "F6", color: NAVY, align: "center" }),
+    // Right: role-based signature (an institutional title rather than a
+    // person's name, so the certificate doesn't need reissuing if the signer changes)
+    text("Founder & Director", 586, 124, signatureSize, { font: "F6", color: NAVY, align: "center" }),
     line(496, 114, 676, 114, 0.9, NAVY_STROKE),
-    text("SAMUEL NDUNG'U", 586, 100, 9.5, { font: "F2", color: NAVY, align: "center", spacing: 1.2 }),
-    text("TRAINER, SCDS", 586, 87, 7.5, { font: "F2", color: MUTED, align: "center", spacing: 1.8 }),
+    text("SAM CREATIVE DESIGN SCHOOL", 586, 100, 8.3, { font: "F2", color: NAVY, align: "center", spacing: 0.8 }),
+    text("AUTHORIZED SIGNATORY", 586, 87, 7.5, { font: "F2", color: MUTED, align: "center", spacing: 1.8 }),
 
     // Center: seal with ribbon tails
     polygon([[sealX - 26, sealY - 30], [sealX - 8, sealY - 38], [sealX - 20, sealY - 58], [sealX - 30, sealY - 47], [sealX - 44, sealY - 50]], SKY),
